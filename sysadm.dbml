@@ -1,0 +1,228 @@
+// NetServa 3.0 sysadm Database Schema (Canonical DBML)
+// Version: 1.0
+// Purpose: Runtime mail server configuration for remote NetServa deployments
+// Date: 2025-10-04
+//
+// This is the single source of truth for the sysadm database schema.
+// Convert to SQL using: https://dbml.dbdiagram.io/
+//
+// Target Systems:
+// - MySQL/MariaDB: Production mail servers
+// - SQLite: Development and lightweight deployments
+
+// ============================================================================
+// DOMAINS TABLE
+// Virtual mail domains with filesystem ownership
+// ============================================================================
+
+Table domains {
+  domain varchar(255) [pk, note: 'Primary domain name (e.g., example.com)']
+  uid integer [not null, note: 'Unix user ID for filesystem ownership']
+  gid integer [not null, note: 'Unix group ID for filesystem ownership']
+  maxquota bigint [default: 0, note: 'Maximum quota for domain in bytes (0 = unlimited)']
+  active tinyint(1) [default: 1, note: 'Active flag: 1=active, 0=disabled']
+  created_at timestamp [null, note: 'Laravel timestamp: creation time']
+  updated_at timestamp [null, note: 'Laravel timestamp: last update time']
+
+  Note: '''
+    Virtual mail domains managed by Postfix/Dovecot.
+    Each domain has filesystem ownership (uid/gid) for virtual mailboxes.
+    No foreign key constraints by design for maximum flexibility.
+  '''
+}
+
+// ============================================================================
+// MAILBOXES TABLE
+// Virtual mailboxes with intelligent redundancy for zero-JOIN queries
+// ============================================================================
+
+Table mailboxes {
+  username varchar(255) [pk, note: 'Full email address (e.g., user@example.com)']
+  password varchar(255) [not null, note: 'Encrypted password hash (SHA256-CRYPT, BLF-CRYPT, etc.)']
+  maildir varchar(255) [not null, note: 'Maildir path relative to /var/ns/ (e.g., example.com/mail/user/)']
+  domain varchar(255) [not null, note: 'Domain name (redundant for performance - no JOIN needed)']
+  uid integer [not null, note: 'Unix user ID for mailbox ownership (redundant for performance)']
+  gid integer [not null, note: 'Unix group ID for mailbox ownership (redundant for performance)']
+  quota bigint [default: 500000000, note: 'Mailbox quota in bytes (default: 500MB)']
+  active tinyint(1) [default: 1, note: 'Active flag: 1=active, 0=disabled']
+  created_at timestamp [null, note: 'Laravel timestamp: creation time']
+  updated_at timestamp [null, note: 'Laravel timestamp: last update time']
+
+  Indexes {
+    domain [name: 'idx_mailbox_domain', note: 'Performance: fast domain lookups']
+    active [name: 'idx_mailbox_active', note: 'Performance: fast active mailbox queries']
+  }
+
+  Note: '''
+    Virtual mailboxes for Dovecot/Postfix authentication and delivery.
+    Redundant domain/uid/gid fields enable zero-JOIN queries for maximum performance.
+    Maildir format: /var/ns/{domain}/mail/{user}/Maildir
+    Password format: Use doveadm pw -s SHA256-CRYPT to generate hashes
+  '''
+}
+
+// ============================================================================
+// ALIASES TABLE
+// Email aliases and forwarding rules with multi-destination support
+// ============================================================================
+
+Table aliases {
+  address varchar(255) [pk, note: 'Full email address or wildcard (e.g., user@example.com, @example.com)']
+  goto text [not null, note: 'Destination email(s) - comma-separated for multiple destinations']
+  domain varchar(255) [not null, note: 'Domain name (redundant for performance - no JOIN needed)']
+  active tinyint(1) [default: 1, note: 'Active flag: 1=active, 0=disabled']
+  created_at timestamp [null, note: 'Laravel timestamp: creation time']
+  updated_at timestamp [null, note: 'Laravel timestamp: last update time']
+
+  Indexes {
+    domain [name: 'idx_alias_domain', note: 'Performance: fast domain lookups']
+    active [name: 'idx_alias_active', note: 'Performance: fast active alias queries']
+  }
+
+  Note: '''
+    Email aliases and forwarding rules for Postfix virtual alias maps.
+    The goto field supports:
+    - Single destination: user@destination.com
+    - Multiple destinations: user1@dest.com,user2@dest.com
+    - Catch-all: @example.com -> admin@example.com
+  '''
+}
+
+// ============================================================================
+// REFERENCE QUERIES (Dovecot/Postfix Integration)
+// ============================================================================
+
+Note dovecot_queries {
+  '''
+  Dovecot SQL queries (zero JOINs for maximum performance):
+
+  Authentication query (/etc/dovecot/user-*.conf):
+    password_query = SELECT password, maildir, uid, gid, quota \
+                     FROM mailboxes \
+                     WHERE username = '%u' AND active = 1
+
+  User info query:
+    user_query = SELECT maildir, uid, gid, quota \
+                 FROM mailboxes \
+                 WHERE username = '%u' AND active = 1
+
+  Iterate query (for doveadm):
+    iterate_query = SELECT username FROM mailboxes WHERE active = 1
+  '''
+}
+
+Note postfix_queries {
+  '''
+  Postfix SQL queries:
+
+  Virtual mailbox maps (/etc/postfix/sqlite-mailbox-maps.cf):
+    query = SELECT maildir FROM mailboxes \
+            WHERE username = '%s' AND active = 1
+
+  Virtual alias maps (/etc/postfix/sqlite-alias-maps.cf):
+    query = SELECT goto FROM aliases \
+            WHERE address = '%s' AND active = 1
+
+  Virtual mailbox domains (/etc/postfix/sqlite-mailbox-domains.cf):
+    query = SELECT domain FROM domains \
+            WHERE domain = '%s' AND active = 1
+  '''
+}
+
+// ============================================================================
+// DESIGN NOTES
+// ============================================================================
+
+Note design_principles {
+  '''
+  Design Principles:
+
+  1. No Foreign Keys: By design for maximum flexibility and portability
+  2. Redundant Fields: domain/uid/gid in mailboxes table for zero-JOIN performance
+  3. Laravel Compatibility: created_at/updated_at timestamp fields
+  4. Soft Deletes: Active flags enable soft deletes without data loss
+  5. VARCHAR(255): Optimal length for maximum compatibility across platforms
+  6. TEXT for goto: Supports comma-separated multi-destination aliases
+  '''
+}
+
+Note performance_optimization {
+  '''
+  Performance Optimization:
+
+  1. Indexes: Critical for production deployments with 1000+ mailboxes
+  2. Zero JOINs: Redundant fields eliminate JOINs in hot query paths
+  3. Active flags: Fast filtering without checking deleted_at timestamps
+  4. Maildir format: Efficient file-based storage, no database overhead
+  5. BIGINT quotas: Supports quotas up to 9.2 exabytes
+  '''
+}
+
+Note security_recommendations {
+  '''
+  Security Recommendations:
+
+  Database Users (Principle of Least Privilege):
+
+  For Postfix (read-only):
+    CREATE USER 'postfix'@'localhost' IDENTIFIED BY 'secure_password';
+    GRANT SELECT ON sysadm.* TO 'postfix'@'localhost';
+
+  For Dovecot (read-only):
+    CREATE USER 'dovecot'@'localhost' IDENTIFIED BY 'secure_password';
+    GRANT SELECT ON sysadm.mailboxes TO 'dovecot'@'localhost';
+
+  For NetServa management (full access):
+    CREATE USER 'netserva'@'localhost' IDENTIFIED BY 'secure_password';
+    GRANT ALL ON sysadm.* TO 'netserva'@'localhost';
+
+  Password Hashing:
+    - Use SHA256-CRYPT or BLF-CRYPT (never PLAIN or MD5)
+    - Generate with: doveadm pw -s SHA256-CRYPT
+  '''
+}
+
+Note deployment_notes {
+  '''
+  Deployment Notes:
+
+  Database Location by Platform:
+
+  MySQL/MariaDB (Production):
+    - Database name: sysadm (or mail_{domain})
+    - Connection: /etc/postfix/mysql-*.cf
+    - Connection: /etc/dovecot/dovecot-sql.conf.ext
+
+  SQLite (Development/Lightweight):
+    - Database file: /var/lib/sqlite/sysadm/sysadm.db
+    - Connection: /etc/postfix/sqlite-*.cf
+    - Connection: /etc/dovecot/user-sqlite.conf
+
+  NetServa Directory Structure:
+    /var/ns/{domain}/
+    ├── mail/{user}/Maildir/    # Mailbox storage
+    ├── home/{user}/            # User home directory
+    └── var/
+        ├── log/                # Domain logs
+        └── www/                # Web files (if applicable)
+  '''
+}
+
+Note migration_compatibility {
+  '''
+  Migration Compatibility:
+
+  This schema is compatible with:
+  - NetServa 2.x (SH standard) - minimal changes needed
+  - NetServa 3.0 (NS standard) - full compatibility
+  - Standard Postfix/Dovecot virtual mailbox setups
+  - Laravel Eloquent ORM models
+  - Filament admin panels
+
+  Breaking Changes from Legacy NetServa:
+  - Removed: vmails table (replaced by mailboxes)
+  - Removed: master_users table (use admin mailbox instead)
+  - Added: Laravel timestamp fields (created_at, updated_at)
+  - Changed: quota from INT to BIGINT for larger quotas
+  '''
+}

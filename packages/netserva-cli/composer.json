@@ -1,0 +1,43 @@
+{
+    "name": "netserva/cli",
+    "description": "NetServa CLI package for unified command-line interfaces with Laravel Prompts",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["netserva", "infrastructure", "cli", "laravel", "prompts"],
+    "authors": [
+        {
+            "name": "Mark Constable",
+            "email": "mc@netserva.org",
+            "homepage": "https://netserva.org"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0",
+        "laravel/prompts": "^0.3",
+        "netserva/core": "*"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "orchestra/testbench": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "NetServa\\Cli\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NetServa\\Cli\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NetServa\\Cli\\NetServaCliServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -1,0 +1,151 @@
+
+export NETSERVA_VERSION="3.0.0"
+
+export NS="${NS:-$HOME/.ns}"                 # NetServa Directory (root)
+
+export NS_SUCCESS="✅"                       # Success indicator
+export NS_ERROR="❌"                         # Error indicator
+export NS_WARN="⚠️ "                          # Warning indicator (extra space for alignment)
+export NS_INFO="ℹ️ "                          # Info indicator
+export NS_DEBUG="🔍"                         # Debug indicator
+export NS_PROGRESS="🔄"                      # Progress/working indicator
+export NS_DONE="✨"                          # Completion/done indicator
+export NS_ROCKET="🚀"                        # Launch/start indicator
+export NS_LOCK="🔒"                          # Security/locked indicator
+export NS_KEY="🔑"                           # Key/unlock indicator
+export NS_FOLDER="📁"                        # Folder/directory indicator
+export NS_FILE="📄"                          # File indicator
+export NS_MAIL="📧"                          # Mail indicator
+export NS_WEB="🌐"                           # Web/network indicator
+export NS_DB_ICON="🗄️ "                       # Database icon (renamed to avoid conflict)
+
+if [[ -d "$NS/bin" ]] && [[ ":$PATH:" != *":$NS/bin:"* ]]; then
+    export PATH="$NS/bin:$PATH"
+fi
+
+export NS_DB="$NS/database/database.sqlite"
+
+ns_log() {
+    local level="$1"
+    shift
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$level] $*" | tee -a "$NS/storage/logs/netserva.log" >&2
+}
+
+ns_db() {
+    sqlite3 "$NS_DB" "$@"
+}
+
+ns_cf_zone_id() {
+    local domain="$1"
+    local cf_cache="$NS/tmp/cf_domains.txt"
+    if [[ -f "$cf_cache" ]]; then
+        grep "^$domain=" "$cf_cache" | cut -d= -f2
+    fi
+}
+
+ns_ssh_host_exists() {
+    local ssh_host="$1"
+    [[ -f "$HOME/.ssh/hosts/$ssh_host" ]]
+}
+
+
+ns_remote_exec() {
+    local ssh_host="$1"
+    shift
+    ssh "$ssh_host" "sudo" bash -s "$@"
+}
+
+ns_update_cf_cache() {
+    if [[ -d "$NS" ]]; then
+        cd "$NS" && php artisan dns:cloudflare:zones cache-update
+    else
+        ns_log "ERROR" "NetServa directory not found: $NS"
+        return 1
+    fi
+}
+
+# SSH Tunnel Management - Use Laravel commands:
+# tunnel create <host> <service>  - Create SSH tunnel
+# tunnel close <host>              - Close SSH tunnel(s)
+# tunnel check <host> <service>    - Check if tunnel is active
+# tunnel endpoint <host> <service> - Get tunnel endpoint URL
+# tunnel ensure <host> <service>   - Create tunnel if not active
+# tunnel list                      - List all active tunnels
+#
+# Bash convenience wrappers (backward compatibility):
+ns_tunnel_create() { cd "$NS" && php artisan tunnel create "$@"; }
+ns_tunnel_active() { cd "$NS" && php artisan tunnel check "$@" >/dev/null 2>&1; }
+ns_tunnel_endpoint() { cd "$NS" && php artisan tunnel endpoint "$@"; }
+ns_tunnel_ensure() { cd "$NS" && php artisan tunnel ensure "$@"; }
+ns_tunnel_close() { cd "$NS" && php artisan tunnel close "$@"; }
+
+ns_init() {
+    mkdir -p "$NS/tmp"
+
+    if [[ ! -f "$NS_DB" ]]; then
+        ns_log "INFO" "Initializing NetServa database"
+        touch "$NS_DB"
+    fi
+}
+
+alias a='php artisan'
+alias c='composer'
+alias lx='lxc list'
+alias hcp='shm pull; su - sysadm -c "cd var/www/html/hcp; git pull"'
+
+alias ns_reload='source "$NS/_nsrc"; echo "NetServa environment reloaded"'
+
+nspull() {
+    cd "$NS"
+    git pull
+}
+
+nspush() {
+    cd "$NS"
+    if [[ -n "$1" ]]; then
+        git commit -am "$*"
+    else
+        git commit -a
+    fi
+    git push
+}
+
+
+addvhost() { cd "$NS" && php artisan addvhost "$@"; }
+addvmail() { cd "$NS" && php artisan addvmail "$@"; }
+chvhost() { cd "$NS" && php artisan chvhost "$@"; }
+chpw() { cd "$NS" && php artisan chpw "$@"; }
+chperms() { cd "$NS" && php artisan chperms "$@"; }
+delvhost() { cd "$NS" && php artisan delvhost "$@"; }
+shvhost() { cd "$NS" && php artisan shvhost "$@"; }
+shpw() { cd "$NS" && php artisan shpw "$@"; }
+
+addpw() { cd "$NS" && php artisan addpw "$@"; }
+newpw() { cd "$NS" && php artisan addpw "$@"; }  # Alias for compatibility
+delpw() { cd "$NS" && php artisan delpw "$@"; }
+
+ns() { cd "$NS" && php artisan ns "$@"; }  # Fixed: command is 'ns' not 'platform:ns'
+
+bl() { cd "$NS" && php artisan bl "$@"; }
+
+fleet() { cd "$NS" && php artisan fleet:tree "$@"; }
+
+mkfilament() { cd "$NS" && php artisan make:filament-resource "$@"; }
+
+migratevhost() { cd "$NS" && php artisan migrate:vhost-configs "$@"; }
+migrateplatform() { cd "$NS" && php artisan migrate:platform-profiles "$@"; }
+
+deploy-netserva-dashboards() { cd "$NS" && php artisan grafana deploy "$@"; }
+
+shhost() { cd "$NS" && php artisan shhost "$@"; }
+
+# VHost Configuration Variables wrappers
+addvconf() { cd "$NS" && php artisan addvconf "$@"; }
+shvconf() { cd "$NS" && php artisan shvconf "$@"; }
+chvconf() { cd "$NS" && php artisan chvconf "$@"; }
+delvconf() { cd "$NS" && php artisan delvconf "$@"; }
+
+if [[ -z "${NS_NO_AUTO_INIT:-}" ]]; then
+    ns_init
+fi

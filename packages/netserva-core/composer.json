@@ -1,0 +1,51 @@
+{
+    "name": "netserva/core",
+    "description": "NetServa Core - Foundation package for NetServa infrastructure management ecosystem",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["netserva", "infrastructure", "server-management", "laravel", "filament"],
+    "homepage": "https://netserva.org",
+    "authors": [
+        {
+            "name": "Mark Constable",
+            "email": "markc@netserva.org",
+            "homepage": "https://netserva.org"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^12.0",
+        "filament/filament": "^4.0",
+        "laravel/prompts": "^0.3",
+        "phpseclib/phpseclib": "^3.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "orchestra/testbench": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "NetServa\\Core\\": "src/",
+            "NetServa\\Core\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NetServa\\Core\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NetServa\\Core\\NetServaCoreServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "support": {
+        "issues": "https://github.com/netserva/core/issues",
+        "source": "https://github.com/netserva/core"
+    }
+}

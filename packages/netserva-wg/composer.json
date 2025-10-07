@@ -1,0 +1,48 @@
+{
+    "name": "netserva/wg",
+    "description": "NetServa WireGuard VPN Management - Comprehensive WireGuard VPN server and peer management with network orchestration",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["netserva", "wireguard", "vpn", "networking", "laravel", "filament"],
+    "homepage": "https://netserva.org",
+    "authors": [
+        {
+            "name": "Mark Constable",
+            "email": "markc@netserva.org",
+            "homepage": "https://netserva.org"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^12.0",
+        "filament/filament": "^4.0",
+        "netserva/core": "*",
+        "netserva/ipam": "*",
+        "symfony/process": "^7.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "orchestra/testbench": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "NetServa\\Wg\\": "src/",
+            "NetServa\\Wg\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NetServa\\Wg\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NetServa\\Wg\\NetServaWgServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

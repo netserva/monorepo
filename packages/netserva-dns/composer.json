@@ -1,0 +1,47 @@
+{
+    "name": "netserva/dns",
+    "description": "NetServa DNS & Domain Management - Comprehensive DNS management with PowerDNS integration and domain registration services",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["netserva", "dns", "domain", "powerdns", "laravel", "filament"],
+    "homepage": "https://netserva.org",
+    "authors": [
+        {
+            "name": "Mark Constable",
+            "email": "markc@netserva.org",
+            "homepage": "https://netserva.org"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^12.0",
+        "filament/filament": "^4.0",
+        "netserva/core": "*",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "orchestra/testbench": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "NetServa\\Dns\\": "src/",
+            "NetServa\\Dns\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NetServa\\Dns\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NetServa\\Dns\\NetServaDnsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

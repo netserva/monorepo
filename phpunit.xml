@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         processIsolation="false"
+         stopOnFailure="false"
+         cacheDirectory="storage/cache/phpunit"
+         executionOrder="depends,defects"
+         failOnWarning="false"
+         failOnRisky="false"
+         failOnEmptyTestSuite="false"
+         beStrictAboutOutputDuringTests="true"
+         timeoutForSmallTests="60"
+         timeoutForMediumTests="120"
+         timeoutForLargeTests="180"
+>
+    <testsuites>
+        <!-- Core Laravel Application Tests -->
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+        
+        <!-- Browser Tests with Pest v4 - Disabled until browser setup -->
+        <!-- <testsuite name="Browser">
+            <directory>tests/Browser</directory>
+        </testsuite> -->
+        
+        <!-- Integration Tests Across Plugins -->
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+        
+        <!-- Performance and Load Tests -->
+        <testsuite name="Performance">
+            <directory>tests/Performance</directory>
+        </testsuite>
+        
+        <!-- Consolidated NetServa Plugin Test Suites -->
+        <testsuite name="NetServa Core">
+            <directory>packages/netserva-core/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa CLI">
+            <directory>packages/netserva-cli/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa DNS">
+            <directory>packages/netserva-dns/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa Mail">
+            <directory>packages/netserva-mail/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa Web">
+            <directory>packages/netserva-web/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa WireGuard">
+            <directory>packages/netserva-wg/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa Operations">
+            <directory>packages/netserva-ops/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa Configuration">
+            <directory>packages/netserva-config/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa Automation">
+            <directory>packages/netserva-cron/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa IPAM">
+            <directory>packages/netserva-ipam/tests</directory>
+        </testsuite>
+    </testsuites>
+    
+    <!-- Code Coverage Configuration -->
+    <source>
+        <include>
+            <directory>app</directory>
+            <directory>packages/netserva-*/src</directory>
+        </include>
+        <exclude>
+            <directory>app/Console/Commands</directory>
+            <file>app/Providers/AppServiceProvider.php</file>
+            <file>app/Http/Kernel.php</file>
+            <directory>packages/netserva-*/tests</directory>
+            <directory>packages/netserva-*/database/migrations</directory>
+            <directory>packages/netserva-*/database/seeders</directory>
+            <directory>packages/netserva-*/database/factories</directory>
+            <file>packages/netserva-*/src/*ServiceProvider.php</file>
+        </exclude>
+    </source>
+    
+    <!-- Test Environment Configuration -->
+    <php>
+        <!-- Core Laravel Configuration -->
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_DEBUG" value="false"/>
+        <env name="APP_KEY" value="base64:2fl+Ktvkdphvz9JInVGNOK6W8JNy4k4GGc4L6d4S6bc="/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="HASH_DRIVER" value="bcrypt"/>
+        
+        <!-- Database Configuration -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_FOREIGN_KEYS" value="true"/>
+        
+        <!-- Cache and Session Configuration -->
+        <env name="CACHE_STORE" value="array"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="SESSION_LIFETIME" value="120"/>
+        
+        <!-- Queue Configuration -->
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="QUEUE_FAILED_DRIVER" value="array"/>
+        
+        <!-- Mail Configuration -->
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="MAIL_HOST" value="localhost"/>
+        <env name="MAIL_PORT" value="1025"/>
+        <env name="MAIL_ENCRYPTION" value="null"/>
+        
+        <!-- Logging Configuration -->
+        <env name="LOG_CHANNEL" value="stderr"/>
+        <env name="LOG_LEVEL" value="error"/>
+        
+        <!-- Third-party Service Disabling -->
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+        
+        <!-- Filament Testing Configuration -->
+        <env name="FILAMENT_AUTH_ENABLED" value="false"/>
+        <env name="FILAMENT_REGISTRATION_ENABLED" value="false"/>
+        <env name="FILAMENT_EMAIL_VERIFICATION_ENABLED" value="false"/>
+        
+        <!-- NS Plugin Testing Configuration -->
+        <env name="NS_TESTING_MODE" value="true"/>
+        <env name="NS_SSH_MOCK_CONNECTIONS" value="true"/>
+        <env name="NS_DNS_MOCK_API" value="true"/>
+        <env name="NS_SSL_MOCK_VALIDATION" value="true"/>
+        <env name="NS_SECRETS_USE_TEST_ENCRYPTION" value="true"/>
+        <env name="NS_INFRASTRUCTURE_MOCK_PROVIDERS" value="true"/>
+        <env name="NS_AUDIT_LOG_LEVEL" value="error"/>
+        
+        <!-- Browser Testing Configuration (Pest v4) -->
+        <env name="BROWSER_TESTING_ENABLED" value="true"/>
+        <env name="BROWSER_DEFAULT" value="chrome"/>
+        <env name="BROWSER_HEADLESS" value="true"/>
+        <env name="BROWSER_WIDTH" value="1920"/>
+        <env name="BROWSER_HEIGHT" value="1080"/>
+        <env name="BROWSER_TIMEOUT" value="30"/>
+        
+        <!-- Performance Testing Configuration -->
+        <env name="PERFORMANCE_TESTING_ENABLED" value="false"/>
+        <env name="PERFORMANCE_MAX_EXECUTION_TIME" value="300"/>
+        <env name="PERFORMANCE_MEMORY_LIMIT" value="2G"/>
+        <env name="PERFORMANCE_SSH_CONCURRENT_CONNECTIONS" value="10"/>
+        
+        <!-- Integration Testing Configuration -->
+        <env name="INTEGRATION_TESTING_ENABLED" value="true"/>
+        <env name="INTEGRATION_CROSS_PLUGIN_TESTS" value="true"/>
+        <env name="INTEGRATION_EVENT_TESTING" value="true"/>
+        <env name="INTEGRATION_WEBHOOK_TESTING" value="true"/>
+        
+        <!-- External Service Mocking -->
+        <env name="MOCK_CLOUDFLARE_API" value="true"/>
+        <env name="MOCK_LETSENCRYPT_API" value="true"/>
+        <env name="MOCK_DIGITALOCEAN_API" value="true"/>
+        <env name="MOCK_AWS_API" value="true"/>
+        <env name="MOCK_MONITORING_SERVICES" value="true"/>
+        
+        <!-- Test Data Configuration -->
+        <env name="TEST_SSH_KEY_PASSPHRASE" value="test_passphrase"/>
+        <env name="TEST_ENCRYPTION_KEY" value="base64:test-encryption-key-32-characters"/>
+        <env name="TEST_DOMAIN_SUFFIX" value="example.com"/>
+        <env name="TEST_IP_RANGE" value="192.168.100.0/24"/>
+        
+        <!-- Timeouts and Limits for Different Test Types -->
+        <ini name="memory_limit" value="2G"/>
+        <ini name="max_execution_time" value="0"/>
+        <ini name="display_errors" value="1"/>
+        <ini name="display_startup_errors" value="1"/>
+
+        <!-- PHP Configuration for Testing -->
+        <ini name="pcre.jit" value="0"/>
+        <ini name="assert.exception" value="1"/>
+        <!-- Suppress PHP 8.2+ deprecation warnings for dynamic properties in testing -->
+        <ini name="error_reporting" value="E_ALL &amp; ~E_DEPRECATED"/>
+    </php>
+    
+    <!-- Logging Configuration -->
+    <logging>
+        <junit outputFile="storage/logs/junit.xml"/>
+    </logging>
+</phpunit>

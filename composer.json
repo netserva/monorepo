@@ -1,0 +1,156 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "The skeleton application for the Laravel framework.",
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^4.0.12",
+        "laravel/framework": "^12.28.1",
+        "laravel/tinker": "^2.10.1",
+        "netserva/dns": "*",
+        "netserva/mail": "*",
+        "netserva/wg": "*",
+        "netserva/web": "*",
+        "netserva/ops": "*",
+        "netserva/config": "*",
+        "netserva/cron": "*",
+        "netserva/ipam": "*",
+        "phpseclib/phpseclib": "^3.0.46",
+        "netserva/core": "*",
+        "netserva/cli": "*",
+        "netserva/fleet": "*"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.24.1",
+        "laravel/boost": "^1.1.4",
+        "laravel/pail": "^1.2.3",
+        "laravel/pint": "^1.24",
+        "laravel/sail": "^1.45",
+        "mockery/mockery": "^1.6.12",
+        "nunomaduro/collision": "^8.8.2",
+        "pestphp/pest": "^4.1.0@dev",
+        "pestphp/pest-plugin-browser": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/",
+            "NetServa\\Core\\Database\\Factories\\": "packages/netserva-core/database/factories/",
+            "NetServa\\Cli\\Database\\Factories\\": "packages/netserva-cli/database/factories/",
+            "NetServa\\Dns\\Database\\Factories\\": "packages/netserva-dns/database/factories/",
+            "NetServa\\Mail\\Database\\Factories\\": "packages/netserva-mail/database/factories/",
+            "NetServa\\Wg\\Database\\Factories\\": "packages/netserva-wg/database/factories/",
+            "NetServa\\Web\\Database\\Factories\\": "packages/netserva-web/database/factories/",
+            "NetServa\\Ops\\Database\\Factories\\": "packages/netserva-ops/database/factories/",
+            "NetServa\\Config\\Database\\Factories\\": "packages/netserva-config/database/factories/",
+            "NetServa\\Cron\\Database\\Factories\\": "packages/netserva-cron/database/factories/",
+            "NetServa\\Ipam\\Database\\Factories\\": "packages/netserva-ipam/database/factories/",
+            "NetServa\\Fleet\\Database\\Factories\\": "packages/netserva-fleet/database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "@php artisan config:clear",
+            "@php artisan clear-compiled",
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": {
+        "pest": {
+            "type": "vcs",
+            "url": "https://github.com/pestphp/pest.git"
+        },
+        "netserva/dns": {
+            "type": "path",
+            "url": "./packages/netserva-dns"
+        },
+        "netserva/mail": {
+            "type": "path",
+            "url": "./packages/netserva-mail"
+        },
+        "netserva/wg": {
+            "type": "path",
+            "url": "./packages/netserva-wg"
+        },
+        "netserva/web": {
+            "type": "path",
+            "url": "./packages/netserva-web"
+        },
+        "netserva/ops": {
+            "type": "path",
+            "url": "./packages/netserva-ops"
+        },
+        "netserva/config": {
+            "type": "path",
+            "url": "./packages/netserva-config"
+        },
+        "netserva/cron": {
+            "type": "path",
+            "url": "./packages/netserva-cron"
+        },
+        "netserva/ipam": {
+            "type": "path",
+            "url": "./packages/netserva-ipam"
+        },
+        "netserva/core": {
+            "type": "path",
+            "url": "./packages/netserva-core"
+        },
+        "netserva/cli": {
+            "type": "path",
+            "url": "./packages/netserva-cli"
+        },
+        "netserva/fleet": {
+            "type": "path",
+            "url": "./packages/netserva-fleet"
+        }
+    }
+}
