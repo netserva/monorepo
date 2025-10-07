@@ -37,6 +37,67 @@ NetServa 3.0 Platform is a **database-first** infrastructure management system b
 
 ## Architecture
 
+### Platform Schema Hierarchy
+
+NetServa 3.0 follows a **6-layer hierarchical model** for infrastructure organization:
+
+```
+venue → vsite → vnode → vhost + vconf → vserv
+```
+
+**Layer Descriptions:**
+
+1. **venue** - Physical location or datacenter
+   - Example: `sydney-dc`, `home-lab`, `aws-us-east`
+   - Represents: Geographic location or hosting provider region
+   - Contains: Multiple vsites
+
+2. **vsite** - Logical grouping within a venue
+   - Example: `production`, `staging`, `development`
+   - Represents: Environment or customer separation
+   - Contains: Multiple vnodes
+
+3. **vnode** - Virtual or physical server/host
+   - Example: `markc` (192.168.1.227)
+   - Represents: Individual server, VM, container, or VPS
+   - Database: `fleet_vnodes` table
+   - Contains: Multiple vhosts
+
+4. **vhost** - Virtual hosting domain/instance
+   - Example: `markc.goldcoast.org`
+   - Represents: Individual domain or application instance
+   - Database: `fleet_vhosts` table
+   - Directory: `/srv/markc.goldcoast.org/`
+   - Contains: Multiple vconfs
+
+5. **vconf** - Virtual host configuration variables
+   - Example: `WPATH=/srv/markc.goldcoast.org/web`
+   - Represents: Individual configuration variables (54+)
+   - Database: `vconfs` table (one row per variable)
+   - Types: Paths, credentials, settings, metadata
+
+6. **vserv** - Virtual services per vhost
+   - Example: `nginx`, `php-fpm`, `mysql`, `mail`
+   - Represents: Services configured for each vhost
+   - Configuration: Service-specific templates and pools
+
+**Example Hierarchy:**
+```
+home-lab (venue)
+└── production (vsite)
+    └── markc (vnode)
+        └── markc.goldcoast.org (vhost)
+            ├── WPATH (vconf)
+            ├── DPASS (vconf)
+            ├── U_UID (vconf)
+            └── [51+ more vconfs]
+            └── Services (vserv)
+                ├── nginx
+                ├── php-fpm
+                ├── postfix
+                └── dovecot
+```
+
 ### Central Workstation (NetServa Platform)
 ```
 ~/.ns/
