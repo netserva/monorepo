@@ -15,7 +15,8 @@ NS is a unified Laravel application with plugin-based architecture providing:
 
 **Core:** Laravel 12, Filament 4.0 (stable), Pest 4.0, Laravel Prompts, Laravel Boost MCP, phpseclib 3.x
 **Storage:** SQLite (dev), MySQL/MariaDB (production)
-**Architecture:** Database-first (all configuration in Laravel database)
+**Architecture:** Database-first with `vconfs` table for all configuration
+**Infrastructure:** Proxmox/Incus/VPS/Physical servers
 
 ## 🔧 Plugin Architecture
 
@@ -184,25 +185,52 @@ See `docs/SSH_EXECUTION_ARCHITECTURE.md` for complete implementation examples.
 
 **ALL VHost configuration, credentials, and environment variables are stored in the Laravel database.**
 
-### FleetVHost Model - Source of Truth
+### Platform Schema Hierarchy
 
-**Table:** `fleet_vhosts`
-**Primary Storage Column:** `environment_vars` (JSON)
+**6-Layer Infrastructure Model:**
+
+```
+venue → vsite → vnode → vhost + vconf → vserv
+```
+
+1. **venue** - Physical location/datacenter (e.g., `home-lab`, `sydney-dc`)
+2. **vsite** - Logical grouping (e.g., `production`, `staging`)
+3. **vnode** - Virtual/physical server (e.g., `markc` at 192.168.1.227)
+4. **vhost** - Virtual hosting domain (e.g., `markc.goldcoast.org`)
+5. **vconf** - Configuration variables (54+ vars in dedicated `vconfs` table)
+6. **vserv** - Services per vhost (nginx, php-fpm, postfix, dovecot)
+
+### vconfs Table - Configuration Storage
+
+**Each environment variable is a separate database row:**
+
+```sql
+CREATE TABLE vconfs (
+    id BIGINT,
+    fleet_vhost_id BIGINT,           -- Links to fleet_vhosts
+    name VARCHAR(5),                  -- 5-char variable (WPATH, DPASS, etc.)
+    value TEXT,                       -- Variable value
+    category VARCHAR(20),             -- Group: paths, credentials, settings
+    is_sensitive BOOLEAN,             -- Password masking
+    UNIQUE(fleet_vhost_id, name)
+);
+```
+
+### FleetVHost Model - VConf Access
 
 ```php
-// Store all NetServa environment variables in database
+// Get VHost from database
 $vhost = FleetVHost::where('domain', 'markc.goldcoast.org')
     ->whereHas('vnode', fn($q) => $q->where('name', 'markc'))
     ->first();
 
-// Access environment variables
-$upath = $vhost->getEnvVar('UPATH');  // /srv/markc.goldcoast.org
-$wpath = $vhost->getEnvVar('WPATH');  // /srv/markc.goldcoast.org/web
-$dpass = $vhost->getEnvVar('DPASS');  // database password
+// Access vconf variables (from vconfs table)
+$upath = $vhost->vconf('UPATH');     // /srv/markc.goldcoast.org
+$wpath = $vhost->vconf('WPATH');     // /srv/markc.goldcoast.org/web
+$dpass = $vhost->vconf('DPASS');     // database password (masked if is_sensitive)
 
-// Get standard paths
-$paths = $vhost->getNetServasPaths();
-// Returns: ['vhost', 'vnode', 'vpath', 'upath', 'wpath', 'mpath']
+// Get all vconfs for a vhost
+$allVconfs = $vhost->vconfs()->get();  // Collection of VConf models
 ```
 
 ### Discovery Process
@@ -216,7 +244,7 @@ php artisan fleet:discover --vnode=markc
 # This populates:
 # - fleet_vnodes (servers/VMs)
 # - fleet_vhosts (domains/instances)
-# - environment_vars (all config from remote server)
+# - vconfs (54+ configuration variables per vhost)
 
 # 2. Now commands work
 php artisan chperms markc markc.goldcoast.org
@@ -231,37 +259,48 @@ $vhost = FleetVHost::where('domain', $vhost)
     ->whereHas('vnode', fn($q) => $q->where('name', $vnode))
     ->firstOrFail();
 
-// Access environment variables
-$upath = $vhost->getEnvVar('UPATH');
-$wpath = $vhost->getEnvVar('WPATH');
+// Access vconf variables (from vconfs table)
+$upath = $vhost->vconf('UPATH');     // /srv/markc.goldcoast.org
+$wpath = $vhost->vconf('WPATH');     // /srv/markc.goldcoast.org/web
+$dpass = $vhost->vconf('DPASS');     // Password (masked if sensitive)
 ```
 
-### Environment Variables Storage
+### VConf Variables (54+ per vhost)
 
-**All 53 NetServa environment variables stored in database:**
+**Each variable stored as separate row in `vconfs` table:**
 
-```json
-{
-  "VHOST": "markc.goldcoast.org",
-  "VNODE": "markc",
-  "UPATH": "/srv/markc.goldcoast.org",
-  "WPATH": "/srv/markc.goldcoast.org/web",
-  "MPATH": "/srv/markc.goldcoast.org/msg",
-  "DNAME": "markc_goldcoast_org",
-  "DPASS": "generated_secure_password",
-  "UUSER": "u1001",
-  "U_UID": "1001",
-  "WUGID": "33",
-  ... (48 more variables)
-}
-```
-
-**Access via model:**
 ```php
-$vhost->environment_vars['DPASS']     // Array access
-$vhost->getEnvVar('DPASS')           // Method access (preferred)
-$vhost->setEnvVar('DPASS', 'newpw')  // Update value
-$vhost->save()                        // Persist to database
+// Example vconfs for markc.goldcoast.org:
+VConf::create([
+    'fleet_vhost_id' => 1,
+    'name' => 'VHOST',
+    'value' => 'markc.goldcoast.org',
+    'category' => 'core',
+]);
+
+VConf::create([
+    'fleet_vhost_id' => 1,
+    'name' => 'WPATH',
+    'value' => '/srv/markc.goldcoast.org/web',
+    'category' => 'paths',
+]);
+
+VConf::create([
+    'fleet_vhost_id' => 1,
+    'name' => 'DPASS',
+    'value' => 'xxxxxxxxxxxx',
+    'category' => 'credentials',
+    'is_sensitive' => true,
+]);
+
+// ... (51 more variables)
+```
+
+**Access via VHost model:**
+```php
+$vhost->vconf('DPASS')                          // Get value
+$vhost->setVconf('DPASS', 'newpw', true)       // Set value (is_sensitive=true)
+$vhost->vconfs()->where('category', 'paths')   // Query by category
 ```
 
 ### CLI Command Conventions (CRITICAL)

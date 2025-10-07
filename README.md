@@ -1,14 +1,30 @@
-# NetServa Platform (NS)
+# NetServa 3.0 Platform
 
-**NS** is a comprehensive, plugin-based Laravel application for managing server infrastructure through a unified web interface and command-line tools. Built on Laravel 12 + Filament 4.0, NS transforms traditional bash-based server management into a modern, testable, and maintainable platform.
+**Modern infrastructure management built on Laravel 12 + Filament 4.0 + Pest 4.0**
 
-## 🎯 Vision
+NetServa 3.0 Platform (NS) is a comprehensive, plugin-based Laravel application for managing multi-server infrastructure through a unified web interface and command-line tools. Built with database-first architecture and real-time monitoring.
 
-NS provides a unified management platform for:
-- **Virtual Machines (VM)** - Complete lifecycle management
-- **LXC Containers (CT)** - Lightweight container orchestration  
-- **Commercial VPS** - Multi-provider VPS management
-- **Infrastructure Services** - DNS, SSL, monitoring, backups, and more
+## 🎯 Platform Hierarchy
+
+**6-Layer Infrastructure Model:**
+
+```
+venue → vsite → vnode → vhost + vconf → vserv
+```
+
+1. **venue** - Physical location/datacenter (e.g., `home-lab`, `sydney-dc`)
+2. **vsite** - Logical grouping (e.g., `production`, `staging`)
+3. **vnode** - Server/VM/container (e.g., `markc` at 192.168.1.227)
+4. **vhost** - Virtual hosting domain (e.g., `markc.goldcoast.org`)
+5. **vconf** - Configuration variables (54+ vars in `vconfs` table)
+6. **vserv** - Services (nginx, php-fpm, postfix, dovecot)
+
+## 🌐 Infrastructure Support
+
+- **Proxmox VE** - Virtual machine management
+- **Incus (LXC)** - Container orchestration
+- **Commercial VPS** - Multi-provider support
+- **Physical Servers** - Bare metal deployment
 
 ## 🚀 Key Features
 
@@ -18,77 +34,66 @@ NS provides a unified management platform for:
 - **Hot-Pluggable**: Enable/disable plugins without system restart
 - **Auto-Discovery**: Plugins automatically register resources and commands
 
-### Modern Technology Stack
-- **Laravel 12** - Latest framework with streamlined structure
-- **Filament 4.0** - Modern admin interface with real-time updates
-- **Pest 4.0** - Comprehensive testing with browser testing support
-- **Laravel Prompts** - Beautiful CLI interactions with progress bars
-- **phpseclib 3.x** - Secure SSH connections without certificate complexity
+### Technology Stack
+- **Laravel 12** - Modern framework with streamlined structure
+- **Filament 4.0** - Admin interface (STABLE) with real-time updates
+- **Pest 4.0** - Comprehensive testing with browser support
+- **Laravel Prompts** - Beautiful CLI interactions
+- **phpseclib 3.x** - SSH without certificate complexity
+- **vconfs Table** - Database-first configuration (54+ vars per vhost)
 
-### Comprehensive Infrastructure Management
-- **SSH Management** - Hosts, keys, connections with automated testing
-- **DNS Management** - Multi-provider DNS with PowerDNS integration
-- **SSL Management** - Certificate lifecycle with ACME automation
-- **Server Setup** - Automated deployment templates and workflows
-- **Migration Tools** - Server migration with assessment and validation
-- **Backup Management** - Automated backups with retention policies
+### Infrastructure Management
+- **SSH** - Hosts, keys, connections with automated testing
+- **DNS** - Multi-provider with PowerDNS integration
+- **SSL** - Certificate lifecycle with ACME automation
+- **Deployment** - Automated server setup workflows
+- **Migration** - Server migration with assessment tools
+- **Backup** - Automated with retention policies
 - **Monitoring** - Real-time health checks and alerting
-
-## 🎉 Pure Laravel Architecture Achievement
-
-**NetServa 3.0** represents a complete architectural transformation:
-
-### ✅ **100% Laravel Operation**
-- **Pure PHP**: All infrastructure operations now run through Laravel services
-- **No Bash Dependencies**: Eliminated 63 bash scripts and 88 library files
-- **Service-Based Architecture**: 74 Laravel services handle all functionality
-- **Backward Compatibility**: 67 bash function wrappers maintain familiar command interface
-
-### 🔄 **Seamless Migration**
-```bash
-# User runs familiar commands
-addvhost example.com --shost=server1
-chperms example.com
-migrate server assess
-
-# Functions automatically call Laravel
-cd "$NSDIR" && php artisan addvhost "$@"
-cd "$NSDIR" && php artisan chperms "$@"
-cd "$NSDIR" && php artisan platform:migrate "$@"
-```
-
-### 🏗️ **Modern Architecture Flow**
-```
-User Command → Function Wrapper → Laravel Command → Laravel Service → Result
-     ↓              ↓                ↓               ↓            ↓
-addvhost      →  addvhost()  →  php artisan  →  VhostManagement  →  ✅
-example.com      function        addvhost         Service
-```
 
 ## 📦 Plugin Architecture
 
 **11 NetServa Plugins** providing comprehensive infrastructure management:
 
-- **netserva-core** - Foundation models, services, and database migrations
-- **netserva-cli** - Command-line tools and bash function wrappers
-- **netserva-config** - Configuration management and templates
-- **netserva-cron** - Scheduled task management and automation
-- **netserva-dns** - DNS zones, records, and PowerDNS integration
-- **netserva-fleet** - Multi-server infrastructure management
-- **netserva-ipam** - IP address management and network allocation
-- **netserva-mail** - Email server configuration (Postfix/Dovecot/Rspamd)
-- **netserva-ops** - Operational tools and server administration
-- **netserva-web** - Web server and virtual host management (Nginx/PHP-FPM)
+- **netserva-core** - Foundation models, services, database migrations
+- **netserva-cli** - Command-line tools, VHost/VConf management
+- **netserva-config** - Configuration templates and management
+- **netserva-cron** - Scheduled tasks and automation
+- **netserva-dns** - DNS zones, records, PowerDNS integration
+- **netserva-fleet** - Multi-server infrastructure (VNode/VHost/VConf)
+- **netserva-ipam** - IP address management, network allocation
+- **netserva-mail** - Email servers (Postfix/Dovecot/Rspamd)
+- **netserva-ops** - Operational tools, server administration
+- **netserva-web** - Web servers, virtual hosts (Nginx/PHP-FPM)
 - **netserva-wg** - WireGuard VPN management
 
-## 🆕 Status (2025-10-04)
+## 🗄️ Database-First Architecture
 
-### ✅ Core Architecture Complete
-- **Laravel 12 + Filament 4.0** - Modern PHP framework with admin interface
-- **Plugin System** - 11 NetServa plugins with Pest 4.0 test coverage
-- **Pure Laravel** - Eliminated bash dependencies, 100% PHP operation
-- **Database Schema** - SQLite for workstation, MySQL/MariaDB for production
-- **CLI + Web** - Dual interface for all infrastructure operations
+**ALL configuration stored in Laravel database - NO flat files.**
+
+### vconfs Table Structure
+```sql
+CREATE TABLE vconfs (
+    id BIGINT,
+    fleet_vhost_id BIGINT,           -- Links to fleet_vhosts
+    name VARCHAR(5),                  -- 5-char variable (WPATH, DPASS)
+    value TEXT,                       -- Variable value
+    category VARCHAR(20),             -- paths, credentials, settings
+    is_sensitive BOOLEAN,             -- Password masking
+    UNIQUE(fleet_vhost_id, name)
+);
+```
+
+**54+ environment variables per vhost** - each as a separate database row.
+
+## 🆕 Status (2025-10-08)
+
+### ✅ Architecture Complete
+- **Laravel 12 + Filament 4.0** - Modern PHP stack with admin interface
+- **11 Plugins** - Comprehensive coverage with Pest 4.0 tests
+- **vconfs Table** - Database-first configuration (54+ vars per vhost)
+- **Platform Hierarchy** - 6-layer model (venue → vsite → vnode → vhost + vconf → vserv)
+- **Dual Interface** - CLI + Web for all operations
 
 ## 🖥️ Quick Start
 
@@ -124,23 +129,25 @@ example.com      function        addvhost         Service
 ### Command Line Usage
 
 ```bash
-# SSH Management
-php artisan ssh:host list          # List all SSH hosts
-php artisan ssh:host create        # Create new SSH host
-php artisan ssh:key generate       # Generate SSH key pairs
-php artisan ssh:connection test    # Test SSH connections
+# VHost Management (positional: vnode vhost)
+php artisan addvhost markc example.com
+php artisan chvhost markc example.com --php-version=8.4
+php artisan shvhost markc example.com
+php artisan chperms markc example.com
 
-# DNS Management  
-php artisan dns:zone list          # List DNS zones
-php artisan dns:record sync        # Sync DNS records
+# VConf Management (vconfs table)
+php artisan shvconf markc example.com              # Show all variables
+php artisan shvconf markc example.com WPATH        # Show specific variable
+php artisan chvconf markc example.com WPATH /srv/example.com/web
+php artisan addvconf markc example.com             # Initialize with defaults
 
-# Server Setup
-php artisan setup:server           # Interactive server setup
-php artisan migrate:assess         # Assess server for migration
+# Fleet Discovery
+php artisan fleet:discover --vnode=markc           # Import infrastructure
 
-# Plugin Management
-php artisan plugin:list            # List installed plugins
-php artisan plugin:sync            # Sync plugin registry
+# SSH/DNS/SSL Management
+php artisan ssh:host list                          # List SSH hosts
+php artisan dns:zone list                          # List DNS zones
+php artisan ssl:cert list                          # List SSL certificates
 ```
 
 ## 🧪 Testing
@@ -211,12 +218,13 @@ php artisan test
 vendor/bin/phpstan analyse
 ```
 
-## 🗄️ Database Support
+## 🗄️ Database
 
-- **SQLite** - Development and single-server deployments
-- **MySQL/MariaDB** - Production multi-server setups
-- **Migrations** - Plugin-specific database migrations
-- **Factories** - Test data generation for all models
+- **SQLite** - Development, single-server
+- **MySQL/MariaDB** - Production, multi-server
+- **vconfs Table** - 54+ configuration variables per vhost
+- **Migrations** - Plugin-specific schemas
+- **Factories** - Test data generation
 
 ## 🔐 Security
 
@@ -247,21 +255,21 @@ vendor/bin/phpstan analyse
 - **Performance Analytics** - Resource utilization trends
 - **Cost Tracking** - Resource usage and optimization insights
 
-## 🔄 Migration from Bash Scripts
+## 🔄 NetServa 3.0 Evolution
 
-NS migrates functionality from traditional bash scripts while preserving all capabilities:
+**From Bash to Laravel** - Complete architectural transformation:
 
-### Legacy → Modern
-- `bin/migrate` → `php artisan migrate:assess`
-- `bin/setup-*` → `php artisan setup:server`
-- `bin/sshm` → `php artisan ssh:host|key|connection`
-- Manual configs → Database-driven with web interface
+### Modern Architecture
+- **Database-First** - All config in `vconfs` table (54+ vars per vhost)
+- **Platform Hierarchy** - 6-layer model (venue → vsite → vnode → vhost + vconf → vserv)
+- **Positional Commands** - `<command> <vnode> <vhost>` convention
+- **Dual Interface** - Laravel CLI + Filament 4.0 web interface
 
 ### Benefits
-- **Testability** - Comprehensive test coverage with Pest
-- **Reliability** - Database transactions and error handling
-- **Usability** - Beautiful web interface and CLI prompts
-- **Maintainability** - Modern PHP patterns and documentation
+- **Testability** - Pest 4.0 comprehensive coverage
+- **Reliability** - Database transactions, error handling
+- **Usability** - Laravel Prompts + Filament interface
+- **Maintainability** - Modern PHP patterns, documentation
 
 ## 📚 Documentation
 
@@ -284,19 +292,19 @@ MIT License - See LICENSE file for full details.
 
 ## 🛠️ System Requirements
 
-- **PHP 8.2+** - Modern PHP with latest features
+- **PHP 8.4+** - Modern PHP with latest features
 - **Composer 2.x** - Dependency management
 - **Node.js 18+** - Frontend asset compilation
-- **SQLite/MySQL** - Database backend
-- **SSH Access** - For remote server management
+- **SQLite/MySQL** - Database (SQLite dev, MySQL/MariaDB production)
+- **SSH Access** - Remote server management (phpseclib 3.x)
 
 ## 🔗 Related Projects
 
-- **NetServa Shell Enhancement (`~/.sh/`)** - Foundational shell utilities
-- **NetServa Platform (`~/.ns/`)** - Complete infrastructure management
+- **NetServa Shell Enhancement (`~/.rc/`)** - Foundational shell utilities
+- **NetServa 3.0 Platform (`~/.ns/`)** - Complete infrastructure management
 
 ---
 
-**NetServa Platform (NS)** - Modern infrastructure management for the cloud-native era.
+**NetServa 3.0 Platform** - Modern infrastructure management with database-first architecture.
 
-*Built with ❤️ using Laravel, Filament, and Pest*
+*Built with Laravel 12 + Filament 4.0 + Pest 4.0*
