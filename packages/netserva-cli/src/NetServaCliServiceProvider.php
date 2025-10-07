@@ -15,7 +15,6 @@ use NetServa\Cli\Console\Commands\ChvhostCommand;
 use NetServa\Cli\Console\Commands\ClearContextCommand;
 use NetServa\Cli\Console\Commands\DelvconfCommand;
 use NetServa\Cli\Console\Commands\DelvhostCommand;
-use NetServa\Cli\Console\Commands\GrafanaCommand;
 use NetServa\Cli\Console\Commands\MigratePlatformProfilesCommand;
 use NetServa\Cli\Console\Commands\MigrateVhostConfigsCommand;
 use NetServa\Cli\Console\Commands\ShhostCommand;
@@ -106,7 +105,6 @@ class NetServaCliServiceProvider extends ServiceProvider
                 // VPS Management
                 BinaryLaneCommand::class,   // BinaryLane VPS management
                 // Monitoring & Analytics
-                GrafanaCommand::class,      // Grafana dashboard management
                 // Migration Commands
                 MigrateVhostConfigsCommand::class, // Migrate vhost configs to database
                 MigratePlatformProfilesCommand::class, // Migrate platform profiles to database
