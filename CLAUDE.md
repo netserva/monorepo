@@ -1,15 +1,54 @@
-# CLAUDE.md - NS Plugin Architecture Guide
+# CLAUDE.md - NetServa 3.0 Platform Guide
 
-This file provides guidance to Claude Code for the NetServa Platform (NS) modern plugin-based Laravel + Filament 4.0 architecture.
+This file provides guidance to Claude Code for the NetServa 3.0 Platform (NS) - a modern plugin-based Laravel + Filament 4.0 infrastructure management system.
 
-## 🎯 Project Vision
+## 🔒 Directory Access Policy
 
-NS is a unified Laravel application with plugin-based architecture providing:
-- **CLI commands** with Laravel Prompts for interactive workflows
-- **Web interface** using Filament 4.0 admin panels
-- **Modular plugins** working in both CLI and web contexts
-- **Comprehensive testing** with Pest 4.0
-- **Enhanced development** using Laravel Boost MCP tools
+**CRITICAL**: Claude Code is restricted to work ONLY within specific directories:
+
+### ✅ Allowed Directories (Full Access)
+- **`~/.ns/`** - NetServa 3.0 Platform management system
+- **`~/.rc/`** - Shell Enhancement System (foundational utilities)
+
+### ❌ Restricted Access (Requires Explicit Authorization)
+- **All other directories in `/home/markc/`** - Require explicit user permission before reading/writing
+
+## 🏗️ Architecture Overview
+
+### Two-Component System
+
+This is a **dual-component infrastructure management system**:
+
+#### 1. Shell Enhancement System (`~/.rc/`)
+- **Purpose**: Foundational shell utilities and cross-platform compatibility layer
+- **Components**: Bash aliases, functions, SSH management tools
+- **Scope**: General-purpose shell enhancements for any Linux/Unix system
+
+#### 2. NetServa 3.0 Platform (`~/.ns/`)
+- **Purpose**: Complete server infrastructure management system
+- **Stack**: Laravel 12 + Filament 4.0 + Pest 4.0
+- **Architecture**: Plugin-based (11 modules) with database-first configuration
+- **Scope**: Proxmox/Incus/VPS/Physical servers, multi-site environments
+
+### Dependency Relationship
+- **`~/.ns/`** depends on **`~/.rc/`** for foundational functions
+- **`~/.rc/`** is standalone and can be used independently
+- Remote servers only need `~/.rc/` (not `~/.ns/`)
+
+## 🎯 Platform Schema Hierarchy
+
+**6-Layer Infrastructure Model:**
+
+```
+venue → vsite → vnode → vhost + vconf → vserv
+```
+
+1. **venue** - Physical location or datacenter (e.g., `home-lab`, `sydney-dc`)
+2. **vsite** - Logical grouping within venue (e.g., `production`, `staging`)
+3. **vnode** - Virtual/physical server (e.g., `markc` at 192.168.1.227)
+4. **vhost** - Virtual hosting domain (e.g., `markc.goldcoast.org`)
+5. **vconf** - Configuration variables (54+ vars in `vconfs` table)
+6. **vserv** - Services per vhost (nginx, php-fpm, postfix, dovecot)
 
 ## 📋 Technology Stack
 
@@ -406,6 +445,72 @@ protected $signature = 'chvhost {vnode : SSH host/VNode identifier}
 - Laravel 12 modern patterns
 - CLI + Web dual interface
 
+## 🐚 Shell Enhancement System (`~/.rc/`)
+
+### Core Components
+- **`_shrc`** - Main shell resource file with cross-platform compatibility
+- **`_myrc`** - User customization template
+- **`shm`** - SSH management utility
+
+### Cross-Platform Support
+- **Debian/Ubuntu**: apt | **Arch/CachyOS**: pacman/yay | **Alpine**: apk | **OpenWRT**: opkg
+
+### Key Commands
+- `i/r/s/u` - Install/Remove/Search/Update packages
+- `sc <action> <service>` - Service control (systemd/OpenRC/OpenWRT)
+- `sx <host> <command>` - Remote execution via SSH
+- `f <pattern>` - Find files recursively
+
+## 🖥️ Development Environment
+
+### OS Support
+- **Development**: CachyOS (Arch-based)
+- **Containers**: Alpine Linux (LXC/Incus)
+- **VMs/VPS**: Debian Trixie, Proxmox
+- **Legacy**: OpenWrt support
+
+### Infrastructure Stack
+- **Web**: Nginx + PHP-FPM
+- **Mail**: Postfix + Dovecot + PowerDNS + RSpamd
+- **Database**: MySQL/MariaDB, SQLite
+- **Frontend**: Laravel 12 + Filament 4.0 + TailwindCSS
+
+## 🚨 Execution Architecture
+
+### Central Workstation Pattern (MANDATORY)
+
+**ALL NS commands execute FROM workstation TO remote servers via SSH.**
+
+```bash
+# ✅ CORRECT - Execute from workstation
+user@workstation:~/.ns$ php artisan addvhost markc example.com
+user@workstation:~/.ns$ php artisan chperms markc example.com
+
+# ❌ WRONG - Never copy scripts to remote servers
+scp script.sh remote:/tmp/ && ssh remote '/tmp/script.sh'
+```
+
+**Architecture:** Workstation (`~/.ns/`) → SSH → Remote Server (`~/.rc/` only)
+
+## 🔐 Security & Best Practices
+
+### Security
+- **Passwords**: Auto-generated via `/dev/urandom`
+- **Permissions**: SSH files 600/700, scripts 755
+- **Credentials**: NEVER hardcoded - store in database (`vconfs` table)
+- **Private files**: Use `*/private/` directories (gitignored)
+
+### Repository Sanitization (Public GitHub)
+- Real domains → `example.com`, `example.net`
+- Real IPs → `192.168.100.0/24` range
+- Sensitive vars → `_VAR_NAME` placeholders
+
+### Testing & Quality
+- **Pest 4.0**: ALL features MUST have comprehensive tests
+- **Test location**: `packages/*/tests/` folders
+- **Pint formatting**: Run before commits (`vendor/bin/pint`)
+- **License**: MIT with copyright headers (1995-2025)
+
 ## 📝 Development Guidelines
 
 **Filament 4.0:** Always use `search-docs` MCP tool for documentation, use stable patterns, leverage Livewire
@@ -415,6 +520,26 @@ protected $signature = 'chvhost {vnode : SSH host/VNode identifier}
 **Testing:** Pest 4.0 mandatory, mock SSH for speed, test CLI + web interfaces
 
 **Philosophy:** Reference existing implementations, plugin-based architecture, maintain functionality, enhance UX with Laravel Prompts
+
+## 📚 Quick Reference
+
+### Common Commands
+```bash
+# Discovery & Setup
+php artisan fleet:discover --vnode=markc
+php artisan addvhost markc example.com
+php artisan chperms markc example.com
+
+# VConf Management
+php artisan shvconf markc example.com              # Show all variables
+php artisan shvconf markc example.com WPATH        # Show specific variable
+php artisan chvconf markc example.com WPATH /srv/example.com/web
+
+# Development
+php artisan serve --port=8888    # Web interface (Filament)
+php artisan test                 # Run Pest tests
+vendor/bin/pint                  # Format code (Laravel Pint)
+```
 
 ---
 
