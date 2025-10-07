@@ -31,7 +31,7 @@ NetServa 3.0 Platform is a **database-first** infrastructure management system b
 - **Database-First:** Configuration in Laravel database, not flat files
 - **Remote Execution:** SSH-based management (phpseclib)
 - **NetServa 3.0 Standards:** `/srv/` directory layout, standardized naming
-- **54 Environment Variables:** Complete VHost configuration
+- **54+ Environment Variables:** Stored in dedicated `vconfs` table (not JSON)
 
 ---
 
@@ -43,7 +43,7 @@ NetServa 3.0 Platform is a **database-first** infrastructure management system b
 ├── database/database.sqlite          # Laravel app database
 │   ├── fleet_vnodes                  # Server registry
 │   ├── fleet_vhosts                  # Domain/VHost registry
-│   │   └── environment_vars (JSON)   # 54 config variables per vhost
+│   ├── vconfs                        # VHost configuration (54+ variables)
 │   └── [other infrastructure tables]
 ├── artisan                           # Laravel CLI
 └── packages/                         # 11 NetServa plugins
@@ -89,7 +89,14 @@ OS: Debian 13 (Trixie)
 
 ### 1. Create Remote Server
 
-**Option A: Incus Container**
+**Option A: Proxmox VM**
+```bash
+# Create VM via Proxmox web interface or CLI
+# NetServa supports Proxmox infrastructure management
+# Configure static IP and SSH access
+```
+
+**Option B: Incus Container**
 ```bash
 # Launch Debian 13 container
 incus launch images:debian/13/cloud markc
@@ -102,7 +109,7 @@ incus exec markc -- ip addr show
 # Note the IP address (e.g., 192.168.1.227)
 ```
 
-**Option B: VPS Provider**
+**Option C: VPS Provider**
 ```bash
 # Create VPS via provider (BinaryLane, DigitalOcean, etc.)
 # NetServa includes BinaryLane integration:
@@ -110,7 +117,7 @@ cd ~/.ns
 php artisan binarylane:create markc --size=nanode-1 --region=syd
 ```
 
-**Option C: Physical Server**
+**Option D: Physical Server**
 ```bash
 # Install Debian/Ubuntu minimal
 # Configure static IP
@@ -242,9 +249,9 @@ php artisan chperms markc markc.goldcoast.org
 
 ## VHost Configuration
 
-### 54 Environment Variables
+### 54+ Environment Variables
 
-Every VHost has 54 configuration variables stored in `fleet_vhosts.environment_vars` JSON column.
+Every VHost has 54+ configuration variables stored in the dedicated `vconfs` table, where each variable is a separate database row linked to the VHost.
 
 **View configuration:**
 ```bash
@@ -314,7 +321,13 @@ WUGID='www-data'
 **Initialize configuration:**
 ```bash
 php artisan addvconf markc example.com
-# Creates 54 default variables in database
+# Creates 54+ default variables in vconfs table
+# Each variable is stored as a separate row:
+# - fleet_vhost_id (FK to fleet_vhosts)
+# - name (5-char uppercase, e.g., WPATH, DPASS)
+# - value (the actual value)
+# - category (paths, database, user, etc.)
+# - is_sensitive (true for passwords)
 ```
 
 **Update variable:**
