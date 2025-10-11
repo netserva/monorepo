@@ -23,7 +23,8 @@ class ChvconfCommand extends BaseNetServaCommand
                            {variable : Variable name to set}
                            {value? : Variable value (prompts if not provided)}
                            {--unset : Remove the variable instead of setting it}
-                           {--force : Skip confirmation}';
+                           {--force : Skip confirmation}
+                           {--dry-run : Show what would be changed}';
 
     protected $description = 'Change VHost configuration variable (NetServa CRUD pattern)';
 
@@ -52,9 +53,16 @@ class ChvconfCommand extends BaseNetServaCommand
                 return $this->unsetVariable($vhost, $variable);
             }
 
+            // Get current value
+            $currentValue = $vhost->getEnvVar($variable);
+
             // Prompt for value if not provided
             if ($value === null) {
-                $currentValue = $vhost->getEnvVar($variable);
+                if ($this->option('dry-run')) {
+                    $this->error("❌ Value required in dry-run mode");
+                    $this->line("   Usage: chvconf {$VNODE} {$VHOST} {$variable} <value> --dry-run");
+                    return 1;
+                }
 
                 if ($currentValue !== null) {
                     $this->line("Current value: <fg=yellow>{$currentValue}</>");
@@ -68,8 +76,26 @@ class ChvconfCommand extends BaseNetServaCommand
                 );
             }
 
+            // Dry-run mode
+            if ($this->option('dry-run')) {
+                $this->info("🔍 DRY RUN: Would change {$variable} for {$VHOST}");
+                $this->line('');
+
+                if ($currentValue !== null) {
+                    $this->line("   Current: <fg=red>{$currentValue}</>");
+                    $this->line("   New:     <fg=green>{$value}</>");
+                    $this->line('');
+                    $this->line("   Would update vconfs table");
+                } else {
+                    $this->line("   New:     <fg=green>{$value}</>");
+                    $this->line('');
+                    $this->line("   Would create new variable in vconfs table");
+                }
+
+                return 0;
+            }
+
             // Set the variable
-            $currentValue = $vhost->getEnvVar($variable);
             $vhost->setEnvVar($variable, $value);
             $vhost->save();
 
@@ -86,6 +112,17 @@ class ChvconfCommand extends BaseNetServaCommand
 
         if ($currentValue === null) {
             $this->warn("⚠️  Variable {$variable} is not set for {$vhost->domain}");
+
+            return 0;
+        }
+
+        // Dry-run mode
+        if ($this->option('dry-run')) {
+            $this->info("🔍 DRY RUN: Would remove {$variable} from {$vhost->domain}");
+            $this->line('');
+            $this->line("   Current value: <fg=red>{$currentValue}</>");
+            $this->line('');
+            $this->line("   Would delete from vconfs table");
 
             return 0;
         }

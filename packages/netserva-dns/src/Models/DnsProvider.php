@@ -114,6 +114,38 @@ class DnsProvider extends Model
         return $this->hasMany(DnsServer::class);
     }
 
+    /**
+     * Get venues using this DNS provider
+     */
+    public function venues(): HasMany
+    {
+        return $this->hasMany(\NetServa\Fleet\Models\FleetVenue::class, 'dns_provider_id');
+    }
+
+    /**
+     * Get vsites using this DNS provider
+     */
+    public function vsites(): HasMany
+    {
+        return $this->hasMany(\NetServa\Fleet\Models\FleetVSite::class, 'dns_provider_id');
+    }
+
+    /**
+     * Get vnodes using this DNS provider
+     */
+    public function vnodes(): HasMany
+    {
+        return $this->hasMany(\NetServa\Fleet\Models\FleetVNode::class, 'dns_provider_id');
+    }
+
+    /**
+     * Get vhosts using this DNS provider
+     */
+    public function vhosts(): HasMany
+    {
+        return $this->hasMany(\NetServa\Fleet\Models\FleetVHost::class, 'dns_provider_id');
+    }
+
     // Scopes
     public function scopeActive($query)
     {

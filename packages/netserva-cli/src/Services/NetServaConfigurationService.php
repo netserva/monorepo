@@ -115,13 +115,108 @@ class NetServaConfigurationService implements ConfigManagerInterface
     }
 
     /**
-     * Get server FQDN
+     * Get server FQDN using database-first approach
+     *
+     * Strategy order:
+     * 1. Load from fleet_vnodes.fqdn (primary source - set during discovery)
+     * 2. Try hostname -f (for backwards compatibility)
+     * 3. Try /etc/hosts parsing
+     * 4. Try DNS reverse lookup
+     * 5. Return short hostname as fallback
      */
     protected function getServerFqdn(string $VNODE): string
     {
+        // Strategy 1: Load from database (fastest, most reliable)
+        $vnode = \NetServa\Fleet\Models\FleetVNode::where('name', $VNODE)->first();
+        if ($vnode && $vnode->fqdn && $this->isValidFqdn($vnode->fqdn)) {
+            return $vnode->fqdn;
+        }
+
+        // Strategy 2: Try hostname -f
+        $fqdn = $this->getServerFqdnFromHostname($VNODE);
+        if ($this->isValidFqdn($fqdn)) {
+            return $fqdn;
+        }
+
+        // Strategy 3: Try /etc/hosts
+        $fqdn = $this->getServerFqdnFromEtcHosts($VNODE);
+        if ($this->isValidFqdn($fqdn)) {
+            return $fqdn;
+        }
+
+        // Strategy 4: Try DNS reverse lookup
+        $fqdn = $this->getServerFqdnFromDns($VNODE);
+        if ($this->isValidFqdn($fqdn)) {
+            return $fqdn;
+        }
+
+        // Fallback: Return short hostname (will need manual configuration)
+        Log::warning('Could not determine valid FQDN for VNode', [
+            'vnode' => $VNODE,
+            'fallback' => $VNODE,
+            'suggestion' => "Run 'php artisan fleet:discover --vnode={$VNODE} --force' to detect FQDN",
+        ]);
+
+        return $VNODE;
+    }
+
+    /**
+     * Get FQDN from hostname -f command
+     */
+    protected function getServerFqdnFromHostname(string $VNODE): string
+    {
         $result = $this->remoteExecution->executeAsRoot($VNODE, 'hostname -f | tr "A-Z" "a-z"');
 
-        return $result['success'] ? trim($result['output']) : $VNODE;
+        return $result['success'] ? trim($result['output']) : '';
+    }
+
+    /**
+     * Get FQDN from /etc/hosts file
+     */
+    protected function getServerFqdnFromEtcHosts(string $VNODE): string
+    {
+        // Look for 127.0.1.1 entry (Debian/Ubuntu pattern)
+        $result = $this->remoteExecution->executeAsRoot($VNODE,
+            "grep -E '^127\\.0\\.1\\.1|^127\\.0\\.0\\.1' /etc/hosts | awk '{print \$2}' | grep '\\.'"
+        );
+
+        return $result['success'] ? trim($result['output']) : '';
+    }
+
+    /**
+     * Get FQDN from DNS reverse lookup
+     */
+    protected function getServerFqdnFromDns(string $VNODE): string
+    {
+        try {
+            $ip = $this->getServerIp($VNODE);
+            $fqdn = gethostbyaddr($ip);
+
+            // gethostbyaddr returns IP if lookup fails
+            return ($fqdn !== $ip) ? strtolower($fqdn) : '';
+        } catch (\Exception $e) {
+            return '';
+        }
+    }
+
+    /**
+     * Validate if hostname is a proper FQDN
+     *
+     * Valid FQDN must:
+     * - Contain at least one dot
+     * - Use only alphanumeric, hyphens, and dots
+     * - Not start/end with hyphen or dot
+     */
+    protected function isValidFqdn(string $hostname): bool
+    {
+        if (empty($hostname) || ! str_contains($hostname, '.')) {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/i',
+            $hostname
+        );
     }
 
     /**
@@ -140,24 +235,27 @@ class NetServaConfigurationService implements ConfigManagerInterface
 
     /**
      * Get next available UID (mirrors newuid() function)
+     *
+     * Returns first available UID starting from ADMIN_UID + 1 (1001)
+     * If no users exist, returns 1001 (1000 is reserved for admin)
      */
     protected function getNextAvailableUid(string $VNODE): int
     {
-        $minUid = NetServaConstants::MIN_USER_UID->value;
+        $adminUid = NetServaConstants::ADMIN_UID->value;
         $maxUid = NetServaConstants::MAX_USER_UID->value;
 
         $result = $this->remoteExecution->executeAsRoot($VNODE,
-            "getent passwd | awk -F: '\$3 > {$minUid} && \$3 < {$maxUid} {print}' | cut -d: -f3 | sort -n | tail -n1"
+            "getent passwd | awk -F: '\$3 > {$adminUid} && \$3 < {$maxUid} {print}' | cut -d: -f3 | sort -n | tail -n1"
         );
 
         if (! $result['success'] || empty(trim($result['output']))) {
-            return NetServaConstants::ADMIN_UID->value; // Default to admin UID
+            // No users found - return first user UID (1001 = ADMIN_UID + 1)
+            return $adminUid + 1; // 1000 + 1 = 1001
         }
 
         $lastUid = (int) trim($result['output']);
-        $nextUid = $lastUid + 1;
 
-        return ($nextUid === 1) ? NetServaConstants::ADMIN_UID->value : $nextUid;
+        return $lastUid + 1;
     }
 
     /**
@@ -524,9 +622,24 @@ class NetServaConfigurationService implements ConfigManagerInterface
 
     /**
      * Extract 54 canonical platform variables
+     *
+     * NetServa 3.0: ALL values FULLY EXPANDED (no $VAR references)
+     * Database stores concrete values ready for immediate use
      */
-    protected function extractPlatformVariables(VhostConfiguration $config): array
+    public function extractPlatformVariables(VhostConfiguration $config): array
     {
+        // Compute base values for expansion
+        $dname = 'sysadm';
+        $duser = 'sysadm';
+        $dpath = dirname($config->paths->dbpath);
+
+        // Detect web server group from OS type
+        $wugid = match($config->osConfig->type) {
+            OsType::DEBIAN, OsType::UBUNTU => 'www-data',
+            OsType::ALPINE, OsType::MANJARO, OsType::CACHYOS => 'http',
+            default => 'nginx',
+        };
+
         return [
             'ADMIN' => 'sysadm',
             'AHOST' => $config->VNODE,
@@ -545,15 +658,16 @@ class NetServaConfigurationService implements ConfigManagerInterface
             'DBMYS' => '/var/lib/mysql',
             'DBSQL' => '/var/lib/sqlite',
             'DHOST' => 'localhost',
-            'DNAME' => 'sysadm',
+            'DNAME' => $dname,
             'DPASS' => $config->passwords->database,
-            'DPATH' => dirname($config->paths->dbpath),
+            'DPATH' => $dpath,
             'DPORT' => '3306',
             'DTYPE' => 'sqlite',
-            'DUSER' => 'sysadm',
+            'DUSER' => $duser,
             'EPASS' => $config->passwords->email,
-            'EXMYS' => 'mysql -u$DUSER -p$DPASS $DNAME',
-            'EXSQL' => 'sqlite3 $DPATH/$DNAME.db',
+            // ✅ FULLY EXPANDED - no $VAR references!
+            'EXMYS' => "mysql -u{$duser} -p{$config->passwords->database} {$dname}",
+            'EXSQL' => "sqlite3 {$dpath}/{$dname}.db",
             'HDOMN' => $config->VHOST,
             'HNAME' => $config->VNODE,
             'IP4_0' => $config->IP4_0,
@@ -563,8 +677,9 @@ class NetServaConfigurationService implements ConfigManagerInterface
             'OSREL' => $config->osConfig->release ?? 'edge',
             'OSTYP' => $config->osConfig->type->value,
             'SPATH' => $config->paths->sslPath,
-            'SQCMD' => 'sqlite3 $DPATH/$DNAME.db',
-            'SQDNS' => 'sqlite3 $DPATH/powerdns.db',
+            // ✅ FULLY EXPANDED - no $VAR references!
+            'SQCMD' => "sqlite3 {$dpath}/{$dname}.db",
+            'SQDNS' => "sqlite3 {$dpath}/powerdns.db",
             'TAREA' => 'Australia',
             'TCITY' => 'Sydney',
             'UPASS' => $config->passwords->user,
@@ -581,7 +696,7 @@ class NetServaConfigurationService implements ConfigManagerInterface
             'WPASS' => $config->passwords->web,
             'WPATH' => $config->paths->wpath,
             'WPUSR' => $config->passwords->wordpress,
-            'WUGID' => 'nginx',
+            'WUGID' => $wugid,
         ];
     }
 

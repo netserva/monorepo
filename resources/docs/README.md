@@ -12,6 +12,35 @@
 - **[VHOST-VARIABLES.md](VHOST-VARIABLES.md)** - 54 environment variable standard
 - **[PowerDNS_ACME_DNS01_Solution.md](PowerDNS_ACME_DNS01_Solution.md)** - DNS-01 ACME challenge
 
+## 🤖 AI-Assisted Development
+
+**New in 2025-10-08:** Comprehensive guides for Claude Code workflows
+
+### Claude Code Essentials
+- **[Claude Code Essentials](ai/claude-code-essentials.md)** - Core patterns, memory system, MCP integration
+- **[Memory Management](ai/memory-management.md)** - Context optimization, CLAUDE.md strategy
+- **[Documentation Standards](ai/documentation-standards.md)** - AI-readable documentation patterns
+- **[Proven Workflows](ai/proven-workflows.md)** - 4-phase development, TDD, technical debt management
+
+### Quick Start
+1. Read [claude-code-essentials.md](ai/claude-code-essentials.md) for overview
+2. Optimize your CLAUDE.md files using [memory-management.md](ai/memory-management.md)
+3. Follow [proven-workflows.md](ai/proven-workflows.md) for development process
+4. Use `.claude/commands/` for workflow automation
+
+## 🏗️ Architecture & Patterns
+
+**New in 2025-10-08:** Laravel architectural patterns and Filament organization
+
+- **[Service & Action Patterns](architecture/service-action-patterns.md)** - Service layer, actions, thin models
+- **[Business Logic Documentation](architecture/business-logic-documentation.md)** - Business rules catalog, state machines
+- **[Filament Organization](architecture/filament-organization.md)** - Filament 4.1 structure, resources, testing
+
+### Architectural Decision Records
+- **[ADR System](../../docs/adr/README.md)** - Track significant architectural decisions
+- [ADR-0001: Database-First Architecture](../../docs/adr/0001-use-database-first-architecture.md)
+- [ADR-0002: executeScript Heredoc Pattern](../../docs/adr/0002-adopt-executeScript-pattern.md)
+
 ## 🔧 Service Configuration
 
 ### Mail Server
@@ -28,7 +57,6 @@
 ### Infrastructure
 - [Incus Management](infrastructure/) - Backup, resource limits
 - [Centralized Logging](infrastructure/centralized-logging-architecture.md)
-- [Grafana + Loki](infrastructure/grafana-loki-promtail-api-guide.md)
 
 ### Security
 - [Firewalld Gotchas](security/firewalld-first-install-gotchas.md)

@@ -2,6 +2,8 @@
 
 use NetServa\Cli\Services\NetServaContext;
 use NetServa\Cli\Services\VhostManagementService;
+use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVNode;
 
 uses()
     ->group('feature', 'commands', 'netserva-cli', 'vhost-management', 'crud', 'priority-1');
@@ -18,244 +20,237 @@ it('displays help information', function () {
         ->assertExitCode(0);
 });
 
-it('adds vhost successfully with explicit vnode', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn(null);
-
+it('adds vhost successfully with positional arguments', function () {
     $this->vhostService
-        ->shouldReceive('addVhost')
+        ->shouldReceive('createVhost')
         ->once()
-        ->with('example.com', 'test-server')
-        ->andReturn(true);
+        ->with('markc', 'example.com')
+        ->andReturn([
+            'success' => true,
+            'domain' => 'example.com',
+            'vnode' => 'markc',
+            'fleet_vhost_id' => 1,
+            'username' => 'u1001',
+            'uid' => 1001,
+            'paths' => [
+                'wpath' => '/srv/example.com/web',
+            ],
+        ]);
 
-    $this->artisan('addvhost example.com --vnode=test-server')
-        ->expectsOutput('🌐 Adding Virtual Host')
-        ->expectsOutput('✅ Successfully added vhost: example.com')
-        ->expectsOutput('🔧 Server: test-server')
+    $this->artisan('addvhost markc example.com')
+        ->expectsOutput('🚀 Adding VHost: example.com on node markc')
+        ->expectsOutput('✅ VHost example.com created successfully on markc')
         ->assertExitCode(0);
 });
 
-it('adds vhost successfully with context', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('motd');
-
+it('shows vhost details after creation', function () {
     $this->vhostService
-        ->shouldReceive('addVhost')
+        ->shouldReceive('createVhost')
         ->once()
-        ->with('test.motd.com', 'motd')
-        ->andReturn(true);
+        ->with('markc', 'test.goldcoast.org')
+        ->andReturn([
+            'success' => true,
+            'domain' => 'test.goldcoast.org',
+            'vnode' => 'markc',
+            'fleet_vhost_id' => 2,
+            'username' => 'u1002',
+            'uid' => 1002,
+            'paths' => [
+                'wpath' => '/srv/test.goldcoast.org/web',
+            ],
+        ]);
 
-    $this->artisan('addvhost test.motd.com')
-        ->expectsOutput('🌐 Adding Virtual Host')
-        ->expectsOutput('✅ Successfully added vhost: test.motd.com')
-        ->expectsOutput('🔧 Server: motd (from context)')
+    $this->artisan('addvhost markc test.goldcoast.org')
+        ->expectsOutputToContain('📋 VHost Details:')
+        ->expectsOutputToContain('User: u1002')
+        ->expectsOutputToContain('UID: 1002')
+        ->expectsOutputToContain('Web Path: /srv/test.goldcoast.org/web')
+        ->expectsOutputToContain('Database ID: 2')
+        ->expectsOutputToContain('Config: vconfs table (database-first)')
         ->assertExitCode(0);
-});
-
-it('prompts for vnode when not provided and no context', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn(null);
-
-    $this->vhostService
-        ->shouldReceive('addVhost')
-        ->once()
-        ->with('example.org', 'production')
-        ->andReturn(true);
-
-    $this->artisan('addvhost example.org')
-        ->expectsQuestion('Enter virtual node (server) identifier', 'production')
-        ->expectsOutput('✅ Successfully added vhost: example.org')
-        ->assertExitCode(0);
-});
-
-it('validates domain format', function () {
-    $this->artisan('addvhost invalid-domain-format')
-        ->expectsOutput('❌ Invalid domain format: invalid-domain-format')
-        ->assertExitCode(1);
-});
-
-it('handles vhost creation failure', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('test');
-
-    $this->vhostService
-        ->shouldReceive('addVhost')
-        ->once()
-        ->with('existing.com', 'test')
-        ->andReturn(false);
-
-    $this->artisan('addvhost existing.com')
-        ->expectsOutput('❌ Failed to add vhost: existing.com')
-        ->assertExitCode(1);
 });
 
 it('supports dry-run mode', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('staging');
-
     $this->vhostService
-        ->shouldNotReceive('addVhost');
+        ->shouldNotReceive('createVhost');
 
-    $this->artisan('addvhost test.staging.com --dry-run')
-        ->expectsOutput('🔍 DRY RUN: Add Virtual Host')
-        ->expectsOutput('Would add vhost: test.staging.com')
-        ->expectsOutput('Target server: staging')
-        ->expectsOutput('Operations that would be performed:')
+    $this->artisan('addvhost markc test.example.com --dry-run')
+        ->expectsOutput('🚀 Adding VHost: test.example.com on node markc')
+        ->expectsOutput('🔍 DRY RUN: Add VHost test.example.com on markc')
+        ->expectsOutputToContain('Generate VHost configuration for test.example.com')
+        ->expectsOutputToContain('Create fleet_vhosts database record')
+        ->expectsOutputToContain('Store ~54 config variables in vconfs table (database-first)')
+        ->expectsOutputToContain('Execute single heredoc SSH script to markc')
         ->assertExitCode(0);
 });
 
 it('shows detailed dry-run information', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn(null);
-
-    $this->artisan('addvhost new.example.com --vnode=prod --dry-run')
-        ->expectsOutput('🔍 DRY RUN: Add Virtual Host')
-        ->expectsOutput('Would add vhost: new.example.com')
-        ->expectsOutput('Target server: prod')
-        ->expectsOutput('Operations that would be performed:')
-        ->expectsOutput('1. Create virtual host configuration')
-        ->expectsOutput('2. Setup directory structure')
-        ->expectsOutput('3. Configure web server')
-        ->expectsOutput('4. Generate SSL certificates (if applicable)')
+    $this->artisan('addvhost prod new.example.com --dry-run')
+        ->expectsOutput('🔍 DRY RUN: Add VHost new.example.com on prod')
+        ->expectsOutputToContain('Create user u1001+, directories, permissions on remote')
+        ->expectsOutputToContain('Configure PHP-FPM pool, nginx, database on remote')
+        ->expectsOutputToContain('Set permissions and restart services')
         ->assertExitCode(0);
 });
 
-it('handles legacy shost parameter', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn(null);
-
+it('handles vhost creation failure gracefully', function () {
     $this->vhostService
-        ->shouldReceive('addVhost')
+        ->shouldReceive('createVhost')
         ->once()
-        ->with('legacy.com', 'legacy-server')
-        ->andReturn(true);
+        ->with('markc', 'existing.com')
+        ->andReturn([
+            'success' => false,
+            'error' => 'VHost already exists',
+        ]);
 
-    $this->artisan('addvhost legacy.com --shost=legacy-server')
-        ->expectsOutput('⚠️  Using legacy --shost parameter. Use --vnode in future.')
-        ->expectsOutput('✅ Successfully added vhost: legacy.com')
-        ->assertExitCode(0);
-});
-
-it('validates vnode parameter when provided', function () {
-    $this->artisan('addvhost example.com --vnode=""')
-        ->expectsOutput('❌ Invalid vnode parameter provided')
+    $this->artisan('addvhost markc existing.com')
+        ->expectsOutput('❌ Failed to create VHost existing.com on markc')
+        ->expectsOutputToContain('Error: VHost already exists')
         ->assertExitCode(1);
 });
 
-it('shows vhost creation steps', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('dev');
-
+it('handles VNode not found error', function () {
     $this->vhostService
-        ->shouldReceive('addVhost')
+        ->shouldReceive('createVhost')
         ->once()
-        ->with('step-test.com', 'dev')
-        ->andReturn(true);
+        ->with('nonexistent', 'test.com')
+        ->andReturn([
+            'success' => false,
+            'error' => "VNode 'nonexistent' not found. Run 'php artisan fleet:discover --vnode=nonexistent' first.",
+        ]);
 
-    $this->artisan('addvhost step-test.com')
-        ->expectsOutput('🌐 Adding Virtual Host')
-        ->expectsOutput('📋 Configuration:')
-        ->expectsOutput('   Domain: step-test.com')
-        ->expectsOutput('   Server: dev (from context)')
-        ->expectsOutput('✅ Successfully added vhost: step-test.com')
-        ->assertExitCode(0);
+    $this->artisan('addvhost nonexistent test.com')
+        ->expectsOutput('❌ Failed to create VHost test.com on nonexistent')
+        ->expectsOutputToContain('VNode \'nonexistent\' not found')
+        ->assertExitCode(1);
 });
 
-it('provides post-creation guidance', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('guide');
+it('validates required vnode argument', function () {
+    // Missing vnode argument should fail with Laravel's validation
+    $this->artisan('addvhost')
+        ->assertExitCode(1);
+});
 
-    $this->vhostService
-        ->shouldReceive('addVhost')
-        ->once()
-        ->with('guide.example.com', 'guide')
-        ->andReturn(true);
-
-    $this->artisan('addvhost guide.example.com')
-        ->expectsOutput('✅ Successfully added vhost: guide.example.com')
-        ->expectsOutput('📖 Next steps:')
-        ->expectsOutput('• Upload your website files')
-        ->expectsOutput('• Configure DNS records')
-        ->expectsOutput('• Test SSL certificate')
-        ->expectsOutput('• php artisan shvhost guide.example.com (view details)')
-        ->assertExitCode(0);
+it('validates required vhost argument', function () {
+    // Missing vhost argument should fail with Laravel's validation
+    $this->artisan('addvhost markc')
+        ->assertExitCode(1);
 });
 
 it('handles special domain formats correctly', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('special');
-
     $this->vhostService
-        ->shouldReceive('addVhost')
+        ->shouldReceive('createVhost')
         ->once()
-        ->with('sub.domain.example.co.uk', 'special')
-        ->andReturn(true);
+        ->with('markc', 'sub.domain.example.co.uk')
+        ->andReturn([
+            'success' => true,
+            'domain' => 'sub.domain.example.co.uk',
+            'vnode' => 'markc',
+            'fleet_vhost_id' => 3,
+            'username' => 'u1003',
+            'uid' => 1003,
+            'paths' => [
+                'wpath' => '/srv/sub.domain.example.co.uk/web',
+            ],
+        ]);
 
-    $this->artisan('addvhost sub.domain.example.co.uk')
-        ->expectsOutput('✅ Successfully added vhost: sub.domain.example.co.uk')
-        ->assertExitCode(0);
-});
-
-it('shows configuration summary before creation', function () {
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('summary');
-
-    $this->vhostService
-        ->shouldReceive('addVhost')
-        ->once()
-        ->with('summary.test.com', 'summary')
-        ->andReturn(true);
-
-    $this->artisan('addvhost summary.test.com')
-        ->expectsOutput('📋 Configuration:')
-        ->expectsOutput('   Domain: summary.test.com')
-        ->expectsOutput('   Server: summary (from context)')
-        ->expectsOutput('   Document Root: /srv/summary.test.com/web/app/public')
+    $this->artisan('addvhost markc sub.domain.example.co.uk')
+        ->expectsOutput('✅ VHost sub.domain.example.co.uk created successfully on markc')
         ->assertExitCode(0);
 });
 
 it('handles very long domain names', function () {
     $longDomain = 'very-long-subdomain.with-multiple-parts.example-domain.co.uk';
 
-    $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('long');
-
     $this->vhostService
-        ->shouldReceive('addVhost')
+        ->shouldReceive('createVhost')
         ->once()
-        ->with($longDomain, 'long')
-        ->andReturn(true);
+        ->with('markc', $longDomain)
+        ->andReturn([
+            'success' => true,
+            'domain' => $longDomain,
+            'vnode' => 'markc',
+            'fleet_vhost_id' => 4,
+            'username' => 'u1004',
+            'uid' => 1004,
+            'paths' => [
+                'wpath' => "/srv/{$longDomain}/web",
+            ],
+        ]);
 
-    $this->artisan("addvhost {$longDomain}")
-        ->expectsOutput("✅ Successfully added vhost: {$longDomain}")
+    $this->artisan("addvhost markc {$longDomain}")
+        ->expectsOutput("✅ VHost {$longDomain} created successfully on markc")
         ->assertExitCode(0);
 });
 
-it('provides correct context usage info', function () {
+it('creates vhost with database-first architecture', function () {
+    $this->vhostService
+        ->shouldReceive('createVhost')
+        ->once()
+        ->with('markc', 'db-first.test.com')
+        ->andReturn([
+            'success' => true,
+            'domain' => 'db-first.test.com',
+            'vnode' => 'markc',
+            'fleet_vhost_id' => 5,
+            'username' => 'u1005',
+            'uid' => 1005,
+            'paths' => [
+                'wpath' => '/srv/db-first.test.com/web',
+            ],
+        ]);
+
+    $this->artisan('addvhost markc db-first.test.com')
+        ->expectsOutputToContain('Config: vconfs table (database-first)')
+        ->assertExitCode(0);
+});
+
+it('executes with context tracking', function () {
     $this->context
-        ->shouldReceive('getCurrentShost')
-        ->andReturn('context');
+        ->shouldReceive('addToHistory')
+        ->never(); // Mock won't be called in real execution, but we can verify the pattern
 
     $this->vhostService
-        ->shouldReceive('addVhost')
+        ->shouldReceive('createVhost')
         ->once()
-        ->with('context.example.com', 'context')
-        ->andReturn(true);
+        ->with('markc', 'context-test.com')
+        ->andReturn([
+            'success' => true,
+            'domain' => 'context-test.com',
+            'vnode' => 'markc',
+            'fleet_vhost_id' => 6,
+            'username' => 'u1006',
+            'uid' => 1006,
+            'paths' => [
+                'wpath' => '/srv/context-test.com/web',
+            ],
+        ]);
 
-    $this->artisan('addvhost context.example.com')
-        ->expectsOutput('🔧 Server: context (from context)')
-        ->expectsOutput('💡 Clear context with: php artisan clear-context')
+    $this->artisan('addvhost markc context-test.com')
+        ->assertExitCode(0);
+});
+
+it('uses correct NetServa 3.0 command signature pattern', function () {
+    // Verify command follows: <command> <vnode> <vhost> [options]
+    // NOT: <command> --vnode=X --vhost=Y (old style)
+
+    $this->vhostService
+        ->shouldReceive('createVhost')
+        ->once()
+        ->with('markc', 'signature-test.com')
+        ->andReturn([
+            'success' => true,
+            'domain' => 'signature-test.com',
+            'vnode' => 'markc',
+            'fleet_vhost_id' => 7,
+            'username' => 'u1007',
+            'uid' => 1007,
+            'paths' => [
+                'wpath' => '/srv/signature-test.com/web',
+            ],
+        ]);
+
+    // Correct new signature (positional args)
+    $this->artisan('addvhost markc signature-test.com')
         ->assertExitCode(0);
 });

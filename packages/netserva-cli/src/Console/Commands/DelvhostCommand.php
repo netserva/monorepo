@@ -37,12 +37,12 @@ class DelvhostCommand extends BaseNetServaCommand
 
             if ($this->option('dry-run')) {
                 $this->dryRun("Delete VHost {$VHOST} from {$VNODE}", [
-                    "Remove config ~/.ns/var/{$VNODE}/{$VHOST}",
-                    "Remove credentials ~/.ns/var/{$VNODE}/{$VHOST}.conf",
-                    "SSH to {$VNODE} and execute vhost deletion",
-                    'Remove user, directories, database',
-                    'Remove SSL certificate',
-                    'Remove nginx, PHP-FPM configuration',
+                    "Load config from vconfs table (database-first)",
+                    "SSH to {$VNODE} and execute cleanup via heredoc script",
+                    'Remove user, directories, database on remote',
+                    'Remove SSL certificate on remote',
+                    'Remove nginx, PHP-FPM configuration on remote',
+                    "Soft-delete fleet_vhosts record (cascades to vconfs)",
                 ]);
 
                 return 0;

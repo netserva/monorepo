@@ -16,7 +16,12 @@ class FleetDiscoverCommand extends Command
     protected $signature = 'fleet:discover
                           {--vnode= : Discover specific vnode only}
                           {--force : Force discovery even if not scheduled}
-                          {--test-ssh : Test SSH connections only}';
+                          {--test-ssh : Test SSH connections only}
+                          {--import-legacy : Import existing NetServa 1.0 vhosts from /srv/}
+                          {--fqdn= : Manually set FQDN for the vnode (e.g., server.example.com)}
+                          {--auto-dns : Automatically create DNS records if missing (uses PowerDNS API)}
+                          {--force-no-dns : Emergency override - skip DNS validation (disables email)}
+                          {--verify-dns-only : Only verify DNS without making changes}';
 
     protected $description = 'Discover fleet infrastructure via SSH';
 
@@ -122,10 +127,52 @@ class FleetDiscoverCommand extends Command
 
         $this->info("🔍 Discovering VNode: {$vnode->name}");
 
-        $success = $this->discoveryService->discoverVNode($vnode);
+        // If FQDN is manually specified, set it before discovery
+        if ($manualFqdn = $this->option('fqdn')) {
+            $vnode->update(['fqdn' => $manualFqdn]);
+            $this->info("   FQDN manually set to: {$manualFqdn}");
+        }
+
+        // If legacy import is requested, skip normal vhost discovery
+        $skipVhostDiscovery = $this->option('import-legacy');
+
+        // Get DNS-related flags
+        $forceNoDns = $this->option('force-no-dns');
+        $autoDns = $this->option('auto-dns');
+
+        $success = $this->discoveryService->discoverVNode($vnode, $skipVhostDiscovery, $forceNoDns, $autoDns);
 
         if ($success) {
             $this->info("✅ Discovery successful for {$vnode->name}");
+
+            // Import legacy vhosts if requested
+            if ($this->option('import-legacy')) {
+                $this->newLine();
+                $this->info('📦 Importing legacy NetServa 1.0 vhosts...');
+
+                $importService = app(\NetServa\Cli\Services\LegacyImportService::class);
+                $result = $importService->discoverLegacyVhosts($vnode);
+
+                if ($result['success']) {
+                    $this->info("✅ Legacy import complete:");
+                    $this->line("   • Discovered: {$result['discovered']} vhosts");
+                    $this->line("   • Imported: {$result['imported']} vhosts");
+
+                    if ($result['skipped'] > 0) {
+                        $this->warn("   • Skipped: {$result['skipped']} vhosts");
+
+                        if (! empty($result['errors'])) {
+                            $this->newLine();
+                            $this->error('Errors encountered:');
+                            foreach ($result['errors'] as $error) {
+                                $this->line("   • {$error['domain']}: {$error['error']}");
+                            }
+                        }
+                    }
+                } else {
+                    $this->error("❌ Legacy import failed: {$result['error']}");
+                }
+            }
 
             // Display discovered information
             $vnode->refresh();
@@ -203,6 +250,7 @@ class FleetDiscoverCommand extends Command
         $info = [
             ['Property', 'Value'],
             ['Name', $vnode->name],
+            ['FQDN', $vnode->fqdn ?? 'Not set'],
             ['VSite', $vnode->vsite->name],
             ['Role', ucfirst($vnode->role)],
             ['Environment', ucfirst($vnode->environment)],

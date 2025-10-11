@@ -3,6 +3,7 @@
 namespace NetServa\Mail\Filament\Resources;
 
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -19,6 +20,10 @@ class MailboxResource extends Resource
     protected static ?string $model = Mailbox::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
+
+    protected static UnitEnum|string|null $navigationGroup = 'Mail Services';
+
+    protected static ?int $navigationSort = 20;
 
     public static function form(Schema $schema): Schema
     {

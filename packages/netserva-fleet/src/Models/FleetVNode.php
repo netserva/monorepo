@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use NetServa\Core\Models\SshHost;
+use NetServa\Dns\Models\DnsProvider;
 
 /**
  * Fleet VNode Model
@@ -24,8 +25,10 @@ class FleetVNode extends Model
     protected $fillable = [
         'name',
         'slug',
+        'fqdn',
         'vsite_id',
         'ssh_host_id',
+        'dns_provider_id',
         'role',
         'environment',
         'ip_address',
@@ -43,6 +46,8 @@ class FleetVNode extends Model
         'description',
         'status',
         'is_active',
+        'email_capable',
+        'fcrdns_validated_at',
     ];
 
     protected $casts = [
@@ -53,7 +58,9 @@ class FleetVNode extends Model
         'scan_frequency_hours' => 'integer',
         'last_discovered_at' => 'datetime',
         'next_scan_at' => 'datetime',
+        'fcrdns_validated_at' => 'datetime',
         'is_active' => 'boolean',
+        'email_capable' => 'boolean',
     ];
 
     protected $attributes = [
@@ -103,6 +110,14 @@ class FleetVNode extends Model
     public function vhosts(): HasMany
     {
         return $this->hasMany(FleetVHost::class, 'vnode_id');
+    }
+
+    /**
+     * Get the DNS provider for this vnode
+     */
+    public function dnsProvider(): BelongsTo
+    {
+        return $this->belongsTo(DnsProvider::class, 'dns_provider_id');
     }
 
     /**
@@ -274,5 +289,76 @@ class FleetVNode extends Model
         }
 
         return 'success';
+    }
+
+    /**
+     * Get effective DNS provider (with inheritance from vsite → venue)
+     *
+     * Resolution order:
+     * 1. Explicit vnode assignment (dns_provider_id)
+     * 2. Inherit from vsite
+     * 3. Default provider from config
+     * 4. First active PowerDNS provider (if auto-select enabled)
+     * 5. null (no DNS provider available)
+     */
+    public function getEffectiveDnsProvider(): ?DnsProvider
+    {
+        // 1. Explicit assignment
+        if ($this->dns_provider_id) {
+            return $this->dnsProvider;
+        }
+
+        // 2. Inherit from vsite (which may inherit from venue)
+        if ($this->vsite) {
+            return $this->vsite->getEffectiveDnsProvider();
+        }
+
+        // 3. Default from config
+        $defaultId = config('dns-manager.default_provider_id');
+        if ($defaultId) {
+            return DnsProvider::find($defaultId);
+        }
+
+        // 4. Auto-select first active PowerDNS provider
+        if (config('dns-manager.auto_select_powerdns', true)) {
+            return DnsProvider::active()
+                ->where('type', 'powerdns')
+                ->orderBy('sort_order')
+                ->first();
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if vnode can manage DNS
+     */
+    public function canManageDns(): bool
+    {
+        return $this->getEffectiveDnsProvider() !== null;
+    }
+
+    /**
+     * Get DNS provider type (powerdns, cloudflare, etc.)
+     */
+    public function getDnsProviderType(): ?string
+    {
+        return $this->getEffectiveDnsProvider()?->type;
+    }
+
+    /**
+     * Check if using PowerDNS
+     */
+    public function usesPowerDns(): bool
+    {
+        return $this->getDnsProviderType() === 'powerdns';
+    }
+
+    /**
+     * Check if using Cloudflare
+     */
+    public function usesCloudflare(): bool
+    {
+        return $this->getDnsProviderType() === 'cloudflare';
     }
 }

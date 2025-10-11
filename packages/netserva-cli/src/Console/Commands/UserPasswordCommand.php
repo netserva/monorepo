@@ -111,10 +111,16 @@ class UserPasswordCommand extends Command
             label: 'Enter user email address',
             placeholder: 'user@domain.com',
             required: true,
-            validate: fn (string $value) => match (true) {
-                empty($value) => 'Email address is required',
-                ! filter_var($value, FILTER_VALIDATE_EMAIL) => 'Invalid email format',
-                default => null
+            validate: function (string $value): ?string {
+                $validator = Validator::make(
+                    ['email' => $value],
+                    ['email' => \NetServa\Cli\Validation\Rules\EmailRules::email()],
+                    \NetServa\Cli\Validation\Rules\EmailRules::messages()
+                );
+
+                return $validator->fails()
+                    ? $validator->errors()->first('email')
+                    : null;
             }
         );
     }
@@ -165,19 +171,11 @@ class UserPasswordCommand extends Command
 
     protected function validatePassword(string $password): bool
     {
-        $validator = Validator::make(['password' => $password], [
-            'password' => [
-                'required',
-                'string',
-                'min:12',
-                'regex:/[A-Z]/',      // At least one uppercase
-                'regex:/[a-z]/',      // At least one lowercase
-                'regex:/[0-9]/',      // At least one number
-            ],
-        ], [
-            'password.min' => 'Password must be at least 12 characters long',
-            'password.regex' => 'Password must contain uppercase, lowercase, and numeric characters',
-        ]);
+        $validator = Validator::make(
+            ['password' => $password],
+            ['password' => \NetServa\Cli\Validation\Rules\PasswordRules::secure()],
+            \NetServa\Cli\Validation\Rules\PasswordRules::messages()
+        );
 
         if ($validator->fails()) {
             foreach ($validator->errors()->get('password') as $error) {

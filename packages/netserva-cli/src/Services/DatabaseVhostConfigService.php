@@ -318,6 +318,20 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
     }
 
     /**
+     * Preview variables without saving (for dry-run)
+     *
+     * @param  FleetVNode  $vnode  The vnode
+     * @param  string  $domain  The domain
+     * @param  array  $overrides  Override specific variables
+     * @param  array|null  $detectedOs  OS info from remote detection
+     * @return array All generated environment variables (not saved)
+     */
+    public function previewVariables(FleetVNode $vnode, string $domain, array $overrides = [], ?array $detectedOs = null): array
+    {
+        return $this->envGenerator->generate($vnode, $domain, $overrides, $detectedOs);
+    }
+
+    /**
      * Initialize with minimal variables (for testing/simple configs)
      *
      * @param  FleetVHost  $vhost  The vhost to initialize

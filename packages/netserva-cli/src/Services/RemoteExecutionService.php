@@ -534,32 +534,41 @@ class RemoteExecutionService extends RemoteConnectionService
                 'script_lines' => substr_count($safeScript, "\n") + 1,
             ]);
 
-            // Create temporary file for script
-            $tempScript = tmpfile();
-            $tempPath = stream_get_meta_data($tempScript)['uri'];
-            fwrite($tempScript, $safeScript);
-            fseek($tempScript, 0);
+            // Build heredoc command string (phpseclib stdin via file handle is unreliable)
+            $escapedScript = addcslashes($safeScript, '\\$`');
+            $heredocCmd = "$sudoPrefix bash -s $argsString <<'NETSERVA_EOF'\n{$safeScript}\nNETSERVA_EOF";
 
-            // Execute script via stdin
-            $output = $connection->exec("$sudoPrefix bash -s $argsString", $tempScript);
+            // Execute script via heredoc
+            $output = $connection->exec($heredocCmd);
             $exitCode = $connection->getExitStatus();
 
-            fclose($tempScript);
+            // Get stderr separately if needed
+            $stderr = $connection->getStdError();
 
-            $success = $exitCode === 0;
+            // Handle case where getExitStatus() returns false (connection issue)
+            if ($exitCode === false || $exitCode === null) {
+                $exitCode = 255;
+                $success = false;
+                $errorMsg = "Script execution failed - no exit code returned (possible connection issue)";
+            } else {
+                $success = $exitCode === 0;
+                $errorMsg = $success ? null : "Script failed with exit code: $exitCode";
+            }
 
             Log::info('Script execution completed', [
                 'host' => $host,
                 'success' => $success,
                 'exit_code' => $exitCode,
                 'output_length' => strlen($output),
+                'output_preview' => substr($output, 0, 200),
+                'stderr' => $stderr ? substr($stderr, 0, 200) : null,
             ]);
 
             return [
                 'success' => $success,
                 'output' => $output,
                 'return_code' => $exitCode,
-                'error' => $success ? null : "Script failed with exit code: $exitCode",
+                'error' => $errorMsg,
             ];
 
         } catch (Exception $e) {

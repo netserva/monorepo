@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use NetServa\Fleet\Console\Commands\FleetDiscoverCommand;
 use NetServa\Fleet\Console\Commands\FleetImportCommand;
 use NetServa\Fleet\Console\Commands\FleetMigrateVarCommand;
+use NetServa\Fleet\Console\Commands\VNodeSetupCommand;
 
 /**
  * NetServa Fleet Management Service Provider
@@ -38,6 +39,7 @@ class FleetServiceProvider extends ServiceProvider
                 FleetImportCommand::class,
                 FleetDiscoverCommand::class,
                 FleetMigrateVarCommand::class,
+                VNodeSetupCommand::class,
             ]);
         }
 

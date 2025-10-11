@@ -73,11 +73,10 @@ class ChpwCommand extends BaseNetServaCommand
 
             if ($this->option('dry-run')) {
                 $this->dryRun("Change {$type} password for {$VHOST} on {$VNODE}", [
-                    "Load current config from ~/.ns/var/{$VNODE}/{$VHOST}",
+                    "Load current config from vconfs table (database-first)",
                     "Generate new secure password for {$type}",
-                    'Update configuration with new password',
-                    "Save updated config to ~/.ns/var/{$VNODE}/{$VHOST}",
-                    "SSH to {$VNODE} and update {$type} password",
+                    "Update vconfs table with new password",
+                    "SSH to {$VNODE} and update {$type} password via heredoc script",
                     'Test new password functionality',
                 ]);
 

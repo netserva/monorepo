@@ -4,8 +4,10 @@ namespace NetServa\Fleet\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use NetServa\Dns\Models\DnsProvider;
 
 /**
  * Fleet Venue Model
@@ -24,6 +26,7 @@ class FleetVenue extends Model
         'provider',
         'location',
         'region',
+        'dns_provider_id',
         'credentials',
         'metadata',
         'description',
@@ -57,6 +60,14 @@ class FleetVenue extends Model
     public function vsites(): HasMany
     {
         return $this->hasMany(FleetVSite::class, 'venue_id');
+    }
+
+    /**
+     * Get the DNS provider for this venue
+     */
+    public function dnsProvider(): BelongsTo
+    {
+        return $this->belongsTo(DnsProvider::class, 'dns_provider_id');
     }
 
     /**
@@ -190,5 +201,70 @@ class FleetVenue extends Model
             'local' => '💻',
             default => '📍',
         };
+    }
+
+    /**
+     * Get effective DNS provider (top of inheritance chain)
+     *
+     * Resolution order:
+     * 1. Explicit venue assignment (dns_provider_id)
+     * 2. Default provider from config
+     * 3. First active PowerDNS provider (if auto-select enabled)
+     * 4. null (no DNS provider available)
+     */
+    public function getEffectiveDnsProvider(): ?DnsProvider
+    {
+        // 1. Explicit assignment
+        if ($this->dns_provider_id) {
+            return $this->dnsProvider;
+        }
+
+        // 2. Default from config
+        $defaultId = config('dns-manager.default_provider_id');
+        if ($defaultId) {
+            return DnsProvider::find($defaultId);
+        }
+
+        // 3. Auto-select first active PowerDNS provider
+        if (config('dns-manager.auto_select_powerdns', true)) {
+            return DnsProvider::active()
+                ->where('type', 'powerdns')
+                ->orderBy('sort_order')
+                ->first();
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if venue can manage DNS
+     */
+    public function canManageDns(): bool
+    {
+        return $this->getEffectiveDnsProvider() !== null;
+    }
+
+    /**
+     * Get DNS provider type (powerdns, cloudflare, etc.)
+     */
+    public function getDnsProviderType(): ?string
+    {
+        return $this->getEffectiveDnsProvider()?->type;
+    }
+
+    /**
+     * Check if using PowerDNS
+     */
+    public function usesPowerDns(): bool
+    {
+        return $this->getDnsProviderType() === 'powerdns';
+    }
+
+    /**
+     * Check if using Cloudflare
+     */
+    public function usesCloudflare(): bool
+    {
+        return $this->getDnsProviderType() === 'cloudflare';
     }
 }

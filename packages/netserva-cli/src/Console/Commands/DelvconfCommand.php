@@ -23,7 +23,8 @@ class DelvconfCommand extends BaseNetServaCommand
                            {variable? : Specific variable to delete}
                            {--all : Delete all configuration variables}
                            {--force : Skip confirmation}
-                           {--interactive : Select variables to delete interactively}';
+                           {--interactive : Select variables to delete interactively}
+                           {--dry-run : Show what would be deleted}';
 
     protected $description = 'Delete VHost configuration variables (NetServa CRUD pattern)';
 
@@ -59,8 +60,14 @@ class DelvconfCommand extends BaseNetServaCommand
                 return $this->deleteAll($vhost);
             }
 
-            // Interactive selection
+            // Interactive selection (not compatible with dry-run)
             if ($this->option('interactive')) {
+                if ($this->option('dry-run')) {
+                    $this->error("❌ --dry-run not supported with --interactive");
+                    $this->line("   Use: delvconf {$VNODE} {$VHOST} <variable> --dry-run");
+                    $this->line("   Or: delvconf {$VNODE} {$VHOST} --all --dry-run");
+                    return 1;
+                }
                 return $this->interactiveDelete($vhost, $envVars);
             }
 
@@ -88,13 +95,25 @@ class DelvconfCommand extends BaseNetServaCommand
             return 0;
         }
 
+        // Mask password for display
+        $displayValue = str_contains(strtolower($variable), 'pass')
+            ? '[MASKED]'
+            : $currentValue;
+
+        // Dry-run mode
+        if ($this->option('dry-run')) {
+            $this->info("🔍 DRY RUN: Would delete {$variable} from {$vhost->domain}");
+            $this->line('');
+            $this->line("   Variable: <fg=red>{$variable}</>");
+            $this->line("   Current value: <fg=red>{$displayValue}</>");
+            $this->line('');
+            $this->line("   Would delete from vconfs table");
+
+            return 0;
+        }
+
         // Confirm deletion
         if (! $this->option('force')) {
-            // Mask password in confirmation
-            $displayValue = str_contains(strtolower($variable), 'pass')
-                ? '[MASKED]'
-                : $currentValue;
-
             $confirmed = confirm(
                 label: "Delete {$variable}={$displayValue}?",
                 default: false
@@ -121,6 +140,24 @@ class DelvconfCommand extends BaseNetServaCommand
 
         if ($count === 0) {
             $this->info("ℹ️  No variables to delete for {$vhost->domain}");
+
+            return 0;
+        }
+
+        // Dry-run mode
+        if ($this->option('dry-run')) {
+            $this->info("🔍 DRY RUN: Would delete ALL {$count} variables from {$vhost->domain}");
+            $this->line('');
+            $this->line("   Would delete from vconfs table:");
+
+            $varList = array_keys($vhost->environment_vars ?? []);
+            foreach (array_slice($varList, 0, 10) as $var) {
+                $this->line("   • {$var}");
+            }
+
+            if ($count > 10) {
+                $this->line("   ... and ".($count - 10)." more");
+            }
 
             return 0;
         }

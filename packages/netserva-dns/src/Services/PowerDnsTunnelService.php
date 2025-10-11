@@ -56,8 +56,9 @@ class PowerDnsTunnelService
             ]);
 
             // Make the API request through the SSH tunnel
+            $config = $provider->connection_config ?? $provider->config ?? [];
             $response = Http::withHeaders([
-                'X-API-Key' => $provider->api_key,
+                'X-API-Key' => $config['api_key'] ?? '',
                 'Content-Type' => 'application/json',
                 'User-Agent' => 'NS-DNS-Manager/1.0',
             ])
@@ -108,7 +109,8 @@ class PowerDnsTunnelService
     public function ensurePowerDnsTunnel(DnsProvider $provider): array
     {
         // Extract SSH host from provider configuration
-        $sshHost = $provider->config['ssh_host'] ?? null;
+        $config = $provider->connection_config ?? $provider->config ?? [];
+        $sshHost = $config['ssh_host'] ?? null;
 
         if (! $sshHost) {
             return [
@@ -118,7 +120,7 @@ class PowerDnsTunnelService
         }
 
         // Get PowerDNS API port from configuration
-        $remotePort = $provider->config['api_port'] ?? 8081;
+        $remotePort = $config['api_port'] ?? 8081;
 
         // Ensure tunnel is active
         $result = $this->tunnelService->ensureTunnel($sshHost, 'powerdns', $remotePort);
@@ -450,7 +452,8 @@ class PowerDnsTunnelService
      */
     public function getTunnelStatus(DnsProvider $provider): array
     {
-        $sshHost = $provider->config['ssh_host'] ?? null;
+        $config = $provider->connection_config ?? $provider->config ?? [];
+        $sshHost = $config['ssh_host'] ?? null;
 
         if (! $sshHost) {
             return [
@@ -466,7 +469,7 @@ class PowerDnsTunnelService
             'active' => $isActive,
             'ssh_host' => $sshHost,
             'local_port' => $localPort,
-            'remote_port' => $provider->config['api_port'] ?? 8081,
+            'remote_port' => $config['api_port'] ?? 8081,
             'endpoint' => $isActive ? "http://localhost:$localPort" : null,
             'message' => $isActive ? 'SSH tunnel is active' : 'SSH tunnel is inactive',
         ];
@@ -480,7 +483,8 @@ class PowerDnsTunnelService
      */
     public function closeTunnel(DnsProvider $provider): array
     {
-        $sshHost = $provider->config['ssh_host'] ?? null;
+        $config = $provider->connection_config ?? $provider->config ?? [];
+        $sshHost = $config['ssh_host'] ?? null;
 
         if (! $sshHost) {
             return [

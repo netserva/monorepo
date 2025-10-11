@@ -183,8 +183,12 @@ class LazyConfigurationCache
         $serverFqdn = $this->getServerFqdn($VNODE, $fqdnResolver);
         $serverIp = $this->getServerIp($VNODE, $ipResolver);
 
-        // Determine UID based on cached FQDN
-        $U_UID = ($serverFqdn === $VHOST) ? 1000 : $this->getNextAvailableUid($VNODE, $uidResolver);
+        // Determine UID based on cached FQDN (NetServa logic)
+        // If VHOST == server FQDN, use admin UID (1000)
+        // Otherwise, get next available UID starting from 1002
+        $U_UID = ($serverFqdn === $VHOST)
+            ? 1000  // Admin user (sysadm)
+            : $this->getNextAvailableUid($VNODE, $uidResolver);  // u1002, u1003, etc.
 
         // The VhostConfiguration itself could also be cached
         // but passwords should be generated fresh each time

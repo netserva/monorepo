@@ -24,6 +24,44 @@ class PowerDnsService
     }
 
     /**
+     * Test connection to PowerDNS server
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @return array Connection test result
+     */
+    public function testConnection(DnsProvider $provider): array
+    {
+        try {
+            // Try to get server list as a simple connection test
+            $result = $this->tunnelService->apiCall($provider, '/servers');
+
+            if ($result['success']) {
+                $servers = $result['data'];
+                $serverInfo = ! empty($servers)
+                    ? ($servers[0]['daemon_type'] ?? 'PowerDNS') . ' ' . ($servers[0]['version'] ?? 'Unknown')
+                    : 'PowerDNS Server';
+
+                return [
+                    'success' => true,
+                    'server_info' => $serverInfo,
+                    'tunnel_used' => $result['tunnel_used'],
+                    'message' => 'Connection successful',
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Failed to connect: ' . ($result['error'] ?? 'Unknown error'),
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Connection test failed: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Get all PowerDNS servers
      *
      * @param  DnsProvider  $provider  DNS provider configuration
@@ -710,5 +748,354 @@ class PowerDnsService
                 'message' => 'DNSSEC validation failed: '.$e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Create DNS record in zone
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  string  $zoneName  Zone name (must end with .)
+     * @param  array  $recordData  Record data (name, type, content, ttl)
+     * @return array Creation result
+     */
+    public function createRecord(DnsProvider $provider, string $zoneName, array $recordData): array
+    {
+        // Ensure zone name ends with dot
+        if (! str_ends_with($zoneName, '.')) {
+            $zoneName .= '.';
+        }
+
+        // Ensure record name ends with dot
+        $recordName = $recordData['name'];
+        if (! str_ends_with($recordName, '.')) {
+            $recordName .= '.';
+        }
+
+        $rrsets = [[
+            'name' => $recordName,
+            'type' => strtoupper($recordData['type']),
+            'ttl' => $recordData['ttl'] ?? 3600,
+            'changetype' => 'REPLACE',
+            'records' => [
+                ['content' => $recordData['content'], 'disabled' => false],
+            ],
+        ]];
+
+        $result = $this->tunnelService->apiCall(
+            $provider,
+            "/servers/localhost/zones/$zoneName",
+            'PATCH',
+            ['rrsets' => $rrsets]
+        );
+
+        if ($result['success']) {
+            Log::info('DNS record created', [
+                'provider' => $provider->name,
+                'zone' => $zoneName,
+                'name' => $recordName,
+                'type' => $recordData['type'],
+                'content' => $recordData['content'],
+            ]);
+
+            return [
+                'success' => true,
+                'message' => "Record created: {$recordName} {$recordData['type']} {$recordData['content']}",
+                'record' => $recordData,
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Failed to create record: '.($result['error'] ?? 'Unknown error'),
+        ];
+    }
+
+    /**
+     * Delete DNS record from zone
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  string  $zoneName  Zone name
+     * @param  string  $recordName  Record name
+     * @param  string  $recordType  Record type (A, PTR, etc.)
+     * @return array Deletion result
+     */
+    public function deleteRecord(DnsProvider $provider, string $zoneName, string $recordName, string $recordType): array
+    {
+        // Ensure zone name ends with dot
+        if (! str_ends_with($zoneName, '.')) {
+            $zoneName .= '.';
+        }
+
+        // Ensure record name ends with dot
+        if (! str_ends_with($recordName, '.')) {
+            $recordName .= '.';
+        }
+
+        $rrsets = [[
+            'name' => $recordName,
+            'type' => strtoupper($recordType),
+            'changetype' => 'DELETE',
+        ]];
+
+        $result = $this->tunnelService->apiCall(
+            $provider,
+            "/servers/localhost/zones/$zoneName",
+            'PATCH',
+            ['rrsets' => $rrsets]
+        );
+
+        if ($result['success']) {
+            Log::info('DNS record deleted', [
+                'provider' => $provider->name,
+                'zone' => $zoneName,
+                'name' => $recordName,
+                'type' => $recordType,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => "Record deleted: {$recordName} {$recordType}",
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Failed to delete record: '.($result['error'] ?? 'Unknown error'),
+        ];
+    }
+
+    /**
+     * List DNS records in zone
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  string  $zoneName  Zone name
+     * @param  array  $filters  Optional filters (type, name)
+     * @return array List of records
+     */
+    public function listRecords(DnsProvider $provider, string $zoneName, array $filters = []): array
+    {
+        // Ensure zone name ends with dot
+        if (! str_ends_with($zoneName, '.')) {
+            $zoneName .= '.';
+        }
+
+        $result = $this->tunnelService->apiCall($provider, "/servers/localhost/zones/$zoneName");
+
+        if (! $result['success']) {
+            return [
+                'success' => false,
+                'message' => 'Failed to list records: '.($result['error'] ?? 'Unknown error'),
+            ];
+        }
+
+        $zone = $result['data'];
+        $records = [];
+
+        foreach ($zone['rrsets'] ?? [] as $rrset) {
+            // Apply filters
+            if (! empty($filters['type']) && strtoupper($filters['type']) !== $rrset['type']) {
+                continue;
+            }
+
+            if (! empty($filters['name']) && ! str_contains($rrset['name'], $filters['name'])) {
+                continue;
+            }
+
+            $records[] = [
+                'name' => $rrset['name'],
+                'type' => $rrset['type'],
+                'ttl' => $rrset['ttl'] ?? 3600,
+                'records' => $rrset['records'] ?? [],
+            ];
+        }
+
+        return [
+            'success' => true,
+            'zone' => $zoneName,
+            'records' => $records,
+            'count' => count($records),
+        ];
+    }
+
+    /**
+     * Create both A and PTR records for FCrDNS
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  string  $fqdn  Fully qualified domain name
+     * @param  string  $ip  IPv4 address
+     * @param  int  $ttl  Time to live (default: 3600)
+     * @return array Creation result
+     */
+    public function createFCrDNSRecords(
+        DnsProvider $provider,
+        string $fqdn,
+        string $ip,
+        int $ttl = 3600
+    ): array {
+        // 1. Extract zone from FQDN (e.g., markc.goldcoast.org -> goldcoast.org)
+        $parts = explode('.', $fqdn);
+        if (count($parts) < 2) {
+            return [
+                'success' => false,
+                'message' => "Invalid FQDN: $fqdn (must have at least 2 parts)",
+            ];
+        }
+
+        $hostname = array_shift($parts);
+        $zone = implode('.', $parts);
+
+        // 2. Create A record
+        $aResult = $this->createRecord($provider, $zone, [
+            'name' => $fqdn,
+            'type' => 'A',
+            'content' => $ip,
+            'ttl' => $ttl,
+        ]);
+
+        if (! $aResult['success']) {
+            return [
+                'success' => false,
+                'message' => "Failed to create A record: {$aResult['message']}",
+                'a_record' => $aResult,
+            ];
+        }
+
+        // 3. Create PTR record (reverse zone)
+        $reverseZone = $this->getReverseZone($ip);
+        $ptrName = $this->getReverseName($ip);
+
+        $ptrResult = $this->createRecord($provider, $reverseZone, [
+            'name' => $ptrName,
+            'type' => 'PTR',
+            'content' => $fqdn,
+            'ttl' => $ttl,
+        ]);
+
+        if (! $ptrResult['success']) {
+            return [
+                'success' => false,
+                'message' => "A record created but PTR failed: {$ptrResult['message']}",
+                'partial' => true,
+                'a_record' => $aResult,
+                'ptr_record' => $ptrResult,
+            ];
+        }
+
+        Log::info('FCrDNS records created', [
+            'provider' => $provider->name,
+            'fqdn' => $fqdn,
+            'ip' => $ip,
+            'zone' => $zone,
+            'reverse_zone' => $reverseZone,
+        ]);
+
+        return [
+            'success' => true,
+            'message' => "FCrDNS records created: $fqdn ↔ $ip",
+            'fqdn' => $fqdn,
+            'ip' => $ip,
+            'a_record' => $aResult,
+            'ptr_record' => $ptrResult,
+        ];
+    }
+
+    /**
+     * Delete both A and PTR records
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  string  $fqdn  Fully qualified domain name
+     * @param  string  $ip  IPv4 address
+     * @return array Deletion result
+     */
+    public function deleteFCrDNSRecords(DnsProvider $provider, string $fqdn, string $ip): array
+    {
+        // Extract zone from FQDN
+        $parts = explode('.', $fqdn);
+        $hostname = array_shift($parts);
+        $zone = implode('.', $parts);
+
+        // Delete A record
+        $aResult = $this->deleteRecord($provider, $zone, $fqdn, 'A');
+
+        // Delete PTR record
+        $reverseZone = $this->getReverseZone($ip);
+        $ptrName = $this->getReverseName($ip);
+        $ptrResult = $this->deleteRecord($provider, $reverseZone, $ptrName, 'PTR');
+
+        return [
+            'success' => $aResult['success'] && $ptrResult['success'],
+            'message' => "FCrDNS records deleted: $fqdn ↔ $ip",
+            'a_record' => $aResult,
+            'ptr_record' => $ptrResult,
+        ];
+    }
+
+    /**
+     * Get reverse DNS zone for IP address
+     *
+     * @param  string  $ip  IPv4 address
+     * @return string Reverse zone (e.g., 1.168.192.in-addr.arpa)
+     */
+    protected function getReverseZone(string $ip): string
+    {
+        $octets = explode('.', $ip);
+
+        // For class C (/24) networks
+        return "{$octets[2]}.{$octets[1]}.{$octets[0]}.in-addr.arpa";
+    }
+
+    /**
+     * Get reverse DNS PTR record name for IP address
+     *
+     * @param  string  $ip  IPv4 address
+     * @return string PTR name (e.g., 100.1.168.192.in-addr.arpa)
+     */
+    protected function getReverseName(string $ip): string
+    {
+        $octets = explode('.', $ip);
+
+        return "{$octets[3]}.{$octets[2]}.{$octets[1]}.{$octets[0]}.in-addr.arpa";
+    }
+
+    /**
+     * Validate that a record exists
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  string  $zoneName  Zone name
+     * @param  string  $name  Record name
+     * @param  string  $type  Record type
+     * @return bool True if record exists
+     */
+    public function validateRecordExists(DnsProvider $provider, string $zoneName, string $name, string $type): bool
+    {
+        $result = $this->listRecords($provider, $zoneName, [
+            'name' => $name,
+            'type' => $type,
+        ]);
+
+        return $result['success'] && $result['count'] > 0;
+    }
+
+    /**
+     * Get specific record by name and type
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  string  $zoneName  Zone name
+     * @param  string  $name  Record name
+     * @param  string  $type  Record type
+     * @return array|null Record data or null if not found
+     */
+    public function getRecordByName(DnsProvider $provider, string $zoneName, string $name, string $type): ?array
+    {
+        $result = $this->listRecords($provider, $zoneName, [
+            'name' => $name,
+            'type' => $type,
+        ]);
+
+        if ($result['success'] && ! empty($result['records'])) {
+            return $result['records'][0];
+        }
+
+        return null;
     }
 }

@@ -13,7 +13,6 @@ enum NetServaConstants: int
      * User ID Constants
      */
     case ADMIN_UID = 1000;
-    case MIN_USER_UID = 1001;
     case MAX_USER_UID = 9999;
 
     /**
@@ -51,11 +50,11 @@ enum NetServaConstants: int
     }
 
     /**
-     * Check if UID is valid user range
+     * Check if UID is valid user range (> ADMIN_UID)
      */
     public static function isValidUserUid(int $uid): bool
     {
-        return $uid >= self::MIN_USER_UID->value && $uid <= self::MAX_USER_UID->value;
+        return $uid > self::ADMIN_UID->value && $uid <= self::MAX_USER_UID->value;
     }
 
     /**

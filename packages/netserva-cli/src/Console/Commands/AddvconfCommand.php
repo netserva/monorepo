@@ -24,7 +24,8 @@ class AddvconfCommand extends BaseNetServaCommand
     protected $signature = 'addvconf {vnode : VNode name}
                            {vhost : VHost domain}
                            {--minimal : Only set essential variables (13 vars)}
-                           {--force : Overwrite existing variables}';
+                           {--force : Overwrite existing variables}
+                           {--dry-run : Show what would be configured}';
 
     protected $description = 'Initialize VHost configuration (53+ environment variables)';
 
@@ -42,10 +43,30 @@ class AddvconfCommand extends BaseNetServaCommand
                 ->first();
 
             if (! $vhost) {
-                $this->error("❌ VHost {$VHOST} not found on vnode {$VNODE}");
-                $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+                // Dry-run mode - just preview variables
+                if ($this->option('dry-run')) {
+                    return $this->showDryRunPreview($VNODE, $VHOST, $configService, $remoteExec);
+                }
 
-                return 1;
+                // Create FleetVHost record if it doesn't exist
+                $this->warn("⚠️  VHost '{$VHOST}' not found - creating database record...");
+
+                $vnodeModel = \NetServa\Fleet\Models\FleetVNode::where('name', $VNODE)->first();
+
+                $vhost = FleetVHost::create([
+                    'domain' => $VHOST,
+                    'vnode_id' => $vnodeModel->id,
+                    'instance_type' => 'vhost',
+                    'status' => 'active',
+                    'is_active' => true,
+                ]);
+
+                $this->line("   ✅ Created fleet_vhosts record (ID: {$vhost->id})");
+            }
+
+            // Dry-run mode
+            if ($this->option('dry-run')) {
+                return $this->showDryRunPreview($VNODE, $VHOST, $configService, $remoteExec);
             }
 
             // Check if already configured
@@ -155,5 +176,37 @@ class AddvconfCommand extends BaseNetServaCommand
         $this->line('');
         $this->line('<fg=blue>View all variables:</> <fg=gray>shvconf '.$envVars['VNODE'].' '.$envVars['VHOST'].'</>');
         $this->line('<fg=blue>Change a variable:</> <fg=gray>chvconf '.$envVars['VNODE'].' '.$envVars['VHOST'].' WPATH /new/path</>');
+    }
+
+    /**
+     * Show dry-run preview of what variables would be created
+     * Output in plain bash-sourceable format (sorted, no decorations)
+     */
+    protected function showDryRunPreview(
+        string $VNODE,
+        string $VHOST,
+        DatabaseVhostConfigService $configService,
+        RemoteExecutionService $remoteExec
+    ): int {
+        // Detect OS silently
+        $detectedOs = $remoteExec->getOsVariables($VNODE);
+
+        // Create temporary VNode
+        $tempVnode = new \NetServa\Fleet\Models\FleetVNode(['name' => $VNODE]);
+
+        // Generate variables without saving (dry-run mode)
+        $envVars = $configService->previewVariables($tempVnode, $VHOST, [], $detectedOs);
+
+        // Sort variables alphabetically
+        ksort($envVars);
+
+        // Output in plain bash-sourceable format (ready to source)
+        foreach ($envVars as $key => $value) {
+            // Escape single quotes in value for bash
+            $escapedValue = str_replace("'", "'\\''", $value);
+            $this->line("{$key}='{$escapedValue}'");
+        }
+
+        return 0;
     }
 }

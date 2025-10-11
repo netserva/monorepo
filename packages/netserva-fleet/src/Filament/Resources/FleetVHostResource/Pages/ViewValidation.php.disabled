@@ -1,0 +1,248 @@
+<?php
+
+namespace NetServa\Fleet\Filament\Resources\FleetVHostResource\Pages;
+
+use Filament\Actions;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Colors\Color;
+use NetServa\Cli\Services\MigrationExecutionService;
+use NetServa\Cli\Services\ValidationService;
+use NetServa\Fleet\Filament\Resources\FleetVHostResource;
+use NetServa\Fleet\Models\FleetVHost;
+
+/**
+ * Validation Results Viewer - NetServa 3.0
+ *
+ * Displays detailed validation results from migration_issues JSON field
+ *
+ * Features:
+ * - Color-coded validation status badges
+ * - Expandable check categories (structure, database, service, security)
+ * - JSON viewer for validation results
+ * - Re-validate action button
+ * - Migrate action button (if validated)
+ *
+ * Copyright (C) 1995-2025 Mark Constable <mc@netserva.org> (MIT License)
+ */
+class ViewValidation extends ViewRecord
+{
+    protected static string $resource = FleetVHostResource::class;
+
+    // Filament 4.0: $view is non-static and default is already 'filament-panels::pages.view-record'
+    // Removed: protected static string $view = 'filament-panels::pages.view-record';
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('Validation Status')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('domain')
+                            ->label('VHost Domain')
+                            ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
+                            ->weight('bold'),
+
+                        Infolists\Components\TextEntry::make('migration_status')
+                            ->label('Migration Status')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'validated' => 'success',
+                                'discovered' => 'info',
+                                'native' => 'success',
+                                'migrated' => 'success',
+                                'failed' => 'danger',
+                                default => 'gray',
+                            }),
+
+                        Infolists\Components\TextEntry::make('vnode.name')
+                            ->label('VNode')
+                            ->badge()
+                            ->color('info'),
+                    ])
+                    ->columns(3),
+
+                Infolists\Components\Section::make('Validation Results')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('validation_summary')
+                            ->label('Validation Summary')
+                            ->getStateUsing(function (FleetVHost $record): string {
+                                $issues = $record->migration_issues ?? [];
+                                $validation = $issues['validation'] ?? [];
+
+                                if (empty($validation)) {
+                                    return 'No validation data available';
+                                }
+
+                                $passed = count($validation['checks_passed'] ?? []);
+                                $warnings = count($validation['checks_with_warnings'] ?? []);
+                                $failed = count($validation['checks_failed'] ?? []);
+                                $total = $passed + $warnings + $failed;
+
+                                return "Passed: {$passed} | Warnings: {$warnings} | Failed: {$failed} | Total: {$total}";
+                            })
+                            ->badge()
+                            ->color(function (FleetVHost $record): string {
+                                $issues = $record->migration_issues ?? [];
+                                $validation = $issues['validation'] ?? [];
+                                $failed = count($validation['checks_failed'] ?? []);
+
+                                return $failed > 0 ? 'danger' : 'success';
+                            }),
+                    ]),
+
+                Infolists\Components\Section::make('Passed Checks')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('migration_issues.validation.checks_passed')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('check')
+                                    ->label('Check')
+                                    ->icon('heroicon-o-check-circle')
+                                    ->iconColor('success'),
+                            ])
+                            ->columns(1)
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['validation']['checks_passed'] ?? [])),
+                    ])
+                    ->collapsed()
+                    ->collapsible(),
+
+                Infolists\Components\Section::make('Warnings')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('migration_issues.validation.checks_with_warnings')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('check')
+                                    ->label('Check')
+                                    ->icon('heroicon-o-exclamation-triangle')
+                                    ->iconColor('warning'),
+
+                                Infolists\Components\TextEntry::make('message')
+                                    ->label('Message')
+                                    ->color('warning'),
+                            ])
+                            ->columns(2)
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['validation']['checks_with_warnings'] ?? [])),
+                    ])
+                    ->collapsed(false)
+                    ->collapsible(),
+
+                Infolists\Components\Section::make('Failed Checks')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('migration_issues.validation.checks_failed')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('check')
+                                    ->label('Check')
+                                    ->icon('heroicon-o-x-circle')
+                                    ->iconColor('danger'),
+
+                                Infolists\Components\TextEntry::make('error')
+                                    ->label('Error')
+                                    ->color('danger'),
+                            ])
+                            ->columns(2)
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['validation']['checks_failed'] ?? [])),
+                    ])
+                    ->collapsed(false)
+                    ->collapsible(),
+
+                Infolists\Components\Section::make('Migration Path Analysis')
+                    ->schema([
+                        Infolists\Components\KeyValueEntry::make('migration_issues.validation.paths_found')
+                            ->label('Paths Found')
+                            ->keyLabel('Path Type')
+                            ->valueLabel('Path')
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['validation']['paths_found'] ?? [])),
+
+                        Infolists\Components\TextEntry::make('migration_issues.validation.total_size_mb')
+                            ->label('Total Size')
+                            ->formatStateUsing(fn ($state): string => $state ? round($state, 2).' MB' : 'Unknown')
+                            ->visible(fn (FleetVHost $record): bool => isset($record->migration_issues['validation']['total_size_mb'])),
+                    ])
+                    ->collapsed()
+                    ->collapsible()
+                    ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['validation']['paths_found'] ?? [])),
+
+                Infolists\Components\Section::make('Raw Validation Data')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('migration_issues')
+                            ->label('')
+                            ->formatStateUsing(fn ($state): string => json_encode($state, JSON_PRETTY_PRINT))
+                            ->copyable()
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsed()
+                    ->collapsible(),
+            ]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            // Re-validate action
+            Actions\Action::make('revalidate')
+                ->label('Re-validate')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Re-validate VHost')
+                ->modalDescription('This will re-run validation checks and update the validation results.')
+                ->action(function (FleetVHost $record) {
+                    $validationService = app(ValidationService::class);
+                    $result = $validationService->validateVhost($record);
+
+                    if ($result['success']) {
+                        Notification::make()
+                            ->title('Validation Complete')
+                            ->body("VHost {$record->domain} has been re-validated.")
+                            ->success()
+                            ->send();
+
+                        $this->redirect(static::getResource()::getUrl('view-validation', ['record' => $record]));
+                    } else {
+                        Notification::make()
+                            ->title('Validation Failed')
+                            ->body($result['error'] ?? 'An error occurred during validation')
+                            ->danger()
+                            ->send();
+                    }
+                })
+                ->visible(fn (FleetVHost $record): bool => $record->migration_status !== 'migrated'),
+
+            // Migrate action
+            Actions\Action::make('migrate')
+                ->label('Migrate to NS 3.0')
+                ->icon('heroicon-o-arrow-path')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Migrate VHost to NetServa 3.0')
+                ->modalDescription('This will migrate the vhost to NS 3.0 structure. A backup will be created automatically.')
+                ->action(function (FleetVHost $record) {
+                    $migrationService = app(MigrationExecutionService::class);
+                    $result = $migrationService->migrateVhost($record);
+
+                    if ($result['success']) {
+                        Notification::make()
+                            ->title('Migration Successful')
+                            ->body("VHost {$record->domain} has been migrated to NS 3.0.")
+                            ->success()
+                            ->send();
+
+                        $this->redirect(static::getResource()::getUrl('view', ['record' => $record]));
+                    } else {
+                        Notification::make()
+                            ->title('Migration Failed')
+                            ->body($result['error'] ?? 'An error occurred during migration')
+                            ->danger()
+                            ->send();
+                    }
+                })
+                ->visible(fn (FleetVHost $record): bool => $record->migration_status === 'validated'),
+
+            Actions\EditAction::make(),
+        ];
+    }
+}

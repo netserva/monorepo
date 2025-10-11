@@ -54,15 +54,15 @@ class AddvmailCommand extends BaseNetServaCommand
 
             if ($this->option('dry-run')) {
                 $this->dryRun("Add Virtual Mail User {$email} on {$VNODE}", [
-                    "Validate VHost {$VHOST} exists in database",
+                    "Validate VHost {$VHOST} exists in fleet_vhosts table",
                     "Check if {$email} already exists",
                     'Create mailbox entry in vmails table',
                     'Create alias entry in valias table',
                     'Create mail log entry in vmail_log table',
-                    "SSH to {$VNODE} and create Maildir structure",
+                    'Update vconfs table with mail credentials (database-first)',
+                    "SSH to {$VNODE} and create Maildir structure via heredoc script",
                     'Set up SpamProbe filters',
                     'Set correct file permissions',
-                    "Update ~/.ns/var/{$VNODE}/{$VHOST}.conf with credentials",
                 ]);
 
                 return 0;
@@ -82,7 +82,7 @@ class AddvmailCommand extends BaseNetServaCommand
                     $this->line("   User: <fg=yellow>{$VUSER}@{$VHOST}</>");
                     $this->line("   Maildir: <fg=yellow>{$details['maildir']}</>");
                     $this->line("   Password: <fg=yellow>{$password}</>");
-                    $this->line("   Config: <fg=yellow>~/.ns/var/{$VNODE}/{$VHOST}.conf</>");
+                    $this->line("   Config: <fg=green>vconfs table</> (database-first)");
                 }
 
                 // Add to command history

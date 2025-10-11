@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use NetServa\Cli\Models\VConf;
+use NetServa\Dns\Models\DnsProvider;
 
 /**
  * Fleet VHost Model
@@ -27,6 +28,7 @@ class FleetVHost extends Model
         'domain',
         'slug',
         'vnode_id',
+        'dns_provider_id',
         'instance_type',
         'instance_id',
         'cpu_cores',
@@ -42,6 +44,14 @@ class FleetVHost extends Model
         'description',
         'status',
         'is_active',
+        'migration_status',
+        'legacy_config',
+        'migration_issues',
+        'discovered_at',
+        'migrated_at',
+        'migration_backup_path',
+        'rollback_available',
+        'migration_attempts',
     ];
 
     protected $casts = [
@@ -54,6 +64,12 @@ class FleetVHost extends Model
         'var_file_modified_at' => 'datetime',
         'last_discovered_at' => 'datetime',
         'is_active' => 'boolean',
+        'legacy_config' => 'array',
+        'migration_issues' => 'array',
+        'discovered_at' => 'datetime',
+        'migrated_at' => 'datetime',
+        'rollback_available' => 'boolean',
+        'migration_attempts' => 'integer',
     ];
 
     protected $attributes = [
@@ -98,6 +114,14 @@ class FleetVHost extends Model
     public function vconfs(): HasMany
     {
         return $this->hasMany(VConf::class, 'fleet_vhost_id');
+    }
+
+    /**
+     * Get the DNS provider for this vhost
+     */
+    public function dnsProvider(): BelongsTo
+    {
+        return $this->belongsTo(DnsProvider::class, 'dns_provider_id');
     }
 
     /**
@@ -407,5 +431,137 @@ class FleetVHost extends Model
             'docker' => '🐳',
             default => '💻',
         };
+    }
+
+    /**
+     * Get effective DNS provider (with inheritance)
+     *
+     * Resolution order:
+     * 1. Explicit vhost assignment (dns_provider_id)
+     * 2. Inherit from vnode
+     * 3. Default provider from config
+     * 4. First active PowerDNS provider (if auto-select enabled)
+     * 5. null (no DNS provider available)
+     */
+    public function getEffectiveDnsProvider(): ?DnsProvider
+    {
+        // 1. Explicit vhost assignment
+        if ($this->dns_provider_id) {
+            return $this->dnsProvider;
+        }
+
+        // 2. Inherit from vnode
+        if ($this->vnode) {
+            return $this->vnode->getEffectiveDnsProvider();
+        }
+
+        // 3. Default from config
+        $defaultId = config('dns-manager.default_provider_id');
+        if ($defaultId) {
+            return DnsProvider::find($defaultId);
+        }
+
+        // 4. Auto-select first active PowerDNS provider
+        if (config('dns-manager.auto_select_powerdns', true)) {
+            return DnsProvider::active()
+                ->where('type', 'powerdns')
+                ->orderBy('sort_order')
+                ->first();
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if vhost can manage DNS
+     */
+    public function canManageDns(): bool
+    {
+        return $this->getEffectiveDnsProvider() !== null;
+    }
+
+    /**
+     * Get DNS zone for this vhost
+     *
+     * Extracts zone from domain:
+     * - example.com → example.com
+     * - sub.example.com → example.com
+     * - deep.sub.example.com → example.com
+     */
+    public function getDnsZone(): ?string
+    {
+        if (! $this->domain) {
+            return null;
+        }
+
+        $parts = explode('.', $this->domain);
+
+        if (count($parts) >= 2) {
+            return implode('.', array_slice($parts, -2));
+        }
+
+        return $this->domain;
+    }
+
+    /**
+     * Get DNS subdomain (if any)
+     *
+     * - example.com → null
+     * - sub.example.com → sub
+     * - deep.sub.example.com → deep.sub
+     */
+    public function getDnsSubdomain(): ?string
+    {
+        if (! $this->domain) {
+            return null;
+        }
+
+        $parts = explode('.', $this->domain);
+
+        if (count($parts) > 2) {
+            return implode('.', array_slice($parts, 0, -2));
+        }
+
+        return null;
+    }
+
+    /**
+     * Get DNS provider type (powerdns, cloudflare, etc.)
+     */
+    public function getDnsProviderType(): ?string
+    {
+        return $this->getEffectiveDnsProvider()?->type;
+    }
+
+    /**
+     * Check if using PowerDNS
+     */
+    public function usesPowerDns(): bool
+    {
+        return $this->getDnsProviderType() === 'powerdns';
+    }
+
+    /**
+     * Check if using Cloudflare
+     */
+    public function usesCloudflare(): bool
+    {
+        return $this->getDnsProviderType() === 'cloudflare';
+    }
+
+    /**
+     * Check if DNS provider is explicitly set (not inherited)
+     */
+    public function hasExplicitDnsProvider(): bool
+    {
+        return $this->dns_provider_id !== null;
+    }
+
+    /**
+     * Check if DNS provider is inherited from vnode
+     */
+    public function inheritsDnsProvider(): bool
+    {
+        return $this->dns_provider_id === null && $this->vnode?->dns_provider_id !== null;
     }
 }

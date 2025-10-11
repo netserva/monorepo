@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b62878919beadbfbffce50f39798f019",
+    "content-hash": "2d10b519dbd0807c95d01e082f0f26b6",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -3837,11 +3837,12 @@
             "dist": {
                 "type": "path",
                 "url": "./packages/netserva-fleet",
-                "reference": "d69c548ffe14232167b869b07346f9b801552ffb"
+                "reference": "37ba213ba323cdcff202b4cf323ba9e787142631"
             },
             "require": {
                 "filament/filament": "^4.0",
                 "laravel/framework": "^12.0",
+                "netserva/core": "*",
                 "php": "^8.2"
             },
             "require-dev": {

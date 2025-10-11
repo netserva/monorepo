@@ -7,6 +7,7 @@ use NetServa\Core\Services\ConfigurationService;
 use NetServa\Core\Services\LoggingService;
 use NetServa\Core\Services\NotificationService;
 use NetServa\Core\Services\RemoteConnectionService;
+use NetServa\Core\Services\SshTunnelService;
 
 /**
  * NetServa Core Service Provider
@@ -26,6 +27,7 @@ class NetServaCoreServiceProvider extends ServiceProvider
         $this->app->singleton(LoggingService::class);
         $this->app->singleton(NotificationService::class);
         $this->app->singleton(RemoteConnectionService::class);
+        $this->app->singleton(SshTunnelService::class);
 
         // Register configuration
         $this->registerConfig();
@@ -77,11 +79,12 @@ class NetServaCoreServiceProvider extends ServiceProvider
     protected function registerCommands(): void
     {
         if ($this->app->runningInConsole()) {
-            // TODO: Re-enable when commands are implemented
-            // $this->commands([
-            //     \NetServa\Core\Console\Commands\InstallCommand::class,
-            //     \NetServa\Core\Console\Commands\PluginCommand::class,
-            // ]);
+            $this->commands([
+                \NetServa\Core\Console\Commands\ImportSshHostsCommand::class,
+                // TODO: Re-enable when commands are implemented
+                // \NetServa\Core\Console\Commands\InstallCommand::class,
+                // \NetServa\Core\Console\Commands\PluginCommand::class,
+            ]);
         }
     }
 

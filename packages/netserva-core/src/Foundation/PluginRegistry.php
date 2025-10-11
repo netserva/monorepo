@@ -74,8 +74,11 @@ class PluginRegistry
             // Filter to only include available plugins
             $availableEnabled = array_intersect_key($enabledPlugins, $this->availablePlugins);
 
-            // Resolve dependencies and return in correct order
-            return $this->dependencyResolver->resolve($availableEnabled);
+            // Resolve dependencies and return plugin IDs in correct order
+            $orderedIds = $this->dependencyResolver->resolve($availableEnabled);
+
+            // Map plugin IDs back to their class names
+            return array_map(fn($id) => $availableEnabled[$id], $orderedIds);
         });
     }
 
@@ -329,12 +332,17 @@ class PluginRegistry
     {
         // Only include plugins that actually implement the Plugin interface
         $potentialPlugins = [
-            'ns-core' => \NetServa\Core\CorePlugin::class,
-            'ns-plugins' => \NetServa\Core\PluginsPlugin::class,
-            'ns-ssh' => \NetServa\Core\SshPlugin::class,
-            'ns-dns' => \Ns\Dns\DnsPlugin::class,
-            'ns-example' => \NetServa\Core\ExamplePlugin::class,
-            // Other plugins will be added as they are converted to use Plugin interface
+            'netserva-core' => \NetServa\Core\CorePlugin::class,
+            'netserva-cli' => \NetServa\Cli\Filament\NetServaCliPlugin::class,
+            'netserva-cron' => \NetServa\Cron\Filament\NetServaCronPlugin::class,
+            'netserva-wg' => \NetServa\Wg\Filament\NetServaWgPlugin::class,
+            'netserva-fleet' => \NetServa\Fleet\Filament\FleetPlugin::class,
+            'netserva-ipam' => \NetServa\Ipam\Filament\NetServaIpamPlugin::class,
+            'netserva-dns' => \NetServa\Dns\Filament\NetServaDnsPlugin::class,
+            'netserva-web' => \NetServa\Web\Filament\NetServaWebPlugin::class,
+            'netserva-mail' => \NetServa\Mail\Filament\NetServaMailPlugin::class,
+            'netserva-config' => \NetServa\Config\Filament\NetServaConfigPlugin::class,
+            'netserva-ops' => \NetServa\Ops\Filament\NetServaOpsPlugin::class,
         ];
 
         // Verify each plugin class exists and implements Plugin interface

@@ -5,6 +5,11 @@ namespace NetServa\Fleet\Services;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
+use NetServa\Cli\Services\NetServaConfigurationService;
+use NetServa\Dns\Exceptions\DnsValidationException;
+use NetServa\Dns\Models\DnsProvider;
+use NetServa\Dns\Services\FcrDnsValidationService;
+use NetServa\Dns\Services\PowerDnsService;
 use NetServa\Fleet\Models\FleetVHost;
 use NetServa\Fleet\Models\FleetVNode;
 
@@ -17,9 +22,21 @@ class FleetDiscoveryService
 {
     protected int $sshTimeout;
 
-    public function __construct()
-    {
+    protected NetServaConfigurationService $configService;
+
+    protected FcrDnsValidationService $dnsValidation;
+
+    protected PowerDnsService $powerDnsService;
+
+    public function __construct(
+        NetServaConfigurationService $configService,
+        FcrDnsValidationService $dnsValidation,
+        PowerDnsService $powerDnsService
+    ) {
         $this->sshTimeout = config('fleet.discovery.ssh_timeout', 30);
+        $this->configService = $configService;
+        $this->dnsValidation = $dnsValidation;
+        $this->powerDnsService = $powerDnsService;
     }
 
     /**
@@ -63,8 +80,14 @@ class FleetDiscoveryService
 
     /**
      * Discover a specific VNode
+     *
+     * @param FleetVNode $vnode The VNode to discover
+     * @param bool $skipVhostDiscovery Skip automatic vhost discovery (for legacy import mode)
+     * @param bool $forceNoDns Emergency override - skip DNS validation
+     * @param bool $autoDns Automatically create DNS records if missing
+     * @return bool Success status
      */
-    public function discoverVNode(FleetVNode $vnode): bool
+    public function discoverVNode(FleetVNode $vnode, bool $skipVhostDiscovery = false, bool $forceNoDns = false, bool $autoDns = false): bool
     {
         if (! $vnode->hasSshAccess()) {
             $vnode->recordDiscoveryError('No SSH access configured');
@@ -82,10 +105,13 @@ class FleetDiscoveryService
             };
 
             if ($discoveredData) {
+                // Discover and store FQDN during discovery
+                $this->discoverAndStoreFqdn($vnode, $forceNoDns, $autoDns);
+
                 $vnode->recordDiscoverySuccess($discoveredData);
 
-                // Also discover vhosts for compute nodes
-                if (in_array($vnode->role, ['compute', 'mixed'])) {
+                // Also discover vhosts for compute nodes (unless skip flag is set)
+                if (!$skipVhostDiscovery && in_array($vnode->role, ['compute', 'mixed'])) {
                     $this->discoverVHosts($vnode);
                 }
 
@@ -470,6 +496,184 @@ class FleetDiscoveryService
     }
 
     /**
+     * Validate and store FQDN for VNode using FCrDNS
+     *
+     * NetServa 3.0 Policy: DNS (A + PTR records) MUST exist before vnode initialization
+     * This is required for:
+     * - Email server deliverability (FCrDNS)
+     * - SSL certificate issuance (Let's Encrypt)
+     * - Production server identification
+     *
+     * Will NOT overwrite manually-set FQDNs (if already validated)
+     *
+     * @param FleetVNode $vnode
+     * @param bool $forceNoDns Emergency override flag (use with caution)
+     * @param bool $autoDns Automatically create DNS records if missing
+     * @throws DnsValidationException if FCrDNS validation fails
+     */
+    protected function discoverAndStoreFqdn(FleetVNode $vnode, bool $forceNoDns = false, bool $autoDns = false): void
+    {
+        try {
+            // Emergency override: Skip DNS validation (logs warning)
+            if ($forceNoDns) {
+                Log::warning('DNS validation SKIPPED (emergency mode)', [
+                    'vnode' => $vnode->name,
+                    'fqdn' => $vnode->fqdn,
+                ]);
+                $vnode->update(['email_capable' => false]);
+                return;
+            }
+
+            // Get server IP address
+            $ip = $this->getServerIp($vnode);
+            if (!$ip) {
+                throw new DnsValidationException("Cannot determine IP address for {$vnode->name}");
+            }
+
+            // If FQDN already set, validate it with FCrDNS
+            if ($vnode->fqdn && $this->isValidFqdn($vnode->fqdn)) {
+                Log::info('Validating existing FQDN with FCrDNS', [
+                    'vnode' => $vnode->name,
+                    'fqdn' => $vnode->fqdn,
+                    'ip' => $ip,
+                ]);
+
+                $result = $this->dnsValidation->validate($vnode->fqdn, $ip);
+
+                if ($result->passed()) {
+                    Log::info('FCrDNS validation PASSED for existing FQDN', [
+                        'vnode' => $vnode->name,
+                        'fqdn' => $vnode->fqdn,
+                    ]);
+                    $vnode->update(['email_capable' => true]);
+                    return;
+                }
+
+                // Existing FQDN failed validation
+                Log::error('Existing FQDN failed FCrDNS validation', [
+                    'vnode' => $vnode->name,
+                    'fqdn' => $vnode->fqdn,
+                    'errors' => $result->getErrors(),
+                ]);
+
+                // Auto-create DNS records if requested
+                if ($autoDns) {
+                    Log::info('Attempting to auto-create DNS records', [
+                        'vnode' => $vnode->name,
+                        'fqdn' => $vnode->fqdn,
+                        'ip' => $ip,
+                    ]);
+
+                    if ($this->createDnsRecords($vnode->fqdn, $ip)) {
+                        // Wait for propagation and re-validate
+                        if ($this->dnsValidation->waitForPropagation($vnode->fqdn, $ip, 30)) {
+                            $vnode->update([
+                                'email_capable' => true,
+                                'fcrdns_validated_at' => now(),
+                            ]);
+                            return;
+                        }
+                    }
+                }
+
+                throw DnsValidationException::fromValidationResult($result);
+            }
+
+            // No FQDN set: Try to detect from PTR record
+            Log::info('No FQDN set, attempting PTR lookup', [
+                'vnode' => $vnode->name,
+                'ip' => $ip,
+            ]);
+
+            $reverseFqdn = gethostbyaddr($ip);
+            if ($reverseFqdn === $ip || !$this->isValidFqdn($reverseFqdn)) {
+                throw new DnsValidationException(
+                    "No PTR record found for {$ip}. Please set up DNS before adding vnode."
+                );
+            }
+
+            // Validate FCrDNS for discovered FQDN
+            $result = $this->dnsValidation->validate($reverseFqdn, $ip);
+
+            if (!$result->passed()) {
+                Log::error('FCrDNS validation failed for discovered FQDN', [
+                    'vnode' => $vnode->name,
+                    'discovered_fqdn' => $reverseFqdn,
+                    'errors' => $result->getErrors(),
+                ]);
+
+                throw DnsValidationException::fromValidationResult($result);
+            }
+
+            // FCrDNS passed - store FQDN
+            $vnode->update([
+                'fqdn' => strtolower($reverseFqdn),
+                'email_capable' => true,
+            ]);
+
+            Log::info('FQDN discovered via FCrDNS and stored', [
+                'vnode' => $vnode->name,
+                'fqdn' => $reverseFqdn,
+                'ip' => $ip,
+            ]);
+
+        } catch (DnsValidationException $e) {
+            // Re-throw DNS validation exceptions
+            throw $e;
+        } catch (Exception $e) {
+            Log::error('FQDN validation failed with exception', [
+                'vnode' => $vnode->name,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new DnsValidationException(
+                "FQDN validation failed for {$vnode->name}: {$e->getMessage()}",
+                null,
+                0,
+                $e
+            );
+        }
+    }
+
+    /**
+     * Get server IP address from remote server
+     */
+    protected function getServerIp(FleetVNode $vnode): ?string
+    {
+        // Try to get from database first
+        if ($vnode->ip_address) {
+            return $vnode->ip_address;
+        }
+
+        // Query remote server for primary IPv4
+        $ip = $this->executeSshCommand(
+            $vnode->sshHost,
+            "ip -4 route get 1.1.1.1 | awk '/src/ {print \$7}'"
+        );
+
+        if ($ip && filter_var(trim($ip), FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return trim($ip);
+        }
+
+        return null;
+    }
+
+    /**
+     * Validate if hostname is a proper FQDN
+     */
+    protected function isValidFqdn(?string $hostname): bool
+    {
+        if (empty($hostname) || ! str_contains($hostname, '.')) {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/i',
+            $hostname
+        );
+    }
+
+    /**
      * Test SSH connection to a node
      */
     public function testSshConnection(FleetVNode $vnode): array
@@ -493,6 +697,62 @@ class FleetDiscoveryService
                 'success' => false,
                 'error' => $e->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * Auto-create DNS records (A + PTR) for FCrDNS
+     *
+     * @param  string  $fqdn  Fully qualified domain name
+     * @param  string  $ip  IPv4 address
+     * @return bool Success status
+     */
+    protected function createDnsRecords(string $fqdn, string $ip): bool
+    {
+        try {
+            // Get primary PowerDNS provider
+            $provider = DnsProvider::where('type', 'powerdns')
+                ->where('active', true)
+                ->first();
+
+            if (! $provider) {
+                Log::error('No active PowerDNS provider found for auto-DNS');
+
+                return false;
+            }
+
+            Log::info('Creating FCrDNS records via PowerDNS', [
+                'provider' => $provider->name,
+                'fqdn' => $fqdn,
+                'ip' => $ip,
+            ]);
+
+            $result = $this->powerDnsService->createFCrDNSRecords($provider, $fqdn, $ip);
+
+            if ($result['success']) {
+                Log::info('FCrDNS records created successfully', [
+                    'fqdn' => $fqdn,
+                    'ip' => $ip,
+                ]);
+
+                return true;
+            }
+
+            Log::error('Failed to create FCrDNS records', [
+                'fqdn' => $fqdn,
+                'ip' => $ip,
+                'error' => $result['message'],
+            ]);
+
+            return false;
+        } catch (Exception $e) {
+            Log::error('Exception while creating DNS records', [
+                'fqdn' => $fqdn,
+                'ip' => $ip,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
         }
     }
 }

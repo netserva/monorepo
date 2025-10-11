@@ -1,0 +1,224 @@
+<?php
+
+namespace NetServa\Fleet\Filament\Resources\FleetVHostResource\Pages;
+
+use Filament\Actions;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
+use NetServa\Fleet\Filament\Resources\FleetVHostResource;
+use NetServa\Fleet\Models\FleetVHost;
+
+/**
+ * Migration Logs Viewer - NetServa 3.0
+ *
+ * Displays detailed migration execution history from migration_issues JSON field
+ *
+ * Features:
+ * - Timeline view of migration steps
+ * - Step-by-step execution details
+ * - Error/warning highlighting
+ * - Backup archive information
+ * - Execution duration and timestamps
+ *
+ * Copyright (C) 1995-2025 Mark Constable <mc@netserva.org> (MIT License)
+ */
+class ViewMigrationLog extends ViewRecord
+{
+    protected static string $resource = FleetVHostResource::class;
+
+    // Filament 4.0: $view is non-static and default is already 'filament-panels::pages.view-record'
+    // Removed: protected static string $view = 'filament-panels::pages.view-record';
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('Migration Overview')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('domain')
+                            ->label('VHost Domain')
+                            ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
+                            ->weight('bold'),
+
+                        Infolists\Components\TextEntry::make('migration_status')
+                            ->label('Current Status')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'migrated' => 'success',
+                                'failed' => 'danger',
+                                default => 'gray',
+                            }),
+
+                        Infolists\Components\TextEntry::make('migrated_at')
+                            ->label('Migrated At')
+                            ->dateTime()
+                            ->visible(fn (FleetVHost $record): bool => $record->migrated_at !== null),
+
+                        Infolists\Components\TextEntry::make('execution_duration')
+                            ->label('Execution Duration')
+                            ->getStateUsing(function (FleetVHost $record): ?string {
+                                $execution = $record->migration_issues['migration_execution'] ?? [];
+                                $started = $execution['started_at'] ?? null;
+                                $completed = $execution['completed_at'] ?? null;
+
+                                if (! $started || ! $completed) {
+                                    return null;
+                                }
+
+                                $start = new \DateTime($started);
+                                $end = new \DateTime($completed);
+                                $diff = $end->getTimestamp() - $start->getTimestamp();
+
+                                return sprintf('%d seconds', $diff);
+                            })
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['started_at'])),
+                    ])
+                    ->columns(4),
+
+                Infolists\Components\Section::make('Backup Information')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('migration_backup_path')
+                            ->label('Backup Archive')
+                            ->copyable()
+                            ->visible(fn (FleetVHost $record): bool => $record->migration_backup_path !== null),
+
+                        Infolists\Components\IconEntry::make('rollback_available')
+                            ->label('Rollback Available')
+                            ->boolean()
+                            ->visible(fn (FleetVHost $record): bool => $record->rollback_available !== null),
+                    ])
+                    ->columns(2)
+                    ->visible(fn (FleetVHost $record): bool => $record->migration_backup_path !== null),
+
+                Infolists\Components\Section::make('Migration Steps Completed')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('migration_issues.migration_execution.steps_completed')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('step')
+                                    ->label('Step')
+                                    ->formatStateUsing(fn ($state): string => ucwords(str_replace('_', ' ', $state)))
+                                    ->icon('heroicon-o-check-circle')
+                                    ->iconColor('success'),
+                            ])
+                            ->columns(1)
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['steps_completed'])),
+                    ])
+                    ->collapsible()
+                    ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['steps_completed'])),
+
+                Infolists\Components\Section::make('Structural Changes')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('migration_issues.migration_execution.structural_changes')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('change')
+                                    ->label('Change')
+                                    ->formatStateUsing(fn ($state): string => ucwords(str_replace('_', ' ', $state)))
+                                    ->icon('heroicon-o-folder')
+                                    ->iconColor('info'),
+                            ])
+                            ->columns(1)
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['structural_changes'])),
+                    ])
+                    ->collapsed()
+                    ->collapsible()
+                    ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['structural_changes'])),
+
+                Infolists\Components\Section::make('Verification Results')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('migration_issues.migration_execution.verification_results')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('check')
+                                    ->label('Check')
+                                    ->formatStateUsing(fn ($state): string => ucwords(str_replace('_', ' ', $state)))
+                                    ->icon('heroicon-o-shield-check')
+                                    ->iconColor('success'),
+                            ])
+                            ->columns(1)
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['verification_results'])),
+                    ])
+                    ->collapsed()
+                    ->collapsible()
+                    ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['verification_results'])),
+
+                Infolists\Components\Section::make('Warnings')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('migration_issues.migration_execution.warnings')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('warning')
+                                    ->label('Warning')
+                                    ->icon('heroicon-o-exclamation-triangle')
+                                    ->iconColor('warning'),
+                            ])
+                            ->columns(1)
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['warnings'])),
+                    ])
+                    ->collapsed(false)
+                    ->collapsible()
+                    ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['warnings'])),
+
+                Infolists\Components\Section::make('Errors')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('migration_issues.migration_execution.errors')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('error')
+                                    ->label('Error')
+                                    ->icon('heroicon-o-x-circle')
+                                    ->iconColor('danger'),
+                            ])
+                            ->columns(1)
+                            ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['errors'])),
+                    ])
+                    ->collapsed(false)
+                    ->collapsible()
+                    ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution']['errors'])),
+
+                Infolists\Components\Section::make('Rollback History')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('migration_issues.rollback_execution.executed_at')
+                            ->label('Rollback Executed At')
+                            ->dateTime()
+                            ->visible(fn (FleetVHost $record): bool => isset($record->migration_issues['rollback_execution']['executed_at'])),
+
+                        Infolists\Components\TextEntry::make('migration_issues.rollback_execution.archive_restored')
+                            ->label('Archive Restored')
+                            ->copyable()
+                            ->visible(fn (FleetVHost $record): bool => isset($record->migration_issues['rollback_execution']['archive_restored'])),
+
+                        Infolists\Components\TextEntry::make('migration_issues.rollback_execution.status')
+                            ->label('Rollback Status')
+                            ->badge()
+                            ->color(fn ($state): string => $state === 'completed' ? 'success' : 'danger')
+                            ->visible(fn (FleetVHost $record): bool => isset($record->migration_issues['rollback_execution']['status'])),
+                    ])
+                    ->columns(3)
+                    ->collapsed()
+                    ->collapsible()
+                    ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['rollback_execution'])),
+
+                Infolists\Components\Section::make('Raw Execution Data')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('migration_issues.migration_execution')
+                            ->label('')
+                            ->formatStateUsing(fn ($state): string => json_encode($state, JSON_PRETTY_PRINT))
+                            ->copyable()
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsed()
+                    ->collapsible()
+                    ->visible(fn (FleetVHost $record): bool => ! empty($record->migration_issues['migration_execution'])),
+            ]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\EditAction::make(),
+        ];
+    }
+}

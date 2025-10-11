@@ -270,6 +270,67 @@ class FleetVHostResource extends Resource
                     ->label('Has Var File'),
             ])
             ->actions([
+                Tables\Actions\Action::make('view_validation')
+                    ->label('Validation')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->color('warning')
+                    ->url(fn (FleetVHost $record): string => static::getUrl('view-validation', ['record' => $record]))
+                    ->visible(fn (FleetVHost $record) => in_array($record->migration_status, ['discovered', 'validated', 'failed'])),
+
+                Tables\Actions\Action::make('view_migration_log')
+                    ->label('Migration Log')
+                    ->icon('heroicon-o-document-text')
+                    ->color('info')
+                    ->url(fn (FleetVHost $record): string => static::getUrl('view-migration-log', ['record' => $record]))
+                    ->visible(fn (FleetVHost $record) => in_array($record->migration_status, ['migrated', 'failed'])),
+
+                Tables\Actions\Action::make('rollback')
+                    ->label('Rollback')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Rollback Migration')
+                    ->modalDescription(fn (FleetVHost $record): string => "This will restore {$record->domain} to its pre-migration state. The vhost will be marked as 'validated' after rollback.")
+                    ->form(function (FleetVHost $record) {
+                        $migrationService = app(\NetServa\Cli\Services\MigrationExecutionService::class);
+                        $result = $migrationService->listRollbackPoints($record);
+
+                        $options = [];
+                        if ($result['success'] && ! empty($result['rollback_points'])) {
+                            foreach ($result['rollback_points'] as $point) {
+                                $options[$point['path']] = $point['filename'].' ('.$point['created_at'].')';
+                            }
+                        }
+
+                        return [
+                            Forms\Components\Select::make('archive')
+                                ->label('Rollback Point')
+                                ->options($options)
+                                ->required()
+                                ->helperText('Select which backup to restore from')
+                                ->default(fn () => array_key_first($options)), // Default to most recent
+                        ];
+                    })
+                    ->action(function (FleetVHost $record, array $data) {
+                        $migrationService = app(\NetServa\Cli\Services\MigrationExecutionService::class);
+                        $result = $migrationService->rollbackVhost($record, $data['archive']);
+
+                        if ($result['success']) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Rollback Successful')
+                                ->body("VHost {$record->domain} has been restored to validated status.")
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Rollback Failed')
+                                ->body($result['error'] ?? 'An error occurred during rollback')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->visible(fn (FleetVHost $record) => $record->migration_status === 'migrated' && $record->rollback_available),
+
                 Tables\Actions\Action::make('sync_var_file')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
@@ -298,6 +359,63 @@ class FleetVHostResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('migrate_selected')
+                        ->label('Migrate Selected to NS 3.0')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Migrate Selected VHosts to NetServa 3.0')
+                        ->modalDescription(fn ($records) => "This will migrate {$records->count()} vhost(s) to NS 3.0 structure. Backups will be created automatically for each vhost.")
+                        ->modalSubmitActionLabel('Migrate All')
+                        ->action(function ($records) {
+                            $migrationService = app(\NetServa\Cli\Services\MigrationExecutionService::class);
+                            $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+
+                            foreach ($records as $vhost) {
+                                // Only migrate validated vhosts
+                                if ($vhost->migration_status !== 'validated') {
+                                    $results['failed']++;
+                                    $results['errors'][] = "{$vhost->domain}: Not in validated status (current: {$vhost->migration_status})";
+
+                                    continue;
+                                }
+
+                                $result = $migrationService->migrateVhost($vhost);
+
+                                if ($result['success']) {
+                                    $results['success']++;
+                                } else {
+                                    $results['failed']++;
+                                    $results['errors'][] = "{$vhost->domain}: {$result['error']}";
+                                }
+                            }
+
+                            // Build notification message
+                            $message = "Migrated {$results['success']} vhost(s) successfully.";
+                            if ($results['failed'] > 0) {
+                                $message .= " {$results['failed']} vhost(s) failed.";
+                            }
+
+                            $notificationType = $results['failed'] === 0 ? 'success' : ($results['success'] > 0 ? 'warning' : 'danger');
+
+                            $notification = \Filament\Notifications\Notification::make()
+                                ->title('Bulk Migration Complete')
+                                ->body($message);
+
+                            // Add error details if any
+                            if (! empty($results['errors'])) {
+                                $errorList = implode("\n", array_slice($results['errors'], 0, 5)); // Show first 5 errors
+                                if (count($results['errors']) > 5) {
+                                    $errorList .= "\n... and ".(count($results['errors']) - 5).' more';
+                                }
+                                $notification->body($message."\n\nErrors:\n".$errorList);
+                            }
+
+                            $notification->{$notificationType}()->send();
+                        })
+                        ->deselectRecordsAfterCompletion()
+                        ->visible(fn ($records) => $records->contains(fn ($record) => $record->migration_status === 'validated')),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
@@ -401,6 +519,9 @@ class FleetVHostResource extends Resource
             'index' => Pages\ListFleetVHosts::route('/'),
             'create' => Pages\CreateFleetVHost::route('/create'),
             'view' => Pages\ViewFleetVHost::route('/{record}'),
+            // Temporarily disabled - needs Filament 4.1 compatibility fixes
+            // 'view-validation' => Pages\ViewValidation::route('/{record}/validation'),
+            // 'view-migration-log' => Pages\ViewMigrationLog::route('/{record}/migration-log'),
             'edit' => Pages\EditFleetVHost::route('/{record}/edit'),
         ];
     }

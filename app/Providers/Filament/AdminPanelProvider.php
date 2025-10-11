@@ -29,30 +29,12 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->topbar(false)  // Filament 4.1 feature: enables sticky navigation
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->navigationGroups([
-                '🏗️ Infrastructure',
-                '🌐 Networking',
-                '📧 Email & Messaging',
-                '🔧 Configuration',
-                '📊 Operations',
-                '🚀 Fleet Management',
-                '⚙️ System',
-            ])
-            // Auto-discover resources from all NetServa packages
-            ->discoverResources(in: base_path('packages/netserva-cli/src/Filament/Resources'), for: 'NetServa\\Cli\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-config/src/Filament/Resources'), for: 'NetServa\\Config\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-core/src/Filament/Resources'), for: 'NetServa\\Core\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-cron/src/Filament/Resources'), for: 'NetServa\\Cron\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-dns/src/Filament/Resources'), for: 'NetServa\\Dns\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-fleet/src/Filament/Resources'), for: 'NetServa\\Fleet\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-ipam/src/Filament/Resources'), for: 'NetServa\\Ipam\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-mail/src/Filament/Resources'), for: 'NetServa\\Mail\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-ops/src/Filament/Resources'), for: 'NetServa\\Ops\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-web/src/Filament/Resources'), for: 'NetServa\\Web\\Filament\\Resources')
-            ->discoverResources(in: base_path('packages/netserva-wg/src/Filament/Resources'), for: 'NetServa\\Wg\\Filament\\Resources')
+            // Navigation groups are now defined in Resource classes (Filament 4.x pattern)
+            // Resources are registered via Plugin system (see registerEnabledPlugins)
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
@@ -101,14 +83,12 @@ class AdminPanelProvider extends PanelProvider
             // Get plugin registry
             $registry = app(PluginRegistry::class);
 
-            // Load plugins in dependency order
-            $enabledPluginIds = $registry->getEnabledPluginsInOrder();
+            // Load plugins in dependency order (returns plugin classes)
+            $enabledPluginClasses = $registry->getEnabledPluginsInOrder();
 
             $plugins = [];
-            foreach ($enabledPluginIds as $pluginId) {
-                $pluginClass = $registry->getPluginClass($pluginId);
-
-                if ($pluginClass && class_exists($pluginClass)) {
+            foreach ($enabledPluginClasses as $pluginClass) {
+                if (class_exists($pluginClass)) {
                     try {
                         if (method_exists($pluginClass, 'make')) {
                             $plugins[] = $pluginClass::make();
@@ -116,9 +96,10 @@ class AdminPanelProvider extends PanelProvider
                             $plugins[] = new $pluginClass;
                         }
 
+                        $pluginId = (new $pluginClass)->getId();
                         Log::info("Registered plugin: {$pluginId}");
                     } catch (\Exception $e) {
-                        Log::warning("Failed to register plugin {$pluginId}: ".$e->getMessage());
+                        Log::warning("Failed to register plugin {$pluginClass}: ".$e->getMessage());
                     }
                 }
             }

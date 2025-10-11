@@ -3,7 +3,10 @@
 namespace NetServa\Dns;
 
 use Illuminate\Support\ServiceProvider;
+use NetServa\Dns\Services\DnsProviderManagementService;
 use NetServa\Dns\Services\DnsProviderService;
+use NetServa\Dns\Services\DnsRecordManagementService;
+use NetServa\Dns\Services\DnsZoneManagementService;
 use NetServa\Dns\Services\DnsZoneService;
 use NetServa\Dns\Services\DomainRegistrationService;
 use NetServa\Dns\Services\PowerDnsService;
@@ -23,6 +26,9 @@ class NetServaDnsServiceProvider extends ServiceProvider
     {
         // Register DNS services
         $this->app->singleton(DnsProviderService::class);
+        $this->app->singleton(DnsProviderManagementService::class);
+        $this->app->singleton(DnsZoneManagementService::class);
+        $this->app->singleton(DnsRecordManagementService::class);
         $this->app->singleton(DnsZoneService::class);
         $this->app->singleton(DomainRegistrationService::class);
         $this->app->singleton(PowerDnsService::class);
@@ -85,8 +91,31 @@ class NetServaDnsServiceProvider extends ServiceProvider
     protected function registerCommands(): void
     {
         if ($this->app->runningInConsole()) {
-            // Commands temporarily disabled during migration
+            $this->commands([
+                // DNS Provider CRUD (Tier 1) - Commands: shdns, adddns, chdns, deldns
+                Console\Commands\AddDnsCommand::class,
+                Console\Commands\ShowDnsCommand::class,
+                Console\Commands\ChangeDnsCommand::class,
+                Console\Commands\DeleteDnsCommand::class,
 
+                // DNS Zone CRUD (Tier 2) - Commands: shzone, addzone, chzone, delzone
+                Console\Commands\AddZoneCommand::class,
+                Console\Commands\ShowZoneCommand::class,
+                Console\Commands\ChangeZoneCommand::class,
+                Console\Commands\DeleteZoneCommand::class,
+
+                // DNS Record CRUD (Tier 3) - Commands: shrec, addrec, chrec, delrec
+                Console\Commands\AddRecordCommand::class,
+                Console\Commands\ShowRecordCommand::class,
+                Console\Commands\ChangeRecordCommand::class,
+                Console\Commands\DeleteRecordCommand::class,
+
+                // Utility commands
+                Console\Commands\PowerDnsCommand::class,
+                Console\Commands\PowerDnsManagementCommand::class,
+                Console\Commands\DnsVerifyCommand::class,
+                Console\Commands\SyncHomelabToPdnsCommand::class,
+            ]);
         }
     }
 

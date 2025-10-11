@@ -2,6 +2,7 @@
 
 namespace NetServa\Cli\Console\Commands;
 
+use NetServa\Cli\DataObjects\VhostCreationData;
 use NetServa\Cli\Services\VhostManagementService;
 
 /**
@@ -38,12 +39,12 @@ class AddVhostCommand extends BaseNetServaCommand
             if ($this->option('dry-run')) {
                 $this->dryRun("Add VHost {$VHOST} on {$VNODE}", [
                     "Generate VHost configuration for {$VHOST}",
-                    "Save config to ~/.ns/var/{$VNODE}/{$VHOST}",
-                    "Save credentials to ~/.ns/var/{$VNODE}/{$VHOST}.conf",
-                    "SSH to {$VNODE} and execute vhost creation",
-                    'Create user u1001+, directories, permissions',
-                    'Generate SSL certificate',
-                    'Configure nginx, PHP-FPM, database',
+                    "Create fleet_vhosts database record",
+                    "Store ~54 config variables in vconfs table (database-first)",
+                    "Execute single heredoc SSH script to {$VNODE}",
+                    'Create user u1001+, directories, permissions on remote',
+                    'Configure PHP-FPM pool, nginx, database on remote',
+                    'Set permissions and restart services',
                 ]);
 
                 return 0;
@@ -56,14 +57,17 @@ class AddVhostCommand extends BaseNetServaCommand
                 $this->info("✅ VHost {$VHOST} created successfully on {$VNODE}");
 
                 // Show key NetServa information
-                if (isset($result['config'])) {
-                    $config = $result['config'];
+                if (isset($result['username']) && isset($result['uid'])) {
                     $this->line('');
                     $this->line('<fg=blue>📋 VHost Details:</>');
-                    $this->line("   User: <fg=yellow>{$config->UUSER}</> (UID: {$config->U_UID})");
-                    $this->line("   Path: <fg=yellow>{$config->paths->wpath}</>");
-                    $this->line("   Config: <fg=yellow>~/.ns/var/{$VNODE}/{$VHOST}</>");
-                    $this->line("   Credentials: <fg=yellow>~/.ns/var/{$VNODE}/{$VHOST}.conf</>");
+                    $this->line("   User: <fg=yellow>{$result['username']}</> (UID: {$result['uid']})");
+                    if (isset($result['paths']['wpath'])) {
+                        $this->line("   Web Path: <fg=yellow>{$result['paths']['wpath']}</>");
+                    }
+                    if (isset($result['fleet_vhost_id'])) {
+                        $this->line("   Database ID: <fg=yellow>{$result['fleet_vhost_id']}</>");
+                    }
+                    $this->line("   Config: <fg=green>vconfs table</> (database-first)");
                 }
 
                 // Add to command history

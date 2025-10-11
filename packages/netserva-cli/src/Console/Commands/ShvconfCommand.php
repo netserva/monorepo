@@ -21,7 +21,8 @@ class ShvconfCommand extends BaseNetServaCommand
                            {vhost : VHost domain}
                            {variable? : Specific variable to show}
                            {--table : Output in formatted table with groups}
-                           {--json : Output in JSON format}';
+                           {--json : Output in JSON format}
+                           {--dry-run : Check if vhost exists and show what would be displayed}';
 
     protected $description = 'Show VHost configuration variables (plain sorted bash-sourceable format)';
 
@@ -32,15 +33,35 @@ class ShvconfCommand extends BaseNetServaCommand
             $VHOST = $this->argument('vhost');
             $variable = $this->argument('variable');
 
+            // Check if VNode exists
+            $vnode = \NetServa\Fleet\Models\FleetVNode::where('name', $VNODE)->first();
+
+            if (! $vnode) {
+                $this->error("❌ VNode '{$VNODE}' not found in database");
+                $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+                return 1;
+            }
+
             // Find VHost in database
             $vhost = FleetVHost::where('domain', $VHOST)
-                ->whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
+                ->where('vnode_id', $vnode->id)
                 ->first();
 
             if (! $vhost) {
-                $this->error("❌ VHost {$VHOST} not found on vnode {$VNODE}");
-                $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+                if ($this->option('dry-run')) {
+                    $this->info("🔍 DRY RUN: VHost '{$VHOST}' does not exist on vnode '{$VNODE}'");
+                    $this->line('');
+                    $this->line("   VNode exists: ✅ {$VNODE}");
+                    $this->line("   VHost exists: ❌ {$VHOST}");
+                    $this->line('');
+                    $this->line("   💡 Next steps:");
+                    $this->line("      1. Preview variables: addvconf {$VNODE} {$VHOST} --dry-run");
+                    $this->line("      2. Create vhost:      addvhost {$VNODE} {$VHOST}");
+                    return 0;
+                }
 
+                $this->error("❌ VHost '{$VHOST}' not found on vnode '{$VNODE}'");
+                $this->line("   💡 Run: addvhost {$VNODE} {$VHOST}");
                 return 1;
             }
 
@@ -48,10 +69,32 @@ class ShvconfCommand extends BaseNetServaCommand
             $envVars = $vhost->getAllEnvVars();
 
             if (empty($envVars)) {
+                if ($this->option('dry-run')) {
+                    $this->info("🔍 DRY RUN: VHost exists but has no configuration variables");
+                    $this->line('');
+                    $this->line("   VHost exists: ✅ {$VHOST}");
+                    $this->line("   Variables:    ❌ 0 configured");
+                    $this->line('');
+                    $this->line("   💡 Initialize configuration: addvconf {$VNODE} {$VHOST}");
+                    return 0;
+                }
+
                 $this->warn("⚠️  No configuration variables found for {$VHOST}");
                 $this->line("   💡 Run: addvconf {$VNODE} {$VHOST}");
-
                 return 1;
+            }
+
+            // Dry-run mode - show what would be displayed
+            if ($this->option('dry-run')) {
+                $count = count($envVars);
+                $this->info("🔍 DRY RUN: Would display {$count} variables for {$VHOST}");
+                $this->line('');
+                $this->line("   VHost exists: ✅ {$VHOST}");
+                $this->line("   Variables:    ✅ {$count} configured");
+                $this->line('');
+                $this->line("   💡 View variables: shvconf {$VNODE} {$VHOST}");
+                $this->line("   💡 Format options: --table, --json");
+                return 0;
             }
 
             // Show specific variable
