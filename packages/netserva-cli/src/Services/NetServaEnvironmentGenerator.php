@@ -92,6 +92,9 @@ class NetServaEnvironmentGenerator
             'OSREL' => 'trixie',
             'OSTYP' => 'debian',
 
+            // DNS Provider (from vnode.dns_provider_id)
+            'DPVDR' => $vnode->dnsProvider->name ?? 'homelab',
+
             // Timezone
             'TAREA' => 'Australia',
             'TCITY' => 'Sydney',
@@ -110,10 +113,12 @@ class NetServaEnvironmentGenerator
      */
     protected function getDynamicVariables(FleetVNode $vnode, string $domain, array $vars): array
     {
-        $fqdn = $vnode->name.'.'.($vnode->domain ?? 'local');
+        // AHOST = Server's FQDN (from hostname -f on remote, stored in vnode->fqdn)
+        // This is the administrative hostname of the server itself
+        $ahost = $vnode->fqdn ?? ($vnode->name.'.local');
 
         // Calculate UID (1000 for admin host, otherwise generate new)
-        $isAdminHost = ($fqdn === $domain);
+        $isAdminHost = ($ahost === $domain);
         $uUid = $isAdminHost ? $vars['A_UID'] : $this->generateNewUid($vnode);
         $uUser = $isAdminHost ? $vars['ADMIN'] : 'u'.$uUid;
 
@@ -143,7 +148,7 @@ class NetServaEnvironmentGenerator
             'HDOMN' => $hDomain,
 
             // Hosts
-            'AHOST' => $fqdn,
+            'AHOST' => $ahost,
             'MHOST' => $mHost,
 
             // Network

@@ -634,7 +634,7 @@ class NetServaConfigurationService implements ConfigManagerInterface
         $dpath = dirname($config->paths->dbpath);
 
         // Detect web server group from OS type
-        $wugid = match($config->osConfig->type) {
+        $wugid = match ($config->osConfig->type) {
             OsType::DEBIAN, OsType::UBUNTU => 'www-data',
             OsType::ALPINE, OsType::MANJARO, OsType::CACHYOS => 'http',
             default => 'nginx',
@@ -673,10 +673,9 @@ class NetServaConfigurationService implements ConfigManagerInterface
             'IP4_0' => $config->IP4_0,
             'MHOST' => $config->VHOST,
             'MPATH' => $config->paths->mpath,
-            'OSMIR' => 'http://dl-cdn.alpinelinux.org',
-            'OSREL' => $config->osConfig->release ?? 'edge',
+            'OSMIR' => $config->osConfig->mirror,
+            'OSREL' => $config->osConfig->release,
             'OSTYP' => $config->osConfig->type->value,
-            'SPATH' => $config->paths->sslPath,
             // ✅ FULLY EXPANDED - no $VAR references!
             'SQCMD' => "sqlite3 {$dpath}/{$dname}.db",
             'SQDNS' => "sqlite3 {$dpath}/powerdns.db",

@@ -21,7 +21,7 @@ class BashScriptBuilder
     /**
      * Build complete provisioning script
      *
-     * @param array $vars Fully expanded platform variables from database
+     * @param  array  $vars  Fully expanded platform variables from database
      * @return string Complete bash script ready for execution
      */
     public function build(array $vars): string
@@ -33,6 +33,7 @@ class BashScriptBuilder
             $this->generateDatabaseSetup($vars),
             $this->generateDirectoryStructure($vars),
             $this->generatePhpFpmConfig($vars),
+            $this->generateNginxConfig($vars),
             $this->generateWebFiles($vars),
             $this->generatePermissions($vars),
             $this->generateFinalization($vars),
@@ -196,13 +197,89 @@ class BashScriptBuilder
     }
 
     /**
+     * Generate nginx vhost configuration section
+     */
+    protected function generateNginxConfig(array $v): string
+    {
+        return <<<'BASH'
+        # 5. nginx vhost configuration
+        echo ">>> Step 5: nginx Configuration"
+        if [[ -d "$C_WEB" ]]; then
+            NGINX_CONF="$C_WEB/sites-available/$VHOST"
+
+            if [[ ! -f "$NGINX_CONF" ]]; then
+                echo "    → Creating nginx vhost config"
+                cat > "$NGINX_CONF" <<'NGINXEOF'
+        server {
+            listen 80;
+            listen [::]:80;
+            server_name $VHOST;
+
+            root $WPATH/app/public;
+            index index.php index.html index.htm;
+
+            # Logging
+            access_log $WPATH/log/nginx_access.log;
+            error_log $WPATH/log/nginx_error.log;
+
+            # Security headers
+            add_header X-Frame-Options "SAMEORIGIN" always;
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-XSS-Protection "1; mode=block" always;
+
+            # PHP-FPM via unix socket
+            location ~ \.php$ {
+                include fastcgi_params;
+                fastcgi_pass unix:$WPATH/run/php-fpm.sock;
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            }
+
+            # Deny access to hidden files
+            location ~ /\. {
+                deny all;
+                access_log off;
+                log_not_found off;
+            }
+
+            # Static files caching
+            location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+                expires 30d;
+                add_header Cache-Control "public, immutable";
+            }
+        }
+        NGINXEOF
+                echo "    ✓ nginx config created"
+
+                # Create symlink to sites-enabled
+                if [[ ! -L "$C_WEB/sites-enabled/$VHOST" ]]; then
+                    ln -sf "$C_WEB/sites-available/$VHOST" "$C_WEB/sites-enabled/$VHOST"
+                    echo "    ✓ nginx config enabled"
+                fi
+
+                # Test nginx config
+                if nginx -t &>/dev/null; then
+                    echo "    ✓ nginx config valid"
+                else
+                    echo "    ⚠ nginx config test failed (will try reload anyway)"
+                fi
+            else
+                echo "    ✓ nginx config already exists"
+            fi
+        else
+            echo "    ⚠ nginx not found at $C_WEB, skipping"
+        fi
+        BASH;
+    }
+
+    /**
      * Generate web files section
      */
     protected function generateWebFiles(array $v): string
     {
         return <<<'BASH'
-        # 5. Create web files
-        echo ">>> Step 5: Web Files"
+        # 6. Create web files
+        echo ">>> Step 6: Web Files"
         if [[ -f "$WPATH/index.html" || -f "$WPATH/index.php" ]]; then
             echo "    ✓ Web files already exist"
         else
@@ -229,8 +306,8 @@ class BashScriptBuilder
     protected function generatePermissions(array $v): string
     {
         return <<<'BASH'
-        # 6. Set permissions
-        echo ">>> Step 6: Permissions"
+        # 7. Set permissions
+        echo ">>> Step 7: Permissions"
         echo "    → Setting ownership: $UUSER:$WUGID"
         chown -R "$UUSER:$WUGID" "$UPATH"
         chmod 755 "$UPATH"
@@ -249,8 +326,8 @@ class BashScriptBuilder
     protected function generateFinalization(array $v): string
     {
         return <<<'BASH'
-        # 7. Final commands (if shell functions are available)
-        echo ">>> Step 7: Finalization"
+        # 8. Final commands (if shell functions are available)
+        echo ">>> Step 8: Finalization"
         if [[ -f ~/.sh/_shrc ]]; then
             source ~/.sh/_shrc
 

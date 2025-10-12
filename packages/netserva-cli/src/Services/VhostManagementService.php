@@ -23,7 +23,9 @@ use NetServa\Fleet\Models\FleetVNode;
 class VhostManagementService
 {
     protected NetServaConfigurationService $configService;
+
     protected RemoteExecutionService $remoteExecution;
+
     protected BashScriptBuilder $scriptBuilder;
 
     public function __construct(
@@ -46,8 +48,8 @@ class VhostManagementService
      * 4. Store ALL config variables in vconfs table
      * 5. Execute single heredoc script via SSH (never copy scripts to remote)
      *
-     * @param string $vnodeName VNode hostname (e.g., "markc")
-     * @param string $domain VHost domain (e.g., "wp.goldcoast.org")
+     * @param  string  $vnodeName  VNode hostname (e.g., "markc")
+     * @param  string  $domain  VHost domain (e.g., "wp.goldcoast.org")
      * @return array Result with success status and vhost data
      */
     public function createVhost(string $vnodeName, string $domain): array
@@ -190,7 +192,7 @@ class VhostManagementService
      * - Includes: User creation, web directories (msg, web/{app,log,run,app/public}),
      *   PHP-FPM pools, nginx config, web files, permissions
      *
-     * @param array $vars Platform variables from vconfs table (fully expanded)
+     * @param  array  $vars  Platform variables from vconfs table (fully expanded)
      * @return string Complete bash script ready for execution
      */
     protected function buildProvisioningScript(array $vars): string
@@ -289,78 +291,122 @@ class VhostManagementService
     protected function executeRemoteCleanup(string $vnode, string $domain, array $vars): array
     {
         $script = $this->buildCleanupScript($vars);
+        $args = $this->getCleanupArgs($vars);
 
         Log::info('Executing remote cleanup script', [
             'vnode' => $vnode,
             'domain' => $domain,
+            'username' => $vars['UUSER'] ?? 'unknown',
         ]);
 
         return $this->remoteExecution->executeScript(
             host: $vnode,
             script: $script,
-            args: [],
+            args: $args,
             asRoot: true
         );
     }
 
     /**
      * Build complete cleanup script
+     *
+     * Safely removes all vhost components with proper error handling
      */
     protected function buildCleanupScript(array $v): string
     {
-        $VHOST = $v['VHOST'];
-        $UUSER = $v['UUSER'] ?? 'unknown';
-        $UPATH = $v['UPATH'] ?? "/srv/{$VHOST}";
-        $WPATH = $v['WPATH'] ?? "{$UPATH}/web";
-        $MPATH = $v['MPATH'] ?? "{$UPATH}/msg";
-        $DNAME = $v['DNAME'] ?? 'sysadm';
-        $DUSER = $v['DUSER'] ?? 'sysadm';
-        $SQCMD = $v['SQCMD'] ?? 'sqlite3 /var/lib/sqlite/sysadm/sysadm.db';
-        $C_FPM = $v['C_FPM'] ?? '/etc/php/8.4/fpm';
+        // Extract variables with defaults
+        $vhost = $v['VHOST'];
+        $uuser = $v['UUSER'] ?? 'unknown';
+        $upath = $v['UPATH'] ?? "/srv/{$vhost}";
+        $cfpm = $v['C_FPM'] ?? '/etc/php/8.4/fpm';
+        $ostyp = $v['OSTYP'] ?? 'debian';
 
-        return <<<BASH
+        // Build cleanup script with variables declared at top
+        $script = <<<'BASH'
 #!/bin/bash
-set -e
+set -euo pipefail
 
-echo "=== NetServa VHost Cleanup: {$VHOST} ==="
+# Variables from database
+VHOST="$1"
+UUSER="$2"
+UPATH="$3"
+C_FPM="$4"
+OSTYP="$5"
+
+echo "=== NetServa VHost Cleanup: $VHOST ==="
 
 # 1. Remove system user
-if id -u {$UUSER} &>/dev/null; then
-    echo "Removing user {$UUSER}"
-    userdel -rf {$UUSER} 2>/dev/null || true
+if id -u "$UUSER" &>/dev/null; then
+    echo ">>> Step 1: Removing user $UUSER"
+    userdel -rf "$UUSER" 2>/dev/null || echo "    ⚠ Warning: userdel failed (continuing)"
 else
-    echo "User {$UUSER} not found (already removed)"
+    echo ">>> Step 1: User $UUSER not found (already removed)"
 fi
 
-# 2. Remove database entries
-echo "Removing database entries"
-mysql -e "DROP DATABASE IF EXISTS {$DNAME};" 2>/dev/null || true
-mysql -e "DROP USER IF EXISTS '{$DUSER}'@'localhost';" 2>/dev/null || true
-mysql -e "FLUSH PRIVILEGES;" 2>/dev/null || true
-
-# Remove from SQLite vhosts table
-echo "DELETE FROM vhosts WHERE domain = '{$VHOST}'" | {$SQCMD} 2>/dev/null || true
+# 2. Remove SQLite database entry
+if command -v sqlite3 &>/dev/null; then
+    echo ">>> Step 2: Removing database entry"
+    if [[ -f /var/lib/sqlite/sysadm/sysadm.db ]]; then
+        echo "DELETE FROM vhosts WHERE domain = '$VHOST'" | sqlite3 /var/lib/sqlite/sysadm/sysadm.db 2>/dev/null || true
+        echo "    ✓ Database entry removed"
+    fi
+fi
 
 # 3. Remove nginx configuration
-echo "Removing nginx configuration"
-rm -f /etc/nginx/sites-available/{$VHOST} /etc/nginx/sites-enabled/{$VHOST}
-nginx -t && systemctl reload nginx 2>/dev/null || true
+echo ">>> Step 3: Removing nginx configuration"
+rm -f "/etc/nginx/sites-available/$VHOST" "/etc/nginx/sites-enabled/$VHOST"
+if command -v nginx &>/dev/null; then
+    if nginx -t &>/dev/null; then
+        systemctl reload nginx 2>/dev/null && echo "    ✓ nginx reloaded"
+    else
+        echo "    ⚠ nginx config has errors, skipping reload"
+    fi
+fi
 
-# 4. Remove PHP-FPM pool
-echo "Removing PHP-FPM pool"
-rm -f {$C_FPM}/pool.d/{$VHOST}.conf
-rm -f {$C_FPM}/php-fpm.d/{$VHOST}.conf
-systemctl reload php*-fpm 2>/dev/null || true
+# 4. Remove PHP-FPM pool (OS-aware)
+echo ">>> Step 4: Removing PHP-FPM pool"
+if [[ -d "$C_FPM" ]]; then
+    if [[ "$OSTYP" == "alpine" ]] || [[ "$OSTYP" == "manjaro" ]] || [[ "$OSTYP" == "cachyos" ]]; then
+        rm -f "$C_FPM/php-fpm.d/$VHOST.conf"
+    else
+        rm -f "$C_FPM/pool.d/$VHOST.conf"
+    fi
+    systemctl reload php*-fpm 2>/dev/null && echo "    ✓ php-fpm reloaded"
+fi
 
 # 5. Remove SSL certificates
-echo "Removing SSL certificates"
-rm -rf /etc/ssl/le/{$VHOST} /etc/ssl/le/{$VHOST}.*
+echo ">>> Step 5: Removing SSL certificates"
+rm -rf "/etc/ssl/le/$VHOST" "/etc/ssl/le/$VHOST."*
+[[ -f "/etc/letsencrypt/renewal/$VHOST.conf" ]] && rm -f "/etc/letsencrypt/renewal/$VHOST.conf"
 
-# 6. Remove directories
-echo "Removing directories"
-rm -rf {$UPATH} {$WPATH} {$MPATH}
+# 6. Remove directories (final step - data loss point)
+echo ">>> Step 6: Removing directories"
+if [[ -d "$UPATH" ]]; then
+    rm -rf "$UPATH"
+    echo "    ✓ Removed: $UPATH"
+else
+    echo "    ✓ Directory already removed: $UPATH"
+fi
 
-echo "=== VHost {$VHOST} cleaned up successfully ==="
+echo ""
+echo "=== ✓ VHost $VHOST cleaned up successfully ==="
 BASH;
+
+        // Return script configured for RemoteExecutionService::executeScript() args
+        return $script;
+    }
+
+    /**
+     * Get cleanup script arguments from vhost variables
+     */
+    protected function getCleanupArgs(array $v): array
+    {
+        return [
+            $v['VHOST'],
+            $v['UUSER'] ?? 'unknown',
+            $v['UPATH'] ?? "/srv/{$v['VHOST']}",
+            $v['C_FPM'] ?? '/etc/php/8.4/fpm',
+            $v['OSTYP'] ?? 'debian',
+        ];
     }
 }

@@ -1,8 +1,8 @@
 # NetServa 3.0 VHost Configuration Variables
 
-**Total Variables:** 53 (NetServa 1.0 had 54, removed LROOT in 3.0)
+**Total Variables:** 55 (NetServa 1.0 had 54, removed LROOT, added VNODE and DPVDR in 3.0)
 
-**Storage:** Database column `fleet_vhosts.environment_vars` (JSON)
+**Storage:** Dedicated `vconfs` table (normalized, one variable per row)
 
 **Naming Convention:** All variables are exactly 5 characters, uppercase
 
@@ -100,16 +100,19 @@
 
 ---
 
-## System Variables (6)
+## System Variables (7)
 
 | Variable | Description | Example |
 |----------|-------------|---------|
+| DPVDR | DNS Provider (inherits from vnode) | homelab \| goldcoast \| cloudflare |
 | IP4_0 | Primary IPv4 address | 192.168.100.10 |
-| OSMIR | OS package mirror | http://mirror.example.org |
+| OSMIR | OS package mirror | deb.debian.org |
 | OSREL | OS release | trixie \| bookworm |
 | OSTYP | OS type | debian \| alpine |
 | TAREA | Timezone area | Australia |
 | TCITY | Timezone city | Brisbane |
+
+**Note on DPVDR:** Inherits from `fleet_vnodes.dns_provider_id` unless explicitly overridden at vhost level. Used by `addvhost`/`delvhost` commands for automatic DNS record management (A + PTR for FCrDNS). Resolution hierarchy: command-line flag → vhost env var → vnode.dns_provider_id → 'homelab' default.
 
 ---
 
@@ -143,31 +146,53 @@ All password variables (`APASS`, `DPASS`, `UPASS`, `EPASS`, `WPASS`) are auto-ge
 
 **NetServa 1.0 → 3.0 Changes:**
 - Removed: `LROOT` (no longer needed in 3.0 architecture)
-- Total variables: 54 → 53
+- Added: `VNODE` (server identifier for remote execution)
+- Added: `DPVDR` (DNS provider for automated DNS management)
+- Total variables: 54 → 55
 
 **Backward Compatibility:**
 - NetServa 3.0 maintains naming compatibility with 1.0
-- Existing 1.0 configurations can be migrated directly (minus LROOT)
+- Existing 1.0 configurations can be migrated directly (minus LROOT, plus VNODE and DPVDR)
 
 ---
 
 ## Storage Format
 
-Variables are stored as JSON in the `fleet_vhosts.environment_vars` database column:
+**NetServa 3.0 uses a dedicated `vconfs` table for normalized storage:**
 
-```json
-{
-  "VHOST": "example.com",
-  "HNAME": "www.example.com",
-  "HDOMN": "example.com",
-  "ADMIN": "admin@example.com",
-  "APASS": "[auto-generated]",
-  "DNAME": "example_db",
-  "DUSER": "example_user",
-  "DPASS": "[auto-generated]",
-  ...
-}
+Variables are stored in the `vconfs` table with the following schema:
+
+```sql
+CREATE TABLE vconfs (
+  id INTEGER PRIMARY KEY,
+  fleet_vhost_id INTEGER NOT NULL,
+  name VARCHAR NOT NULL,           -- Variable name (e.g., 'VHOST', 'WPATH')
+  value TEXT NOT NULL,              -- Variable value
+  category VARCHAR,                 -- Category (e.g., 'paths', 'passwords', 'admin')
+  is_sensitive BOOLEAN DEFAULT 0,   -- Mark sensitive data (passwords)
+  created_at DATETIME,
+  updated_at DATETIME,
+  FOREIGN KEY (fleet_vhost_id) REFERENCES fleet_vhosts(id) ON DELETE CASCADE,
+  UNIQUE (fleet_vhost_id, name)
+);
 ```
+
+**Example rows:**
+
+| fleet_vhost_id | name | value | category | is_sensitive |
+|----------------|------|-------|----------|--------------|
+| 1 | VHOST | example.com | domain | 0 |
+| 1 | WPATH | /srv/example.com/web | paths | 0 |
+| 1 | DPASS | [auto-generated] | passwords | 1 |
+| 1 | DPVDR | homelab | system | 0 |
+
+**Why a dedicated table?**
+- Normalized storage (one variable per row)
+- Easy updates without JSON parsing
+- Indexed lookups by name
+- Category grouping for organization
+- Sensitive data flagging for security
+- Automatic cascade deletion when vhost is removed
 
 ---
 
@@ -175,7 +200,7 @@ Variables are stored as JSON in the `fleet_vhosts.environment_vars` database col
 
 ### Database-Centric Storage (NetServa 3.0)
 
-All 53 variables are stored in `~/.ns/database/database.sqlite` in the `fleet_vhosts.environment_vars` JSON column.
+All 55 variables are stored in `~/.ns/database/database.sqlite` in the dedicated `vconfs` table (one row per variable).
 
 ### Command Reference
 
@@ -189,13 +214,13 @@ shvconf markc.goldcoast.org json
 # Show as formatted table
 shvconf markc.goldcoast.org table
 
-# Initialize 53 variables for new vhost
+# Initialize 55 variables for new vhost
 addvconf example.com
 addvconf example.com admin@example.com ns2
 
 # Change a single variable
 chvconf example.com V_PHP 8.3
-chvconf example.com ADMIN new@example.com
+chvconf example.com DPVDR goldcoast
 
 # Delete configuration (with confirmation)
 delvconf example.com
@@ -207,11 +232,13 @@ delvconf example.com --force
 ### Source Variables into Shell
 
 ```bash
-# Export all 53 variables to current shell
+# Export all 55 variables to current shell
 eval "$(shvconf example.com)"
 
 # Now all variables are available
 echo $VHOST
+echo $VNODE
+echo $DPVDR
 echo $DPASS
 echo $WPATH
 ```
@@ -241,9 +268,10 @@ echo $WPATH
 - `delvconf` - Delete VHost configuration
 
 **Database Access:**
-- Uses `ns_db()` function from `_nsrc` (wraps `sqlite3`)
-- Direct SQL queries to `fleet_vhosts` table
-- JSON manipulation via `jq`
+- Laravel Eloquent models for type-safe access
+- Normalized storage in `vconfs` table (one variable per row)
+- Access via `FleetVHost::getAllEnvVars()` method
+- Direct variable updates via `FleetVHost::setEnvVar()` method
 
 **UID Assignment:**
 - Auto-increments from 1001 onwards

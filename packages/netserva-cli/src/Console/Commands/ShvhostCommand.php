@@ -20,7 +20,7 @@ use Symfony\Component\Console\Helper\Table;
  */
 class ShvhostCommand extends BaseNetServaCommand
 {
-    protected $signature = 'shvhost {vnode? : SSH host/VNode identifier (optional)} {vhost? : Domain name to show (optional)} {--list : List all vhosts on server} {--config : Show configuration details}';
+    protected $signature = 'shvhost {vnode? : SSH host/VNode identifier (optional)} {vhost? : Domain name to show (optional)} {--list : List all vhosts on server} {--config : Show configuration details} {--all : Show all environment variables (like shvconf)}';
 
     protected $description = 'Show virtual host information (NetServa CRUD pattern)';
 
@@ -131,7 +131,14 @@ class ShvhostCommand extends BaseNetServaCommand
             $this->line('   Name: <fg=yellow>'.($vhost->getEnvVar('DNAME') ?? 'N/A').'</>');
             $this->line('   User: <fg=yellow>'.($vhost->getEnvVar('DUSER') ?? 'N/A').'</>');
             $this->line('   Type: <fg=yellow>'.($vhost->getEnvVar('DTYPE') ?? 'N/A').'</>');
-            $this->line('   Host: <fg=yellow>'.($vhost->getEnvVar('DHOST') ?? 'N/A').':'.($vhost->getEnvVar('DPORT') ?? 'N/A').'</>');
+
+            // Show DPATH for SQLite, DHOST:DPORT for MySQL/MariaDB/PostgreSQL
+            $dbType = strtolower($vhost->getEnvVar('DTYPE') ?? '');
+            if ($dbType === 'sqlite') {
+                $this->line('   Path: <fg=yellow>'.($vhost->getEnvVar('DPATH') ?? 'N/A').'</>');
+            } else {
+                $this->line('   Host: <fg=yellow>'.($vhost->getEnvVar('DHOST') ?? 'N/A').':'.($vhost->getEnvVar('DPORT') ?? 'N/A').'</>');
+            }
             $this->line('');
 
             // Services
@@ -157,6 +164,23 @@ class ShvhostCommand extends BaseNetServaCommand
                 }
 
                 $table->render();
+            }
+
+            // Show all environment variables in shell format (like shvconf) if --all is used
+            if ($this->option('all') && $vhost->environment_vars) {
+                $this->line('<fg=blue>⚙️  All Environment Variables (shvconf format):</>');
+                $this->line('');
+
+                // Sort variables alphabetically for consistency
+                $vars = $vhost->environment_vars;
+                ksort($vars);
+
+                foreach ($vars as $key => $value) {
+                    // Output in shell variable format: KEY='value'
+                    // Escape single quotes in values by replacing ' with '\''
+                    $escapedValue = str_replace("'", "'\\''", $value);
+                    $this->line("{$key}='{$escapedValue}'");
+                }
             }
 
             return 0;

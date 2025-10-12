@@ -68,7 +68,7 @@ class VhostConfigurationFactory extends Factory
             'OSMIR' => 'http://dl-cdn.alpinelinux.org',
             'OSREL' => $this->faker->randomElement(['edge', '3.19', '3.18']),
             'OSTYP' => $this->faker->randomElement(['alpine', 'debian', 'ubuntu']),
-            'SPATH' => '/etc/ssl',
+            'C_SSL' => '/etc/ssl',
             'SQCMD' => 'sqlite3 /var/lib/sqlite/sysadm/sysadm.db',
             'SQDNS' => 'sqlite3 /var/lib/sqlite/sysadm/powerdns.db',
             'TAREA' => $this->faker->randomElement(['Australia', 'America', 'Europe', 'Asia']),

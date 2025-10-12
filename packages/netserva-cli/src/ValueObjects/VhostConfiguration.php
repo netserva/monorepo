@@ -71,7 +71,7 @@ readonly class VhostConfiguration
             'C_DNS' => $this->paths->dnsPath,
             'C_FPM' => $this->paths->phpFpmPath,
             'C_SQL' => $this->paths->mysqlPath,
-            'SPATH' => $this->paths->sslPath,
+            'C_SSL' => $this->paths->sslPath,
             'C_WEB' => $this->paths->nginxPath,
             'DBMYS' => '/var/lib/mysql',
             'DBSQL' => '/var/lib/sqlite',

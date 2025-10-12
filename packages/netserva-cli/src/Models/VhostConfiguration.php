@@ -83,7 +83,7 @@ class VhostConfiguration extends Model
             'OSMIR' => $this->getVariable('OSMIR', 'http://dl-cdn.alpinelinux.org'),
             'OSREL' => $this->getVariable('OSREL', 'edge'),
             'OSTYP' => $this->getVariable('OSTYP', 'alpine'),
-            'SPATH' => $this->getVariable('SPATH', '/etc/ssl'),
+            'C_SSL' => $this->getVariable('C_SSL', '/etc/ssl'),
             'SQCMD' => $this->getVariable('SQCMD', "sqlite3 {$this->getVariable('DPATH', '/var/lib/sqlite/sysadm')}/{$this->getVariable('DNAME', 'sysadm')}.db"),
             'SQDNS' => $this->getVariable('SQDNS', "sqlite3 {$this->getVariable('DPATH', '/var/lib/sqlite/sysadm')}/powerdns.db"),
             'TAREA' => $this->getVariable('TAREA', 'Australia'),

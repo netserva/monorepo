@@ -34,7 +34,7 @@ class ImportVHostDataCommand extends BaseNetServaCommand
 
     protected array $expectedVariables = [
         'ADMIN', 'AHOST', 'AMAIL', 'ANAME', 'APASS', 'A_GID', 'A_UID',
-        'BPATH', 'CIMAP', 'CSMTP', 'C_DNS', 'C_FPM', 'C_SQL', 'SPATH', 'C_WEB',
+        'BPATH', 'CIMAP', 'CSMTP', 'C_DNS', 'C_FPM', 'C_SQL', 'C_SSL', 'C_WEB',
         'DBMYS', 'DBSQL', 'DHOST', 'DNAME', 'DPASS', 'DPATH', 'DPORT', 'DTYPE', 'DUSER',
         'EPASS', 'EXMYS', 'EXSQL', 'HDOMN', 'HNAME', 'IP4_0',
         'MHOST', 'MPATH', 'OSMIR', 'OSREL', 'OSTYP',
