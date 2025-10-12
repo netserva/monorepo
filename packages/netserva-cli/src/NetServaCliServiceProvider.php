@@ -80,6 +80,9 @@ class NetServaCliServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Load migrations
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
         // Publish configuration
         $this->publishes([
             __DIR__.'/../config/netserva-cli.php' => config_path('netserva-cli.php'),
