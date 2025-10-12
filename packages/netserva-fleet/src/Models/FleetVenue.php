@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use NetServa\Dns\Models\DnsProvider;
+use NetServa\Fleet\Database\Factories\FleetVenueFactory;
 
 /**
  * Fleet Venue Model
@@ -17,6 +18,14 @@ use NetServa\Dns\Models\DnsProvider;
 class FleetVenue extends Model
 {
     use HasFactory;
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): FleetVenueFactory
+    {
+        return FleetVenueFactory::new();
+    }
 
     protected $table = 'fleet_venues';
 

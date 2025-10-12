@@ -2,8 +2,10 @@
 
 namespace NetServa\Cli\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use NetServa\Cli\Database\Factories\VConfFactory;
 use NetServa\Fleet\Models\FleetVHost;
 
 /**
@@ -21,6 +23,16 @@ use NetServa\Fleet\Models\FleetVHost;
  */
 class VConf extends Model
 {
+    use HasFactory;
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): VConfFactory
+    {
+        return VConfFactory::new();
+    }
+
     protected $table = 'vconfs';
 
     protected $fillable = [

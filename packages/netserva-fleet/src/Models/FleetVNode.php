@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use NetServa\Core\Models\SshHost;
 use NetServa\Dns\Models\DnsProvider;
+use NetServa\Fleet\Database\Factories\FleetVNodeFactory;
 
 /**
  * Fleet VNode Model
@@ -19,6 +20,14 @@ use NetServa\Dns\Models\DnsProvider;
 class FleetVNode extends Model
 {
     use HasFactory, SoftDeletes;
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): FleetVNodeFactory
+    {
+        return FleetVNodeFactory::new();
+    }
 
     protected $table = 'fleet_vnodes';
 
