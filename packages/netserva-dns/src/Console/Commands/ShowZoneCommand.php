@@ -22,7 +22,7 @@ class ShowZoneCommand extends Command
     protected $signature = 'shzone
         {zone? : Zone ID or name (shows all if omitted)}
         {--provider= : Filter by provider ID or name}
-        {--type= : Filter by zone kind (Native, Master, Secondary)}
+        {--type= : Filter by zone kind (Native, Primary, Secondary)}
         {--active : Show only active zones}
         {--inactive : Show only inactive zones}
         {--dnssec : Show only DNSSEC-enabled zones}
@@ -98,7 +98,7 @@ class ShowZoneCommand extends Command
         $this->line("ID: <fg=cyan>{$zone->id}</>");
         $this->line("Provider: <fg=cyan>{$provider->name}</> (ID: {$provider->id})");
         $this->line("Kind: <fg=cyan>{$zone->kind}</>");
-        $this->line("TTL: <fg=cyan>{$zone->ttl}s</>");
+        $this->line("TTL: <fg=cyan>{$zone->ttl}</>");
         $this->line("Serial: <fg=cyan>{$zone->serial}</>");
 
         $statusColor = $zone->active ? 'green' : 'red';
@@ -106,11 +106,11 @@ class ShowZoneCommand extends Command
         $this->line("Status: <fg={$statusColor}>{$statusText}</>");
 
         if ($zone->masters) {
-            $this->line("Masters: <fg=cyan>" . implode(', ', $zone->masters) . "</>");
+            $this->line('Masters: <fg=cyan>'.implode(', ', $zone->masters).'</>');
         }
 
         if ($zone->nameservers) {
-            $this->line("Nameservers:");
+            $this->line('Nameservers:');
             foreach ($zone->nameservers as $ns) {
                 $this->line("  - <fg=cyan>{$ns}</>");
             }
@@ -123,7 +123,7 @@ class ShowZoneCommand extends Command
         // Records count
         if ($options['with_records']) {
             $this->newLine();
-            $this->line("📝 Records:");
+            $this->line('📝 Records:');
             $this->line("   Total: <fg=cyan>{$result['records_count']}</>");
             $this->line("   Active: <fg=cyan>{$result['active_records_count']}</>");
             $disabledCount = $result['records_count'] - $result['active_records_count'];
@@ -144,7 +144,7 @@ class ShowZoneCommand extends Command
                 $dnssec = $result['dnssec_status'];
 
                 if ($dnssec['success'] && isset($dnssec['data']['cryptokeys'])) {
-                    $this->line("   Keys:");
+                    $this->line('   Keys:');
                     foreach ($dnssec['data']['cryptokeys'] as $key) {
                         $activeStatus = $key['active'] ? 'Active' : 'Inactive';
                         $this->line("     - ID {$key['id']}: {$key['keytype']} ({$activeStatus})");
@@ -152,7 +152,7 @@ class ShowZoneCommand extends Command
                 }
 
                 if (isset($dnssec['data']['ds_records'])) {
-                    $this->line("   DS Records:");
+                    $this->line('   DS Records:');
                     foreach ($dnssec['data']['ds_records'] as $ds) {
                         $this->line("     {$ds}");
                     }
@@ -163,11 +163,11 @@ class ShowZoneCommand extends Command
         // Metadata
         if ($options['with_metadata'] && isset($result['metadata'])) {
             $this->newLine();
-            $this->line("ℹ️ Metadata:");
+            $this->line('ℹ️ Metadata:');
             $metadata = $result['metadata'];
             if ($metadata['success'] && isset($metadata['data'])) {
                 foreach ($metadata['data'] as $key => $values) {
-                    $this->line("   {$key}: " . implode(', ', $values));
+                    $this->line("   {$key}: ".implode(', ', $values));
                 }
             }
         }
@@ -177,7 +177,7 @@ class ShowZoneCommand extends Command
             $this->newLine();
             $sync = $result['sync_result'];
             if ($sync['success']) {
-                $this->info("✅ Synced from remote");
+                $this->info('✅ Synced from remote');
                 $this->line("   Records synced: <fg=cyan>{$sync['records_synced']}</>");
             } else {
                 $this->warn("⚠️ Sync failed: {$sync['message']}");
@@ -201,7 +201,7 @@ class ShowZoneCommand extends Command
         // Timestamps
         if ($this->option('all')) {
             $this->newLine();
-            $this->line("🕐 Timestamps:");
+            $this->line('🕐 Timestamps:');
             $this->line("   Created: <fg=gray>{$zone->created_at}</>");
             $this->line("   Updated: <fg=gray>{$zone->updated_at}</>");
 
@@ -216,7 +216,7 @@ class ShowZoneCommand extends Command
 
         // Next steps
         $this->newLine();
-        $this->line("💡 Available actions:");
+        $this->line('💡 Available actions:');
         $this->line("   - View records: shrec {$zoneName}");
         $this->line("   - Add record: addrec A www {$zoneName} 192.168.1.100");
         $this->line("   - Update zone: chzone {$zoneName} --ttl=7200");

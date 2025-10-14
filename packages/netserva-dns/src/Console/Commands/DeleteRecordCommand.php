@@ -14,14 +14,15 @@ use function Laravel\Prompts\confirm;
  * Follows NetServa CRUD pattern: delrec (not "dns:record:delete")
  *
  * Usage: delrec <record> [options]
- * Example: delrec 123
- * Example: delrec 456 --delete-ptr     # Also delete related PTR
- * Example: delrec 789 --force          # No confirmation
+ * Example: delrec 123                        # Delete by ID
+ * Example: delrec test.goldcoast.org         # Delete by domain name
+ * Example: delrec 456 --delete-ptr           # Also delete related PTR
+ * Example: delrec 789 --force                # No confirmation
  */
 class DeleteRecordCommand extends Command
 {
     protected $signature = 'delrec
-        {record : Record ID}
+        {record : Record ID or domain name}
         {--delete-ptr : Also delete related PTR record (for A/AAAA)}
         {--force : Force deletion without confirmation}
         {--skip-remote : Skip remote deletion (local only)}
@@ -45,6 +46,12 @@ class DeleteRecordCommand extends Command
 
         if (! $showResult['success']) {
             $this->error("❌ {$showResult['message']}");
+
+            // Show hint if multiple records found
+            if (isset($showResult['hint'])) {
+                $this->newLine();
+                $this->line($showResult['hint']);
+            }
 
             return self::FAILURE;
         }
@@ -80,8 +87,8 @@ class DeleteRecordCommand extends Command
             $this->info('🔍 Dry run - no changes will be made');
             $this->line('');
             $this->line('Would delete:');
-            $this->line('  Record: ' . $record->type . ' ' . $record->name);
-            $this->line('  PTR: ' . ($this->option('delete-ptr') && $hasPTR ? 'Yes' : 'No'));
+            $this->line('  Record: '.$record->type.' '.$record->name);
+            $this->line('  PTR: '.($this->option('delete-ptr') && $hasPTR ? 'Yes' : 'No'));
 
             return self::SUCCESS;
         }
@@ -132,7 +139,7 @@ class DeleteRecordCommand extends Command
         }
 
         $this->newLine();
-        $this->info("✅ DNS Record deleted successfully");
+        $this->info('✅ DNS Record deleted successfully');
         $this->line("   {$result['message']}");
 
         if (isset($result['ptr_deleted']) && $result['ptr_deleted']) {

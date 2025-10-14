@@ -38,7 +38,7 @@ class PowerDnsService
             if ($result['success']) {
                 $servers = $result['data'];
                 $serverInfo = ! empty($servers)
-                    ? ($servers[0]['daemon_type'] ?? 'PowerDNS') . ' ' . ($servers[0]['version'] ?? 'Unknown')
+                    ? ($servers[0]['daemon_type'] ?? 'PowerDNS').' '.($servers[0]['version'] ?? 'Unknown')
                     : 'PowerDNS Server';
 
                 return [
@@ -51,12 +51,12 @@ class PowerDnsService
 
             return [
                 'success' => false,
-                'message' => 'Failed to connect: ' . ($result['error'] ?? 'Unknown error'),
+                'message' => 'Failed to connect: '.($result['error'] ?? 'Unknown error'),
             ];
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Connection test failed: ' . $e->getMessage(),
+                'message' => 'Connection test failed: '.$e->getMessage(),
             ];
         }
     }
@@ -774,7 +774,7 @@ class PowerDnsService
         $rrsets = [[
             'name' => $recordName,
             'type' => strtoupper($recordData['type']),
-            'ttl' => $recordData['ttl'] ?? 3600,
+            'ttl' => $recordData['ttl'] ?? 300,
             'changetype' => 'REPLACE',
             'records' => [
                 ['content' => $recordData['content'], 'disabled' => false],
@@ -904,7 +904,7 @@ class PowerDnsService
             $records[] = [
                 'name' => $rrset['name'],
                 'type' => $rrset['type'],
-                'ttl' => $rrset['ttl'] ?? 3600,
+                'ttl' => $rrset['ttl'] ?? 300,
                 'records' => $rrset['records'] ?? [],
             ];
         }
@@ -930,7 +930,7 @@ class PowerDnsService
         DnsProvider $provider,
         string $fqdn,
         string $ip,
-        int $ttl = 3600
+        int $ttl = 300
     ): array {
         // 1. Extract zone from FQDN (e.g., markc.goldcoast.org -> goldcoast.org)
         $parts = explode('.', $fqdn);

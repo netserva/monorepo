@@ -45,7 +45,7 @@ class Bind9Client implements DnsProviderInterface
         return [
             'id' => $zoneId,
             'serial' => time(),
-            'ttl' => $data['ttl'] ?? 3600,
+            'ttl' => $data['ttl'] ?? 300,
             'dnssec' => $data['auto_dnssec'] ?? false,
             'description' => $data['description'] ?? '',
             'status' => 'active',

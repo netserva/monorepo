@@ -16,7 +16,9 @@ use NetServa\Cli\Console\Commands\ClearContextCommand;
 use NetServa\Cli\Console\Commands\DelvconfCommand;
 use NetServa\Cli\Console\Commands\DelvhostCommand;
 use NetServa\Cli\Console\Commands\MigratePlatformProfilesCommand;
+use NetServa\Cli\Console\Commands\MigrateVhostCommand;
 use NetServa\Cli\Console\Commands\MigrateVhostConfigsCommand;
+use NetServa\Cli\Console\Commands\RollbackVhostCommand;
 use NetServa\Cli\Console\Commands\ShhostCommand;
 use NetServa\Cli\Console\Commands\ShpwCommand;
 use NetServa\Cli\Console\Commands\ShvconfCommand;
@@ -25,9 +27,7 @@ use NetServa\Cli\Console\Commands\UserPasswordCommand;
 use NetServa\Cli\Console\Commands\UserPasswordShowCommand;
 use NetServa\Cli\Console\Commands\UserShowCommand;
 use NetServa\Cli\Console\Commands\UseServerCommand;
-use NetServa\Cli\Console\Commands\ValidateVhostCommand;
-use NetServa\Cli\Console\Commands\MigrateVhostCommand;
-use NetServa\Cli\Console\Commands\RollbackVhostCommand;
+use NetServa\Cli\Console\Commands\ValidateCommand;
 use NetServa\Cli\Services\BinaryLaneService;
 use NetServa\Cli\Services\LazyConfigurationCache;
 use NetServa\Cli\Services\MigrationExecutionService;
@@ -38,6 +38,7 @@ use NetServa\Cli\Services\SshConfigService;
 use NetServa\Cli\Services\UserManagementService;
 use NetServa\Cli\Services\VhostConfigService;
 use NetServa\Cli\Services\VhostManagementService;
+use NetServa\Cli\Services\VhostRepairService;
 use NetServa\Cli\Services\VhostValidationService;
 use NetServa\Cli\Services\VmailManagementService;
 
@@ -67,6 +68,7 @@ class NetServaCliServiceProvider extends ServiceProvider
         $this->app->singleton(UserManagementService::class);
         $this->app->singleton(VhostManagementService::class);
         $this->app->singleton(VhostValidationService::class);
+        $this->app->singleton(VhostRepairService::class);
         $this->app->singleton(MigrationExecutionService::class);
         $this->app->singleton(VmailManagementService::class);
         $this->app->singleton(NetServaConfigurationService::class);
@@ -124,7 +126,7 @@ class NetServaCliServiceProvider extends ServiceProvider
                 ChvconfCommand::class,      // Change vhost config variable
                 DelvconfCommand::class,     // Delete vhost config variables
                 // VHost Validation & Migration (Phase 3-4)
-                ValidateVhostCommand::class, // Validate vhost compliance
+                ValidateCommand::class,      // Validate vhost compliance (NetServa CRUD pattern)
                 MigrateVhostCommand::class,  // Migrate vhost to NS 3.0
                 RollbackVhostCommand::class, // Rollback migrated vhost
             ]);

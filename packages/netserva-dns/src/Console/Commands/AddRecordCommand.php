@@ -153,7 +153,7 @@ class AddRecordCommand extends Command
         $this->line("   Content: <fg=cyan>{$content}</>");
 
         if ($options['ttl']) {
-            $this->line("   TTL: <fg=cyan>{$options['ttl']}s</>");
+            $this->line("   TTL: <fg=cyan>{$options['ttl']}</>");
         }
 
         if (in_array($type, ['MX', 'SRV'])) {
@@ -164,7 +164,7 @@ class AddRecordCommand extends Command
             $this->line('   Auto-PTR: <fg=green>Yes</> (FCrDNS enabled)');
         }
 
-        $this->line('   Status: <fg=' . ($options['disabled'] ? 'red>Disabled' : 'green>Active') . '</>');
+        $this->line('   Status: <fg='.($options['disabled'] ? 'red>Disabled' : 'green>Active').'</>');
 
         // Dry run check
         if ($this->option('dry-run')) {
@@ -172,11 +172,11 @@ class AddRecordCommand extends Command
             $this->info('✅ Dry run complete - no changes made');
             $this->line('');
             $this->line('Would create record with:');
-            $this->line('  Type: ' . $type);
-            $this->line('  Name: ' . $name);
-            $this->line('  Zone: ' . $zone);
-            $this->line('  Content: ' . $content);
-            $this->line('  Options: ' . json_encode($options, JSON_PRETTY_PRINT));
+            $this->line('  Type: '.$type);
+            $this->line('  Name: '.$name);
+            $this->line('  Zone: '.$zone);
+            $this->line('  Content: '.$content);
+            $this->line('  Options: '.json_encode($options, JSON_PRETTY_PRINT));
 
             return self::SUCCESS;
         }
@@ -193,7 +193,7 @@ class AddRecordCommand extends Command
         );
 
         if (! $result['success']) {
-            $this->error("❌ Failed to create DNS record");
+            $this->error('❌ Failed to create DNS record');
             $this->line("   Error: {$result['message']}");
 
             if (isset($result['error'])) {
@@ -206,12 +206,12 @@ class AddRecordCommand extends Command
         $record = $result['record'];
         $zoneInfo = $result['zone'];
 
-        $this->info("✅ DNS Record created successfully");
+        $this->info('✅ DNS Record created successfully');
         $this->line("   ID: <fg=yellow>{$record->id}</>");
         $this->line("   Type: <fg=cyan>{$record->type}</>");
         $this->line("   Name: <fg=cyan>{$record->name}</>");
         $this->line("   Content: <fg=cyan>{$record->content}</>");
-        $this->line("   TTL: <fg=cyan>{$record->ttl}s</>");
+        $this->line("   TTL: <fg=cyan>{$record->ttl}</>");
         $this->line("   Zone: <fg=cyan>{$zoneInfo->name}</>");
 
         // Show PTR record if created

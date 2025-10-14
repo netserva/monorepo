@@ -136,7 +136,10 @@ class DelvhostCommand extends BaseNetServaCommand
 
         // Find existing A record
         $aRecord = \NetServa\Dns\Models\DnsRecord::whereHas('zone', function ($q) use ($domain, $provider) {
-            $q->where('name', $domain)->where('provider', $provider);
+            $q->where('name', $domain)
+                ->whereHas('dnsProvider', function ($pq) use ($provider) {
+                    $pq->where('name', $provider);
+                });
         })
             ->where('type', 'A')
             ->where('name', $subdomain === '@' ? $domain : $subdomain.'.'.$domain)

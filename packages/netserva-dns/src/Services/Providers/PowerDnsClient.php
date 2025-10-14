@@ -86,7 +86,7 @@ class PowerDnsClient implements DnsProviderInterface
         try {
             $zoneData = [
                 'name' => $data['name'],
-                'kind' => $data['kind'] ?? 'Master',
+                'kind' => $data['kind'] ?? 'Primary',
                 'nameservers' => $data['nameservers'] ?? [],
             ];
 
@@ -171,7 +171,7 @@ class PowerDnsClient implements DnsProviderInterface
                             'name' => $rrset['name'],
                             'type' => $rrset['type'],
                             'content' => $record['content'],
-                            'ttl' => $rrset['ttl'] ?? 3600,
+                            'ttl' => $rrset['ttl'] ?? 300,
                             'priority' => $this->extractPriority($record['content'], $rrset['type']),
                             'disabled' => $record['disabled'] ?? false,
                             'auth' => true,
@@ -201,7 +201,7 @@ class PowerDnsClient implements DnsProviderInterface
                 'records' => [
                     ['content' => $data['content'], 'disabled' => $data['disabled'] ?? false],
                 ],
-                'ttl' => $data['ttl'] ?? 3600,
+                'ttl' => $data['ttl'] ?? 300,
             ];
 
             $response = Http::withHeaders([

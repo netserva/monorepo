@@ -46,7 +46,7 @@ class DnsRecord extends Model
     ];
 
     protected $attributes = [
-        'ttl' => 3600,
+        'ttl' => 300,
         'priority' => 0,
         'disabled' => false,
         'auth' => true,

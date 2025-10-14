@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSIS - NetServa Infrastructure Stack</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="description" content="Professional server infrastructure management across multiple platforms, providers, and technologies. Simplify complex multi-server environments with NetServa.">
+    
+    <!-- Web Manifest -->
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#1e3c72">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://netserva.org/">
+    <meta property="og:title" content="NetServa - Infrastructure Management System">
+    <meta property="og:description" content="Professional server infrastructure management across multiple platforms, providers, and technologies. Simplify complex multi-server environments with NetServa.">
+    <meta property="og:image" content="https://netserva.org/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="NetServa">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://netserva.org/">
+    <meta name="twitter:title" content="NetServa - Infrastructure Management System">
+    <meta name="twitter:description" content="Professional server infrastructure management across multiple platforms, providers, and technologies.">
+    <meta name="twitter:image" content="https://netserva.org/og-image.svg">
+    <meta name="twitter:creator" content="@netserva">
+    <meta name="twitter:site" content="@netserva">
+    
+    <!-- Additional SEO -->
+    <meta name="author" content="NetServa Team">
+    <meta name="keywords" content="server management, infrastructure, containers, LXC, Docker, VPS, hosting, DevOps, system administration, NetServa, NSIS">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://netserva.org/">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6; color: #2c3e50; background: #ffffff;
+        }
+        
+        /* Hero Section - Full Width */
+        .hero {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white; padding: 80px 0; text-align: center; position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.03\"%3E%3Ccircle cx=\"30\" cy=\"30\" r=\"2\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+        }
+        .hero-content { position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .hero .logo { font-size: 5rem; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .hero h1 { font-size: 3.5rem; font-weight: 700; margin-bottom: 20px; letter-spacing: -1px; }
+        .hero .tagline { font-size: 1.5rem; margin-bottom: 30px; opacity: 0.95; font-weight: 300; }
+        .hero .description { font-size: 1.2rem; max-width: 800px; margin: 0 auto 40px; opacity: 0.9; }
+        .cta-buttons { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
+        .btn { 
+            display: inline-block; padding: 15px 30px; border-radius: 8px; text-decoration: none;
+            font-weight: 600; font-size: 1.1rem; transition: all 0.3s ease; border: 2px solid transparent;
+        }
+        .btn-primary { background: #fff; color: #1e3c72; }
+        .btn-primary:hover { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-secondary { background: transparent; color: #fff; border-color: #fff; }
+        .btn-secondary:hover { background: #fff; color: #1e3c72; }
+        
+        /* Main Content Container */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Section Styling */
+        .section { padding: 80px 0; }
+        .section h2 { font-size: 2.5rem; text-align: center; margin-bottom: 20px; color: #1e3c72; }
+        .section .subtitle { font-size: 1.2rem; text-align: center; margin-bottom: 60px; color: #5a6c7d; max-width: 800px; margin-left: auto; margin-right: auto; }
+        
+        /* Stats Section */
+        .stats { background: #f8f9fa; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; text-align: center; }
+        .stat-item h3 { font-size: 3rem; color: #1e3c72; margin-bottom: 10px; }
+        .stat-item p { color: #5a6c7d; font-weight: 500; }
+        
+        /* Features Grid */
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; }
+        .feature-card { 
+            background: #fff; padding: 40px 30px; border-radius: 12px; text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+        .feature-card:hover { 
+            transform: translateY(-5px); box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            border-color: #1e3c72;
+        }
+        .feature-card .icon { font-size: 3rem; margin-bottom: 20px; }
+        .feature-card h3 { font-size: 1.4rem; margin-bottom: 15px; color: #1e3c72; }
+        .feature-card p { color: #5a6c7d; line-height: 1.6; }
+        
+        /* Architecture Section */
+        .architecture { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .architecture h2, .architecture .subtitle { color: white; }
+        .layers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+        .layer-card { 
+            background: rgba(255,255,255,0.1); padding: 30px; border-radius: 12px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        .layer-card:hover { background: rgba(255,255,255,0.15); transform: translateY(-3px); }
+        .layer-card .icon { font-size: 2.5rem; margin-bottom: 15px; }
+        .layer-card h3 { margin-bottom: 15px; }
+        
+        /* Benefits Section */
+        .benefits { background: #f8f9fa; }
+        .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+        .benefit-item { display: flex; align-items: flex-start; gap: 20px; }
+        .benefit-item .icon { font-size: 2.5rem; flex-shrink: 0; }
+        .benefit-content h3 { margin-bottom: 10px; color: #1e3c72; }
+        .benefit-content p { color: #5a6c7d; }
+        
+        /* Enterprise Section */
+        .enterprise { background: #1a1a1a; color: white; }
+        .enterprise h2, .enterprise .subtitle { color: white; }
+        .enterprise-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+        .enterprise-card { 
+            background: #2a2a2a; padding: 30px; border-radius: 12px;
+            border: 1px solid #404040; transition: all 0.3s ease;
+        }
+        .enterprise-card:hover { background: #333; border-color: #1e3c72; }
+        .enterprise-card .icon { font-size: 2.5rem; margin-bottom: 15px; color: #4a90e2; }
+        .enterprise-card h3 { margin-bottom: 15px; color: #4a90e2; }
+        .enterprise-card p { color: #ccc; }
+        
+        /* Getting Started */
+        .getting-started { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; }
+        .getting-started h2, .getting-started .subtitle { color: white; }
+        .code-block { 
+            background: #2c3e50; color: #ecf0f1; padding: 25px; border-radius: 8px;
+            font-family: "Monaco", "Consolas", monospace; font-size: 0.95rem;
+            margin: 30px 0; overflow-x: auto; border-left: 4px solid #4a90e2;
+        }
+        .code-block .comment { color: #7f8c8d; }
+        
+        /* Footer */
+        footer { 
+            background: #2c3e50; color: white; padding: 60px 0 30px;
+        }
+        .footer-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; margin-bottom: 40px; }
+        .footer-section h4 { margin-bottom: 20px; color: #4a90e2; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 10px; }
+        .footer-section ul li a { color: #bdc3c7; text-decoration: none; transition: color 0.3s; }
+        .footer-section ul li a:hover { color: #4a90e2; }
+        .footer-bottom { 
+            border-top: 1px solid #34495e; padding-top: 30px; text-align: center;
+            color: #7f8c8d;
+        }
+        .footer-bottom a { color: #4a90e2; text-decoration: none; }
+        .footer-bottom a:hover { text-decoration: underline; }
+        
+        /* Mail Info Box */
+        .mail-info {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white; padding: 30px; border-radius: 12px; margin: 40px 0;
+            text-align: center;
+        }
+        .mail-info h3 { margin-bottom: 15px; }
+        .mail-info code { 
+            background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .hero .logo { font-size: 3.5rem; }
+            .hero .tagline { font-size: 1.2rem; }
+            .cta-buttons { flex-direction: column; align-items: center; }
+            .features-grid { grid-template-columns: 1fr; }
+            .layers-grid { grid-template-columns: 1fr; }
+            .section { padding: 60px 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="logo">⚙️</div>
+            <h1 class="text-5xl font-bold text-white mb-6 leading-tight">NetServa Infrastructure Stack</h1>
+            <p class="tagline">Featuring: NetServa Central Manager</p>
+            <p class="description">
+                Simplify and unify server infrastructure management across multiple platforms, providers, 
+                and technologies through a comprehensive toolkit with modern interfaces.
+            </p>
+            <div class="cta-buttons">
+                <a href="#getting-started" class="btn btn-primary">🚀 Get Started</a>
+                <a href="https://github.com/markc/ns" class="btn btn-secondary">📚 View Documentation</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="section stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>100+</h3>
+                    <p>🌐 Domains Supported</p>
+                </div>
+                <div class="stat-item">
+                    <h3>4</h3>
+                    <p>🏗️ Infrastructure Layers</p>
+                </div>
+                <div class="stat-item">
+                    <h3>10+</h3>
+                    <p>🔧 Management Tools</p>
+                </div>
+                <div class="stat-item">
+                    <h3>30+</h3>
+                    <p>📊 Years of Development</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section">
+        <div class="container">
+            <h2>🎯 Core Capabilities</h2>
+            <p class="subtitle">
+                Everything you need to manage complex server environments from a single command center
+            </p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon">🔧</div>
+                    <h3>Unified Management</h3>
+                    <p>Single <code>ns</code> command interface for all operations across platforms with cross-platform compatibility.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📧</div>
+                    <h3>Professional Mail Services</h3>
+                    <p>Production-ready email server configurations with advanced security features and anti-spam protection.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🌐</div>
+                    <h3>Web Hosting Platform</h3>
+                    <p>High-performance web hosting with Nginx, PHP-FPM, and automated SSL/TLS certificate management.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🔒</div>
+                    <h3>Security First</h3>
+                    <p>Built-in TLS auditing, secure defaults, integrated security testing, and automated password generation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🏗️</div>
+                    <h3>Modern Architecture</h3>
+                    <p>Container-native design, Infrastructure as Code support with OpenTofu/Terraform automation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📊</div>
+                    <h3>Comprehensive Monitoring</h3>
+                    <p>Real-time monitoring, performance metrics, and automated alerting for all managed services.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🎛️</div>
+                    <h3>Web Interface</h3>
+                    <p>Modern Laravel + Filament web interface for GUI management alongside powerful command-line tools.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📋</div>
+                    <h3>Documentation System</h3>
+                    <p>Hierarchical infrastructure documentation with complete profiles for providers, hosts, servers, and vhosts.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🤖</div>
+                    <h3>AI-Ready Infrastructure</h3>
+                    <p>Structured profiles and documentation designed for LLM integration. Complete infrastructure understanding for AI-assisted DevOps.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section architecture">
+        <div class="container">
+            <h2>🏗️ Infrastructure Stack (NSIS)</h2>
+            <p class="subtitle">
+                Four-tier hierarchical architecture for complete infrastructure management
+            </p>
+            <div class="layers-grid">
+                <div class="layer-card">
+                    <div class="icon">🏢</div>
+                    <h3>Providers</h3>
+                    <p>Cloud providers, hardware platforms, and data centers. Supports BinaryLane, AWS, DigitalOcean, Vultr, and physical hardware.</p>
+                </div>
+                <div class="layer-card">
+                    <div class="icon">🖥️</div>
+                    <h3>Hosts</h3>
+                    <p>Physical servers, VPS instances, and container hosts. Complete hardware and network management capabilities.</p>
+                </div>
+                <div class="layer-card">
+                    <div class="icon">🚀</div>
+                    <h3>Servers</h3>
+                    <p>Virtual machines, LXC containers, and application servers. Full lifecycle management with automated provisioning.</p>
+                </div>
+                <div class="layer-card">
+                    <div class="icon">🌐</div>
+                    <h3>Vhosts</h3>
+                    <p>Virtual hosts, domains, and web applications. Complete domain management with SSL automation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="section benefits">
+        <div class="container">
+            <h2>💪 Why Choose NetServa</h2>
+            <p class="subtitle">
+                Designed by system administrators, for system administrators
+            </p>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="icon">⚡</div>
+                    <div class="benefit-content">
+                        <h3>Proven in Production</h3>
+                        <p>Battle-tested configurations and best practices developed over 30 years of system administration experience.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="icon">🔄</div>
+                    <div class="benefit-content">
+                        <h3>Cross-Platform Compatibility</h3>
+                        <p>Works consistently across Debian, Alpine Linux, Ubuntu, and CachyOS with automatic OS detection and adaptation.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="icon">📈</div>
+                    <div class="benefit-content">
+                        <h3>Scalable Architecture</h3>
+                        <p>From single servers to complex multi-provider environments. Manages 100+ domains efficiently.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="icon">🛡️</div>
+                    <div class="benefit-content">
+                        <h3>Security by Design</h3>
+                        <p>Auto-generated secure passwords, proper file permissions, and integrated vulnerability scanning.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="icon">🔧</div>
+                    <div class="benefit-content">
+                        <h3>No Dependencies</h3>
+                        <p>Uses standard Linux tools available everywhere. No complex runtime requirements or framework dependencies.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="icon">📚</div>
+                    <div class="benefit-content">
+                        <h3>Comprehensive Documentation</h3>
+                        <p>Complete infrastructure profiles, setup standards, and "This is the Way" guidelines for consistency.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Enterprise Section -->
+    <section class="section enterprise">
+        <div class="container">
+            <h2>🏆 Enterprise Ready</h2>
+            <p class="subtitle">
+                Professional features for mission-critical infrastructure
+            </p>
+            <div class="enterprise-grid">
+                <div class="enterprise-card">
+                    <div class="icon">📊</div>
+                    <h3>SLA Compliance</h3>
+                    <p>Production uptime guarantees with comprehensive monitoring and automated alerting systems.</p>
+                </div>
+                <div class="enterprise-card">
+                    <div class="icon">🔐</div>
+                    <h3>Data Sovereignty</h3>
+                    <p>Australian data residency options with GDPR and privacy law compliance capabilities.</p>
+                </div>
+                <div class="enterprise-card">
+                    <div class="icon">🔄</div>
+                    <h3>Disaster Recovery</h3>
+                    <p>4-hour RTO, 24-hour RPO with automated backups and tested recovery procedures.</p>
+                </div>
+                <div class="enterprise-card">
+                    <div class="icon">👥</div>
+                    <h3>Professional Support</h3>
+                    <p>Expert technical support with Australian business hours coverage and consultation services.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started Section -->
+    <section class="section getting-started" id="getting-started">
+        <div class="container">
+            <h2>🚀 Get Started</h2>
+            <p class="subtitle">
+                Deploy NetServa in minutes with our automated installer
+            </p>
+            <div class="code-block">
+<span class="comment"># Review the installer first</span>
+curl -s https://raw.githubusercontent.com/markc/ns/main/bin/setup-ns
+
+<span class="comment"># Then install</span>
+curl -s https://raw.githubusercontent.com/markc/ns/main/bin/setup-ns | bash
+
+<span class="comment"># Essential commands</span>
+ns help          <span class="comment"># Show available commands</span>
+ns status        <span class="comment"># Check system status</span>
+sshm list        <span class="comment"># Show configured SSH hosts</span>
+            </div>
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="https://github.com/markc/ns" class="btn btn-primary">📖 Read Full Documentation</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mail Services Info -->
+    <section class="section">
+        <div class="container">
+            <div class="mail-info">
+                <h3>📧 NetServa Mail Services</h3>
+                <p><strong>Mail Server:</strong> <code>mail.netserva.org</code></p>
+                <p>Configure your email client to connect to our mail server for NetServa organization communications and support.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>🛠️ Products</h4>
+                    <ul>
+                        <li><a href="#features">Infrastructure Management</a></li>
+                        <li><a href="#enterprise">Enterprise Solutions</a></li>
+                        <li><a href="#architecture">NSIS Architecture</a></li>
+                        <li><a href="#getting-started">Installation</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>📚 Documentation</h4>
+                    <ul>
+                        <li><a href="https://github.com/markc/ns">GitHub Repository</a></li>
+                        <li><a href="https://github.com/markc/ns/tree/main/doc">Technical Docs</a></li>
+                        <li><a href="https://github.com/markc/ns/tree/main/man">Command Reference</a></li>
+                        <li><a href="https://github.com/markc/ns/blob/main/doc/STANDARDS.md">Setup Standards</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>🏢 Company</h4>
+                    <ul>
+                        <li><a href="mailto:mc@netserva.org">Contact</a></li>
+                        <li><a href="https://github.com/markc/ns/issues">Support</a></li>
+                        <li><a href="https://github.com/markc/ns/blob/main/LICENSE">MIT License</a></li>
+                        <li><a href="https://github.com/markc">About</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>🌐 Platforms</h4>
+                    <ul>
+                        <li><a href="#architecture">Incus/LXD Containers</a></li>
+                        <li><a href="#architecture">Proxmox Virtualization</a></li>
+                        <li><a href="#architecture">Cloud Providers</a></li>
+                        <li><a href="#architecture">Physical Hardware</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p><strong>NetServa</strong> - Complete infrastructure management from a single command center</p>
+                <p>© 2025 NetServa Project | 
+                   <a href="https://github.com/markc/ns">GitHub</a> | 
+                   Powered by Alpine Linux, Nginx & PHP-FPM
+                </p>
+                <p><em>Copyright (C) 1995-2025 Mark Constable &lt;mc@netserva.org&gt; (MIT License)</em></p>
+    <div class="fixed bottom-1 right-4 flex flex-col gap-8 z-50">
+        <a href="https://bsky.app/intent/compose?text=Professional%20Infrastructure%20Management%20with%20NetServa%20-%20https://netserva.org" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors duration-200" title="Share on Bluesky">
+            <span class="text-xl">☁️</span>
+        </a>
+        <a href="https://www.youtube.com/@netserva" target="_blank" class="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg transition-colors duration-200" title="YouTube Channel">
+            <span class="text-xl">📺</span>
+        </a>
+    </div>
+</body>
+</html>

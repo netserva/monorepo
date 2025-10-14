@@ -34,7 +34,7 @@ class DnsProviderService
                             'name' => $remoteZone['name'],
                         ],
                         [
-                            'kind' => $remoteZone['kind'] ?? 'Master',
+                            'kind' => $remoteZone['kind'] ?? 'Primary',
                             'serial' => $remoteZone['serial'] ?? null,
                             'last_check' => $remoteZone['last_check'] ? new \DateTime($remoteZone['last_check']) : null,
                             'active' => true,
@@ -88,7 +88,7 @@ class DnsProviderService
                         'name' => $remoteRecord['name'] ?? '',
                         'type' => $remoteRecord['type'],
                         'content' => $remoteRecord['content'],
-                        'ttl' => $remoteRecord['ttl'] ?? 3600,
+                        'ttl' => $remoteRecord['ttl'] ?? 300,
                         'priority' => $remoteRecord['priority'] ?? 0,
                         'disabled' => $remoteRecord['disabled'] ?? false,
                         'auth' => $remoteRecord['auth'] ?? true,
@@ -136,7 +136,7 @@ class DnsProviderService
                 'dns_provider_id' => $provider->id,
                 'external_id' => $remoteZone['id'] ?? null,
                 'name' => $data['name'],
-                'kind' => $data['kind'] ?? 'Master',
+                'kind' => $data['kind'] ?? 'Primary',
                 'serial' => $remoteZone['serial'] ?? null,
                 'active' => true,
                 'last_synced' => now(),
@@ -171,7 +171,7 @@ class DnsProviderService
                 'name' => $data['name'] ?? '',
                 'type' => $data['type'],
                 'content' => $data['content'],
-                'ttl' => $data['ttl'] ?? 3600,
+                'ttl' => $data['ttl'] ?? 300,
                 'priority' => $data['priority'] ?? 0,
                 'disabled' => $data['disabled'] ?? false,
                 'comment' => $data['comment'] ?? '',
@@ -342,7 +342,7 @@ class DnsProviderService
                 'dns_provider_id' => $provider->id,
                 'external_id' => $remoteZone['id'],
                 'name' => $remoteZone['name'],
-                'kind' => $remoteZone['kind'] ?? 'Master',
+                'kind' => $remoteZone['kind'] ?? 'Primary',
                 'serial' => $remoteZone['serial'] ?? null,
                 'active' => true,
                 'last_synced' => now(),
@@ -377,7 +377,7 @@ class DnsProviderService
 
         foreach ($records as $record) {
             $name = $record->name === '@' ? '@' : $record->name;
-            $ttl = $record->ttl ?? 3600;
+            $ttl = $record->ttl ?? 300;
             $type = $record->type;
             $content = $record->content;
 

@@ -25,8 +25,6 @@ use NetServa\Dns\Models\DnsZone;
  * - Provider → Zone → Record
  * - Each zone belongs to one provider
  * - Each zone can have many records
- *
- * @package NetServa\Dns\Services
  */
 class DnsZoneManagementService
 {
@@ -69,7 +67,7 @@ class DnsZoneManagementService
 
             // Prepare zone data for remote creation
             $zoneData = [
-                'name' => rtrim($zoneName, '.') . '.', // Ensure trailing dot
+                'name' => rtrim($zoneName, '.').'.', // Ensure trailing dot
                 'kind' => $options['kind'] ?? 'Native',
                 'nameservers' => $options['nameservers'] ?? [],
                 'soa_edit_api' => $options['soa_edit_api'] ?? 'DEFAULT',
@@ -110,7 +108,7 @@ class DnsZoneManagementService
                     'name' => $zoneName,
                     'kind' => $options['kind'] ?? 'Native',
                     'masters' => $options['masters'] ?? null,
-                    'ttl' => $options['ttl'] ?? 3600,
+                    'ttl' => $options['ttl'] ?? 300,
                     'active' => $options['active'] ?? true,
                     'description' => $options['description'] ?? null,
                     'auto_dnssec' => $options['auto_dnssec'] ?? false,
@@ -160,7 +158,7 @@ class DnsZoneManagementService
 
                 return [
                     'success' => false,
-                    'message' => 'Failed to create zone: ' . $e->getMessage(),
+                    'message' => 'Failed to create zone: '.$e->getMessage(),
                     'error' => $e->getMessage(),
                 ];
             }
@@ -168,7 +166,7 @@ class DnsZoneManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Zone creation error: ' . $e->getMessage(),
+                'message' => 'Zone creation error: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -178,7 +176,6 @@ class DnsZoneManagementService
      * List DNS zones with optional filtering
      *
      * @param  array  $filters  Filter criteria
-     * @return Collection
      */
     public function listZones(array $filters = []): Collection
     {
@@ -212,7 +209,7 @@ class DnsZoneManagementService
 
         // Search by name
         if (isset($filters['search'])) {
-            $query->where('name', 'like', '%' . $filters['search'] . '%');
+            $query->where('name', 'like', '%'.$filters['search'].'%');
         }
 
         return $query->get();
@@ -277,7 +274,7 @@ class DnsZoneManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to show zone: ' . $e->getMessage(),
+                'message' => 'Failed to show zone: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -308,7 +305,7 @@ class DnsZoneManagementService
             try {
                 // Track changes
                 foreach ($updates as $field => $value) {
-                    if (isset($zone->$field) && $zone->$field !== $value) {
+                    if (isset($zone->$field) && $value !== $zone->$field) {
                         $changes[$field] = [
                             'old' => $zone->$field,
                             'new' => $value,
@@ -344,7 +341,7 @@ class DnsZoneManagementService
                         if ($updates['dnssec_enabled'] && ! $zone->dnssec_enabled) {
                             $dnssecResult = $this->powerDnsService->generateDnssecKey($provider, $zone->name);
                             if (! $dnssecResult['success']) {
-                                throw new Exception('Failed to enable DNSSEC: ' . $dnssecResult['message']);
+                                throw new Exception('Failed to enable DNSSEC: '.$dnssecResult['message']);
                             }
                         } elseif (! $updates['dnssec_enabled'] && $zone->dnssec_enabled) {
                             // Disable DNSSEC logic here if needed
@@ -381,7 +378,7 @@ class DnsZoneManagementService
 
                 return [
                     'success' => false,
-                    'message' => 'Failed to update zone: ' . $e->getMessage(),
+                    'message' => 'Failed to update zone: '.$e->getMessage(),
                     'error' => $e->getMessage(),
                 ];
             }
@@ -389,7 +386,7 @@ class DnsZoneManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Zone update error: ' . $e->getMessage(),
+                'message' => 'Zone update error: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -466,7 +463,7 @@ class DnsZoneManagementService
 
                 return [
                     'success' => false,
-                    'message' => 'Failed to delete zone: ' . $e->getMessage(),
+                    'message' => 'Failed to delete zone: '.$e->getMessage(),
                     'error' => $e->getMessage(),
                 ];
             }
@@ -474,7 +471,7 @@ class DnsZoneManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Zone deletion error: ' . $e->getMessage(),
+                'message' => 'Zone deletion error: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -483,7 +480,6 @@ class DnsZoneManagementService
     /**
      * Sync zone data from remote provider
      *
-     * @param  DnsZone  $zone
      * @return array Sync result
      */
     public function syncZoneFromRemote(DnsZone $zone): array
@@ -520,7 +516,7 @@ class DnsZoneManagementService
 
                     // Only import records that belong to this zone
                     // Skip records from other zones (e.g., glue records)
-                    if (!str_ends_with(rtrim($recordName, '.'), $zoneName)) {
+                    if (! str_ends_with(rtrim($recordName, '.'), $zoneName)) {
                         continue;
                     }
 
@@ -533,7 +529,7 @@ class DnsZoneManagementService
                                 'content' => $record['content'],
                             ],
                             [
-                                'ttl' => $rrset['ttl'] ?? 3600,
+                                'ttl' => $rrset['ttl'] ?? 300,
                                 'disabled' => $record['disabled'] ?? false,
                                 'last_synced' => now(),
                             ]
@@ -558,7 +554,7 @@ class DnsZoneManagementService
 
             return [
                 'success' => false,
-                'message' => 'Sync failed: ' . $e->getMessage(),
+                'message' => 'Sync failed: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -601,7 +597,7 @@ class DnsZoneManagementService
             $zone = DnsZone::find($identifier);
         } else {
             // Normalize: ensure trailing dot for database lookup
-            $normalizedName = rtrim($identifier, '.') . '.';
+            $normalizedName = rtrim($identifier, '.').'.';
             $zone = DnsZone::where('name', $normalizedName)->first();
         }
 
@@ -629,7 +625,7 @@ class DnsZoneManagementService
             'powerdns' => $this->powerDnsService->testConnection($provider),
             default => [
                 'success' => false,
-                'message' => 'Connection test not implemented for ' . $provider->type,
+                'message' => 'Connection test not implemented for '.$provider->type,
             ],
         };
     }
@@ -644,13 +640,13 @@ class DnsZoneManagementService
                 'powerdns' => $this->tunnelService->createZone($provider, $zoneData),
                 default => [
                     'success' => false,
-                    'message' => 'Zone creation not implemented for ' . $provider->type,
+                    'message' => 'Zone creation not implemented for '.$provider->type,
                 ],
             };
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Remote zone creation failed: ' . $e->getMessage(),
+                'message' => 'Remote zone creation failed: '.$e->getMessage(),
             ];
         }
     }
@@ -665,13 +661,13 @@ class DnsZoneManagementService
                 'powerdns' => $this->tunnelService->updateZone($provider, $zoneName, $updateData),
                 default => [
                     'success' => false,
-                    'message' => 'Zone update not implemented for ' . $provider->type,
+                    'message' => 'Zone update not implemented for '.$provider->type,
                 ],
             };
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Remote zone update failed: ' . $e->getMessage(),
+                'message' => 'Remote zone update failed: '.$e->getMessage(),
             ];
         }
     }
@@ -686,13 +682,13 @@ class DnsZoneManagementService
                 'powerdns' => $this->tunnelService->deleteZone($provider, $zoneName),
                 default => [
                     'success' => false,
-                    'message' => 'Zone deletion not implemented for ' . $provider->type,
+                    'message' => 'Zone deletion not implemented for '.$provider->type,
                 ],
             };
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Remote zone deletion failed: ' . $e->getMessage(),
+                'message' => 'Remote zone deletion failed: '.$e->getMessage(),
             ];
         }
     }
@@ -718,7 +714,7 @@ class DnsZoneManagementService
             'name' => $zone->name,
             'type' => 'SOA',
             'content' => $soaContent,
-            'ttl' => $options['ttl'] ?? 3600,
+            'ttl' => $options['ttl'] ?? 300,
             'disabled' => false,
         ]);
 
@@ -729,7 +725,7 @@ class DnsZoneManagementService
                 'name' => $zone->name,
                 'type' => 'NS',
                 'content' => $ns,
-                'ttl' => $options['ttl'] ?? 3600,
+                'ttl' => $options['ttl'] ?? 300,
                 'disabled' => false,
             ]);
         }

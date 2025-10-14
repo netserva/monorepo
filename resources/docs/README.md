@@ -57,6 +57,7 @@
 ### Infrastructure
 - [Incus Management](infrastructure/) - Backup, resource limits
 - [Centralized Logging](infrastructure/centralized-logging-architecture.md)
+- **[SSH Troubleshooting](infrastructure/ssh-troubleshooting.md)** - SSH multiplexing, SFTP issues, config debugging
 
 ### Security
 - [Firewalld Gotchas](security/firewalld-first-install-gotchas.md)

@@ -26,7 +26,7 @@ class CloudFlareRecordsCommand extends Command
                            {--type= : DNS record type filter (A, AAAA, CNAME, MX, TXT, etc.)}
                            {--name= : Record name filter}
                            {--content= : Record content for create/update}
-                           {--ttl=3600 : Record TTL (time to live)}
+                           {--ttl=300 : Record TTL (time to live)}
                            {--priority= : Record priority (for MX, SRV records)}
                            {--proxied : Enable CloudFlare proxy (orange cloud)}
                            {--format=table : Output format (table, json, dns-zone)}
@@ -620,7 +620,7 @@ class CloudFlareRecordsCommand extends Command
 
         $ttl = $this->option('ttl') ?? (int) text(
             label: 'TTL (seconds, 1 for auto):',
-            default: (string) ($current['ttl'] ?? 3600),
+            default: (string) ($current['ttl'] ?? 300),
             validate: fn ($value) => is_numeric($value) && $value > 0 ? null : 'TTL must be a positive number'
         );
 
@@ -741,7 +741,7 @@ class CloudFlareRecordsCommand extends Command
                     'name' => $fields[0],
                     'type' => $fields[1],
                     'content' => $fields[2],
-                    'ttl' => (int) ($fields[3] ?: 3600),
+                    'ttl' => (int) ($fields[3] ?: 300),
                     'priority' => isset($fields[4]) ? (int) $fields[4] : null,
                 ];
             }

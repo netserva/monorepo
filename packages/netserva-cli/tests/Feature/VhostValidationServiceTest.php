@@ -3,7 +3,6 @@
 use NetServa\Cli\Services\VhostValidationService;
 use NetServa\Fleet\Models\FleetVHost;
 use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
 
 /**
  * VHost Validation Service Tests
@@ -35,7 +34,7 @@ describe('VhostValidationService', function () {
         expect($result)->toBeArray()
             ->and($result['success'])->toBeFalse()
             ->and($result)->toHaveKey('error')
-            ->and($result['error'])->toContain('No vconfs found');
+            ->and($result['error'])->toContain('no configuration variables');
     });
 
     it('validates vhost with complete configuration', function () {

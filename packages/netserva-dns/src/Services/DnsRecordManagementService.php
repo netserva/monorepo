@@ -24,8 +24,6 @@ use NetServa\Dns\Models\DnsZone;
  * Tier 3 in DNS Hierarchy:
  * - Provider → Zone → Record
  * - Each record belongs to one zone
- *
- * @package NetServa\Dns\Services
  */
 class DnsRecordManagementService
 {
@@ -101,7 +99,7 @@ class DnsRecordManagementService
                     'name' => $name,
                     'type' => $type,
                     'content' => $content,
-                    'ttl' => $options['ttl'] ?? $zone->ttl ?? 3600,
+                    'ttl' => $options['ttl'] ?? $zone->ttl ?? 300,
                     'priority' => $options['priority'] ?? 0,
                     'disabled' => $options['disabled'] ?? false,
                 ];
@@ -156,7 +154,7 @@ class DnsRecordManagementService
 
                 return [
                     'success' => false,
-                    'message' => 'Failed to create record: ' . $e->getMessage(),
+                    'message' => 'Failed to create record: '.$e->getMessage(),
                     'error' => $e->getMessage(),
                 ];
             }
@@ -164,7 +162,7 @@ class DnsRecordManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Record creation error: ' . $e->getMessage(),
+                'message' => 'Record creation error: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -174,7 +172,6 @@ class DnsRecordManagementService
      * List DNS records with optional filtering
      *
      * @param  array  $filters  Filter criteria
-     * @return Collection
      */
     public function listRecords(array $filters = []): Collection
     {
@@ -205,14 +202,14 @@ class DnsRecordManagementService
         // Search by name
         if (isset($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('content', 'like', '%' . $filters['search'] . '%');
+                $q->where('name', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('content', 'like', '%'.$filters['search'].'%');
             });
         }
 
         // Filter by content (for finding specific IPs, hostnames, etc.)
         if (isset($filters['content'])) {
-            $query->where('content', 'like', '%' . $filters['content'] . '%');
+            $query->where('content', 'like', '%'.$filters['content'].'%');
         }
 
         return $query->get();
@@ -268,7 +265,7 @@ class DnsRecordManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to show record: ' . $e->getMessage(),
+                'message' => 'Failed to show record: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -316,7 +313,7 @@ class DnsRecordManagementService
             try {
                 // Track changes
                 foreach ($updates as $field => $value) {
-                    if (isset($record->$field) && $record->$field !== $value) {
+                    if (isset($record->$field) && $value !== $record->$field) {
                         $changes[$field] = [
                             'old' => $record->$field,
                             'new' => $value,
@@ -367,7 +364,7 @@ class DnsRecordManagementService
 
                 return [
                     'success' => false,
-                    'message' => 'Failed to update record: ' . $e->getMessage(),
+                    'message' => 'Failed to update record: '.$e->getMessage(),
                     'error' => $e->getMessage(),
                 ];
             }
@@ -375,7 +372,7 @@ class DnsRecordManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Record update error: ' . $e->getMessage(),
+                'message' => 'Record update error: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -440,7 +437,7 @@ class DnsRecordManagementService
 
                 return [
                     'success' => false,
-                    'message' => 'Failed to delete record: ' . $e->getMessage(),
+                    'message' => 'Failed to delete record: '.$e->getMessage(),
                     'error' => $e->getMessage(),
                 ];
             }
@@ -448,7 +445,7 @@ class DnsRecordManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Record deletion error: ' . $e->getMessage(),
+                'message' => 'Record deletion error: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ];
         }
@@ -470,7 +467,7 @@ class DnsRecordManagementService
             if (! $ptrZoneName) {
                 return [
                     'success' => false,
-                    'message' => 'Could not generate PTR zone name from IP: ' . $record->content,
+                    'message' => 'Could not generate PTR zone name from IP: '.$record->content,
                 ];
             }
 
@@ -484,7 +481,7 @@ class DnsRecordManagementService
                         zoneName: $ptrZoneName,
                         providerId: $record->zone->dns_provider_id,
                         options: [
-                            'kind' => 'Master',
+                            'kind' => 'Primary',
                             'auto_dnssec' => false,
                         ]
                     );
@@ -492,7 +489,7 @@ class DnsRecordManagementService
                     if (! $zoneResult['success']) {
                         return [
                             'success' => false,
-                            'message' => 'Failed to create PTR zone: ' . $zoneResult['message'],
+                            'message' => 'Failed to create PTR zone: '.$zoneResult['message'],
                         ];
                     }
 
@@ -534,7 +531,7 @@ class DnsRecordManagementService
 
             return [
                 'success' => false,
-                'message' => 'Auto-PTR failed: ' . $e->getMessage(),
+                'message' => 'Auto-PTR failed: '.$e->getMessage(),
             ];
         }
     }
@@ -620,7 +617,7 @@ class DnsRecordManagementService
             }
 
             // Use /24 for PTR zone (first 3 octets)
-            return $octets[2] . '.' . $octets[1] . '.' . $octets[0] . '.in-addr.arpa.';
+            return $octets[2].'.'.$octets[1].'.'.$octets[0].'.in-addr.arpa.';
         }
 
         if ($type === 'AAAA') {
@@ -633,7 +630,7 @@ class DnsRecordManagementService
             // Use /64 for PTR zone (first 16 nibbles)
             $ptrNibbles = array_slice($nibbles, 0, 16);
 
-            return implode('.', $ptrNibbles) . '.ip6.arpa.';
+            return implode('.', $ptrNibbles).'.ip6.arpa.';
         }
 
         return null;
@@ -672,7 +669,7 @@ class DnsRecordManagementService
     {
         // @ means apex/root
         if ($name === '@' || empty($name)) {
-            return rtrim($zoneName, '.') . '.';
+            return rtrim($zoneName, '.').'.';
         }
 
         // Already FQDN
@@ -681,7 +678,7 @@ class DnsRecordManagementService
         }
 
         // Relative name - append zone
-        return $name . '.' . rtrim($zoneName, '.') . '.';
+        return $name.'.'.rtrim($zoneName, '.').'.';
     }
 
     /**
@@ -705,7 +702,7 @@ class DnsRecordManagementService
             'MX' => 'MX record requires content and --priority',
             'SRV' => 'SRV record requires content and --priority',
             'CNAME', 'NS', 'PTR' => 'Content cannot be empty',
-            default => 'Invalid content for ' . $type . ' record'
+            default => 'Invalid content for '.$type.' record'
         };
 
         return [
@@ -729,7 +726,7 @@ class DnsRecordManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Sync failed: ' . $e->getMessage(),
+                'message' => 'Sync failed: '.$e->getMessage(),
             ];
         }
     }
@@ -747,7 +744,7 @@ class DnsRecordManagementService
             $zone = DnsZone::find($identifier);
         } else {
             // Normalize: ensure trailing dot for database lookup
-            $normalizedName = rtrim($identifier, '.') . '.';
+            $normalizedName = rtrim($identifier, '.').'.';
             $zone = DnsZone::where('name', $normalizedName)->first();
         }
 
@@ -767,22 +764,89 @@ class DnsRecordManagementService
     }
 
     /**
-     * Find record by ID
+     * Find record by ID or domain name
+     *
+     * Supports:
+     * - Numeric ID: 123
+     * - FQDN: test.goldcoast.org or test.goldcoast.org.
+     * - Relative name + zone: test (searches in all zones)
      */
-    protected function findRecord(int $identifier): array
+    protected function findRecord(int|string $identifier): array
     {
-        $record = DnsRecord::find($identifier);
+        // Numeric ID lookup
+        if (is_numeric($identifier)) {
+            $record = DnsRecord::find($identifier);
 
-        if (! $record) {
+            if (! $record) {
+                return [
+                    'success' => false,
+                    'message' => "Record ID {$identifier} not found",
+                ];
+            }
+
+            return [
+                'success' => true,
+                'record' => $record,
+            ];
+        }
+
+        // Domain name lookup
+        $normalizedName = rtrim($identifier, '.').'.';
+
+        // Find matching records by FQDN
+        $records = DnsRecord::where('name', $normalizedName)
+            ->with(['zone.dnsProvider'])
+            ->get();
+
+        if ($records->isEmpty()) {
+            // Try finding zone and looking for relative name
+            $parts = explode('.', rtrim($identifier, '.'));
+
+            if (count($parts) >= 2) {
+                // Try extracting zone from FQDN
+                // e.g., "test.goldcoast.org" → zone="goldcoast.org", name="test"
+                for ($i = 1; $i < count($parts); $i++) {
+                    $possibleZone = implode('.', array_slice($parts, $i)).'.';
+                    $possibleName = implode('.', array_slice($parts, 0, $i)).'.'.implode('.', array_slice($parts, $i)).'.';
+
+                    $records = DnsRecord::where('name', $possibleName)
+                        ->whereHas('zone', function ($q) use ($possibleZone) {
+                            $q->where('name', $possibleZone);
+                        })
+                        ->with(['zone.dnsProvider'])
+                        ->get();
+
+                    if ($records->isNotEmpty()) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($records->isEmpty()) {
             return [
                 'success' => false,
-                'message' => "Record ID {$identifier} not found",
+                'message' => "No DNS records found matching '{$identifier}'",
+            ];
+        }
+
+        // Multiple records found - need to disambiguate
+        if ($records->count() > 1) {
+            $recordList = $records->map(function ($r) {
+                return "{$r->id}: {$r->type} {$r->name} → {$r->content} (Zone: {$r->zone->name})";
+            })->join("\n   ");
+
+            return [
+                'success' => false,
+                'message' => "Multiple records found for '{$identifier}'. Please specify by ID:",
+                'records' => $records,
+                'hint' => "Found records:\n   ".$recordList,
             ];
         }
 
         return [
             'success' => true,
-            'record' => $record,
+            'record' => $records->first(),
         ];
     }
 
@@ -796,7 +860,7 @@ class DnsRecordManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Remote record creation failed: ' . $e->getMessage(),
+                'message' => 'Remote record creation failed: '.$e->getMessage(),
             ];
         }
     }
@@ -824,7 +888,7 @@ class DnsRecordManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Remote record update failed: ' . $e->getMessage(),
+                'message' => 'Remote record update failed: '.$e->getMessage(),
             ];
         }
     }
@@ -839,7 +903,7 @@ class DnsRecordManagementService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Remote record deletion failed: ' . $e->getMessage(),
+                'message' => 'Remote record deletion failed: '.$e->getMessage(),
             ];
         }
     }

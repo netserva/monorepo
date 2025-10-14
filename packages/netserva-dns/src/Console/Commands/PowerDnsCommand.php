@@ -180,7 +180,7 @@ class PowerDnsCommand extends Command
 
         $zoneData = [
             'name' => $zoneName,
-            'kind' => 'Master',
+            'kind' => 'Primary',
             'nameservers' => $nameservers,
             'masters' => [],
         ];

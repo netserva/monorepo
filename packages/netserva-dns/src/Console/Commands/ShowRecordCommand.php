@@ -93,7 +93,7 @@ class ShowRecordCommand extends Command
         $this->line("Type: <fg=cyan>{$record->type}</>");
         $this->line("Name: <fg=cyan>{$record->name}</>");
         $this->line("Content: <fg=cyan>{$record->content}</>");
-        $this->line("TTL: <fg=cyan>{$record->ttl}s</>");
+        $this->line("TTL: <fg=cyan>{$record->ttl}</>");
 
         if ($record->requiresPriority()) {
             $this->line("Priority: <fg=cyan>{$record->priority}</>");
@@ -133,13 +133,13 @@ class ShowRecordCommand extends Command
 
         if ($this->option('all')) {
             $this->newLine();
-            $this->line("🕐 Timestamps:");
+            $this->line('🕐 Timestamps:');
             $this->line("   Created: <fg=gray>{$record->created_at}</>");
             $this->line("   Updated: <fg=gray>{$record->updated_at}</>");
         }
 
         $this->newLine();
-        $this->line("💡 Available actions:");
+        $this->line('💡 Available actions:');
         $this->line("   - Update: chrec {$record->id} --content=<new-value>");
         $this->line("   - Delete: delrec {$record->id}");
         $this->line("   - View zone: shzone {$zone->id}");
@@ -150,21 +150,21 @@ class ShowRecordCommand extends Command
     protected function listRecords(array $filters = []): int
     {
         // Merge filters from options if not already set
-        if (!isset($filters['type']) && $this->option('type')) {
+        if (! isset($filters['type']) && $this->option('type')) {
             $filters['type'] = $this->option('type');
         }
 
-        if (!isset($filters['active']) && $this->option('active')) {
+        if (! isset($filters['active']) && $this->option('active')) {
             $filters['active'] = true;
-        } elseif (!isset($filters['active']) && $this->option('inactive')) {
+        } elseif (! isset($filters['active']) && $this->option('inactive')) {
             $filters['active'] = false;
         }
 
-        if (!isset($filters['search']) && $this->option('search')) {
+        if (! isset($filters['search']) && $this->option('search')) {
             $filters['search'] = $this->option('search');
         }
 
-        if (!isset($filters['content']) && $this->option('content')) {
+        if (! isset($filters['content']) && $this->option('content')) {
             $filters['content'] = $this->option('content');
         }
 
@@ -198,10 +198,10 @@ class ShowRecordCommand extends Command
 
         // Check if we're viewing a single zone (all records have same zone)
         $singleZone = $records->first()?->zone;
-        $isSingleZoneView = isset($filters['zone']) && $records->every(fn($r) => $r->zone->id === $singleZone->id);
+        $isSingleZoneView = isset($filters['zone']) && $records->every(fn ($r) => $r->zone->id === $singleZone->id);
 
         // Only show header/separator when viewing all records or with --all flag
-        if (!$isSingleZoneView || $this->option('all')) {
+        if (! $isSingleZoneView || $this->option('all')) {
             $this->newLine();
             $this->line('📝 DNS Records');
             $this->line(str_repeat('─', 120));
@@ -216,11 +216,12 @@ class ShowRecordCommand extends Command
             $name = rtrim($record->name, '.');
             $zone = rtrim($record->zone->name, '.');
 
-            // Simplify SOA content - show only nameserver and serial
+            // Simplify SOA content - show only nameserver and serial (skip hostmaster)
             $content = $record->content;
             if ($record->type === 'SOA') {
                 $parts = explode(' ', $content);
-                $content = ($parts[0] ?? '') . ' ' . ($parts[2] ?? '');
+                // Show ns and serial only (parts 0 and 2, skip hostmaster at part 1)
+                $content = ($parts[0] ?? '').' '.($parts[2] ?? '');
             }
 
             $row = [
@@ -228,12 +229,12 @@ class ShowRecordCommand extends Command
                 $record->type,
                 $name,
                 $content,
-                $record->ttl . 's',
+                $record->ttl,  // Remove 's' suffix
                 $priority,
             ];
 
             // Only include zone column when viewing multiple zones or with --all
-            if (!$isSingleZoneView || $this->option('all')) {
+            if (! $isSingleZoneView || $this->option('all')) {
                 $row[] = $zone;
             }
 
@@ -243,7 +244,7 @@ class ShowRecordCommand extends Command
 
         // Headers depend on whether we're showing zone column
         $headers = ['ID', 'Type', 'Name', 'Content', 'TTL', 'Pri'];
-        if (!$isSingleZoneView || $this->option('all')) {
+        if (! $isSingleZoneView || $this->option('all')) {
             $headers[] = 'Zone';
         }
         $headers[] = 'Active';
@@ -251,11 +252,11 @@ class ShowRecordCommand extends Command
         $this->table($headers, $rows);
 
         // Only show footer when viewing all records or with --all flag
-        if (!$isSingleZoneView || $this->option('all')) {
+        if (! $isSingleZoneView || $this->option('all')) {
             $this->newLine();
             $this->line("Total records: <fg=cyan>{$records->count()}</>");
 
-            $activeCount = $records->filter(fn($r) => $r->isActive())->count();
+            $activeCount = $records->filter(fn ($r) => $r->isActive())->count();
             $this->line("Active: <fg=green>{$activeCount}</>");
 
             if (! $this->option('all')) {

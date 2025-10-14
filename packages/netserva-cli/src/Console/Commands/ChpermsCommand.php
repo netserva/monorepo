@@ -118,8 +118,21 @@ class ChpermsCommand extends BaseNetServaCommand
                 return 0;
             } else {
                 $this->error("❌ Failed to fix permissions for {$VHOST}");
+
+                // Show stderr if available
                 if (isset($result['error'])) {
                     $this->line("   Error: {$result['error']}");
+                }
+
+                // Show stdout if available (may contain error details)
+                if (! empty($result['output'])) {
+                    $this->line('');
+                    $this->line('<fg=red>📋 Script Output:</>');
+                    foreach (explode("\n", trim($result['output'])) as $line) {
+                        if (! empty($line)) {
+                            $this->line("   {$line}");
+                        }
+                    }
                 }
 
                 return 1;
@@ -172,8 +185,11 @@ class ChpermsCommand extends BaseNetServaCommand
     /**
      * Build bash script for fixing permissions (heredoc-based)
      *
-     * This uses a single heredoc script instead of multiple separate commands
-     * for better reliability and proper quoting handling.
+     * Based on NetServa 1.0 _chperms() logic adapted for 3.0 paths:
+     * - UPATH structure: /srv/domain.com/ (not /home/uXXXX)
+     * - Paths: web/app/public (webroot), var/msg (mail), var/log, var/run, var/tmp
+     * - Security: SSH chroot, restrictive permissions, root-owned sensitive dirs
+     * - WUGID: www-data (group name, not numeric GID)
      */
     protected function buildPermissionScript(): string
     {
@@ -181,56 +197,128 @@ class ChpermsCommand extends BaseNetServaCommand
 #!/bin/bash
 set -euo pipefail
 
-# Arguments from caller
-upath=$1
-wpath=$2
-mpath=$3
-uuser=$4
-wugid=$5
-domain=$6
-web_only=${7:-false}
-mail_only=${8:-false}
+# Arguments from caller (NS 3.0 paths)
+upath=$1      # /srv/domain.com
+wpath=$2      # /srv/domain.com/web/app/public
+mpath=$3      # /srv/domain.com/msg
+uuser=$4      # u1001
+p_uid=$5      # 1001
+p_gid=$6      # 1001
+wugid=$7      # www-data (web server group)
+domain=$8
 
-# User home directory
-if [ -n "$upath" ] && [ -d "$upath" ]; then
-    chown -R "$uuser:$wugid" "$upath"
-    chmod 755 "$upath"
-    echo "✓ Fixed user home: $upath"
+# Validate user UID >= 1000 (safety check)
+if [ "$p_uid" -lt 1000 ]; then
+    echo "ERROR: UID $p_uid is less than 1000 (system user)"
+    exit 10
 fi
 
-# Web directory permissions (most critical)
-if [ -n "$wpath" ] && [ -d "$wpath" ] && [ "$mail_only" != "true" ]; then
-    chown -R "$uuser:$wugid" "$wpath"
-    find "$wpath" -type d -exec chmod 755 {} \;
-    find "$wpath" -type f -exec chmod 644 {} \;
-    echo "✓ Fixed web directory: $wpath"
-
-    # Special permissions for writable directories
-    for dir in var/cache var/log var/tmp uploads wp-content; do
-        if [ -d "$wpath/$dir" ]; then
-            chmod 775 "$wpath/$dir"
-            echo "  ✓ Fixed writable dir: $wpath/$dir"
-        fi
-    done
+# Validate UPATH exists
+if [ ! -d "$upath" ]; then
+    echo "ERROR: $upath does not exist"
+    exit 10
 fi
 
-# Mail directory permissions
-if [ -n "$mpath" ] && [ -d "$mpath" ] && [ "$web_only" != "true" ]; then
-    chown -R "$uuser:$wugid" "$mpath"
+echo "🔧 Fixing permissions for: $domain (UID: $p_uid, User: $uuser)"
+
+# Step 1: Set base ownership and restrictive permissions
+chown "$p_uid:$p_gid" -R "$upath"
+find "$upath" -type d -exec chmod 00750 {} +
+find "$upath" -type f -exec chmod 00640 {} +
+echo "✓ Base permissions applied (750/640)"
+
+# Step 2: Exception for UPATH root - owned by root if UID > 1000 (chroot security)
+if [ "$p_uid" -gt 1000 ]; then
+    chown 0:0 "$upath"
+fi
+chmod 755 "$upath"
+echo "✓ UPATH root: 755 (chroot-safe)"
+
+# Step 3: Directory structure - create if missing (NS 3.0 paths)
+mkdir -p "$upath/msg"
+mkdir -p "$upath/web"/{log,run,tmp}
+chmod 750 "$upath/msg"
+chmod 755 "$upath/web"
+echo "✓ msg/ and web/ directories created"
+
+# Step 4: SSH directory (critical for security)
+if [ -d "$upath/.ssh" ]; then
+    chmod 700 "$upath/.ssh"
+    chmod 600 "$upath/.ssh"/*
+    echo "✓ .ssh/ directory: 700, keys: 600"
+fi
+
+# Step 5: GnuPG directory (if exists)
+if [ -d "$upath/.gnupg" ]; then
+    find "$upath/.gnupg" -type d -exec chmod 00700 {} +
+    find "$upath/.gnupg" -type f -exec chmod 00600 {} +
+    echo "✓ .gnupg/ directory: 700/600"
+fi
+
+# Step 6: Chroot executables (busybox, nano, rsync)
+if [ -f "$upath/bin/busybox" ]; then
+    chmod 750 "$upath/bin/busybox"
+    echo "✓ bin/busybox: 750"
+fi
+[ -f "$upath/bin/nano" ] && chmod 750 "$upath/bin/nano"
+[ -f "$upath/bin/rsync" ] && chmod 750 "$upath/bin/rsync"
+
+# Step 7: Shell scripts (if using .sh/ directory pattern)
+if [ -d "$upath/.sh/bin" ]; then
+    chmod 700 "$upath/.sh/bin"/*
+    echo "✓ .sh/bin/ scripts: 700"
+fi
+if [ -d "$upath/.sh/www" ]; then
+    chmod 700 "$upath/.sh/www"/*
+    echo "✓ .sh/www/ scripts: 700"
+fi
+
+# Step 8: Create log files if missing (NS 3.0: logs under web/)
+[ ! -f "$upath/web/log/access.log" ] && touch "$upath/web/log/access.log"
+[ ! -f "$upath/web/log/cache.log" ] && touch "$upath/web/log/cache.log"
+
+# Step 9: Web/mail directories - setgid + web group ownership
+if [ -d "$mpath" ]; then
+    chown "$p_uid:$p_gid" -R "$mpath"
     chmod 750 "$mpath"
-    find "$mpath" -type f -exec chmod 640 {} \;
-    echo "✓ Fixed mail directory: $mpath"
+    echo "✓ msg/: 750 (mail only)"
 fi
 
-# SSL certificates (if they exist)
-ssl_path="/etc/ssl/le/$domain"
-if [ -d "$ssl_path" ]; then
-    chown root:root "$ssl_path"
-    chmod 700 "$ssl_path"
-    echo "✓ Fixed SSL certificates: $ssl_path"
+chown "$p_uid:$wugid" -R "$upath/web"/*
+chmod 660 "$upath/web/log/access.log"
+chmod 660 "$upath/web/log/cache.log"
+chmod 02770 "$upath/web/log"         # setgid for log rotation
+chmod 02750 "$upath/web/run"         # setgid for PHP-FPM sockets
+chmod 02750 "$upath/web/tmp"         # setgid for temp files
+echo "✓ web/log, web/run, web/tmp: 02750/02770 (setgid)"
+
+# Step 10: Web root - setgid on all directories
+if [ -d "$wpath" ]; then
+    chmod 02750 "$wpath"
+    find "$wpath" -type d -exec chmod 02750 {} +
+    echo "✓ web/app: 02750 (setgid on dirs)"
 fi
 
-echo "Permissions fixed successfully"
+# Step 11: WHMCS configuration files (read-only for security)
+webroot="$upath/web/app/public"
+[ -f "$webroot/configuration.php" ] && chmod 400 "$webroot/configuration.php"
+[ -f "$webroot/whmcs/configuration.php" ] && chmod 400 "$webroot/whmcs/configuration.php"
+[ -f "$webroot/billing/configuration.php" ] && chmod 400 "$webroot/billing/configuration.php"
+
+# Step 12: lib/sh/ scripts - root-owned, web-readable index.html only
+if [ -d "$webroot/lib/sh" ]; then
+    chown 0:0 -R "$webroot/lib/sh"/*
+    chmod 700 -R "$webroot/lib/sh"/*
+    echo "✓ web/app/public/lib/sh: root-owned scripts"
+
+    if [ -f "$webroot/lib/sh/index.html" ]; then
+        chown ":$wugid" "$webroot/lib/sh/index.html"
+        chmod 640 "$webroot/lib/sh/index.html"
+        echo "✓ web/app/public/lib/sh/index.html: 640 (web-readable)"
+    fi
+fi
+
+echo "✅ Permissions fixed successfully for $domain"
 BASH;
     }
 
@@ -240,14 +328,14 @@ BASH;
     protected function buildScriptArguments(FleetVHost $vhost): array
     {
         return [
-            $vhost->getEnvVar('UPATH') ?? '',
-            $vhost->getEnvVar('WPATH') ?? '',
-            $vhost->getEnvVar('MPATH') ?? '',
+            $vhost->getEnvVar('UPATH') ?? '',      // /srv/domain.com
+            $vhost->getEnvVar('WPATH') ?? '',      // /srv/domain.com/web/app/public
+            $vhost->getEnvVar('MPATH') ?? '',      // /srv/domain.com/msg
             $vhost->getEnvVar('UUSER') ?? 'www-data',
-            $vhost->getEnvVar('WUGID') ?? 'www-data',
+            $vhost->getEnvVar('U_UID') ?? '1000',
+            $vhost->getEnvVar('U_GID') ?? '1000',
+            $vhost->getEnvVar('WUGID') ?? 'www-data',  // Web server group name
             $vhost->domain,
-            $this->option('web-only') ? 'true' : 'false',
-            $this->option('mail-only') ? 'true' : 'false',
         ];
     }
 }

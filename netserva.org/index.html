@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetServa 3.0 - Enterprise Infrastructure Management Platform</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="NS">
+    <meta name="description" content="NetServa 3.0 - Database-first infrastructure management platform powered by Laravel 12 + Filament 4. Centralized control for domain-based server infrastructure with SSH-native architecture.">
+
+    <!-- Web Manifest -->
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#BC0003">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://netserva.org/">
+    <meta property="og:title" content="NetServa 3.0 - Enterprise Infrastructure Management">
+    <meta property="og:description" content="Database-first infrastructure management platform with Laravel 12 + Filament 4">
+    <meta property="og:image" content="https://netserva.org/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="NetServa">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://netserva.org/">
+    <meta name="twitter:title" content="NetServa 3.0 - Enterprise Infrastructure Management">
+    <meta name="twitter:description" content="Database-first infrastructure management platform">
+    <meta name="twitter:image" content="https://netserva.org/og-image.svg">
+
+    <!-- Additional SEO -->
+    <meta name="author" content="NetServa Team">
+    <meta name="keywords" content="infrastructure management, Laravel 12, Filament 4, domain-based hosting, SSH management, database-first architecture, server automation, DevOps, centralized management, Debian Trixie, Alpine Linux, Incus, Proxmox">
+    <meta name="robots" content="index, follow">
+
+    <style>
+        :root {
+            --primary: #BC0003;
+            --primary-dark: #8B0002;
+            --primary-light: #E6000A;
+            --secondary: #1a1a2e;
+            --accent: #00A8E8;
+            --text-dark: #1a1a1a;
+            --text-light: #ffffff;
+            --bg-light: #f8f9fa;
+            --bg-dark: #0f1419;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 1rem 0;
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo-box {
+            padding: 0.25rem 0.5rem;
+            background: white;
+            border: 3px solid var(--primary);
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 6rem 2rem;
+            background: var(--primary);
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .version-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+            border: 2px solid white;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        .section {
+            margin-bottom: 5rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.25rem;
+            color: #6b7280;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            padding: 3rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            margin: 3rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--text-dark);
+        }
+
+        .feature-card p {
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        /* Architecture Section */
+        .architecture-section {
+            background: var(--primary);
+            width: 100%;
+            padding: 5rem 2rem;
+            margin: 0;
+        }
+
+        .architecture-section h2 {
+            color: white;
+        }
+
+        .architecture-section .section-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1280px;
+            margin: 3rem auto 0;
+        }
+
+        .arch-layer {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .arch-layer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .arch-layer:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .arch-layer h3 {
+            color: white;
+        }
+
+        .arch-layer p {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .arch-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: white;
+            color: var(--primary);
+            border-radius: 50%;
+            line-height: 40px;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        /* Tech Stack Section */
+        .tech-stack-section {
+            background: #000000;
+            width: 100%;
+            padding: 5rem 2rem;
+            margin: 0;
+        }
+
+        .tech-stack-section h2 {
+            color: white;
+        }
+
+        .tech-stack-section .section-subtitle {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            max-width: 1280px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tech-badge {
+            padding: 0.75rem 1.5rem;
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .tech-badge:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Code Block */
+        .code-section {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            padding: 4rem 2rem;
+            margin: 3rem 0;
+            border-radius: 16px;
+        }
+
+        .code-block {
+            background: #1a1f2e;
+            padding: 2rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+            font-size: 0.95rem;
+            line-height: 1.9;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: pre;
+            margin: 0;
+        }
+
+        .code-block .comment {
+            color: #6b7280;
+        }
+
+        .code-block .command {
+            color: #00ff88;
+        }
+
+        /* Comparison Table */
+        .comparison {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        .comparison-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            background: var(--bg-light);
+            font-weight: 700;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .comparison-header div {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-row div {
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .comparison-row div:first-child {
+            font-weight: 600;
+            text-align: left;
+            background: var(--bg-light);
+        }
+
+        .highlight-col {
+            background: rgba(188, 0, 3, 0.05);
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            padding: 4rem 2rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .provider-card {
+            background: var(--primary);
+            border-radius: 12px;
+            padding: 3rem;
+            margin: 3rem auto;
+            max-width: 600px;
+            text-align: center;
+            color: white;
+        }
+
+        .provider-card img {
+            max-width: 200px;
+            margin-bottom: 1.5rem;
+        }
+
+        .provider-phone {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-top: 1.5rem;
+        }
+
+        /* Social Widgets */
+        .social-widgets {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .social-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .social-btn-bluesky {
+            background: #00a8e8;
+            color: white;
+        }
+
+        .social-btn-youtube {
+            background: #ff0000;
+            color: white;
+        }
+
+        .social-btn:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Use Cases Section */
+        .use-cases-section {
+            background: var(--primary);
+            width: 100%;
+            padding: 5rem 2rem;
+            margin: 0;
+        }
+
+        .use-cases-section h2 {
+            color: white;
+        }
+
+        .use-cases-section .section-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .use-case-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+
+        .use-case-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .use-case-card h3 {
+            color: white;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .use-case-card p {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.7;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 2rem; }
+            .tagline { font-size: 1.25rem; }
+            .nav-links { display: none; }
+            .cta-group { flex-direction: column; }
+            .stats-bar { grid-template-columns: 1fr; }
+
+            /* Full-width mobile sections */
+            .container {
+                padding: 3rem 1rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .feature-card {
+                margin: 0;
+                width: 100%;
+            }
+
+            .architecture-section,
+            .tech-stack-section,
+            .use-cases-section {
+                padding: 3rem 1rem;
+            }
+
+            .architecture-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .use-cases-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .comparison-header, .comparison-row {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-row div:first-child {
+                background: var(--primary);
+                color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo-nav">
+                <span class="logo-box">NS</span>
+                <span>NetServa</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="https://github.com/markc/ns">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="version-badge">NetServa 3.0 - Now Available</div>
+            <h1>Enterprise Infrastructure Management Platform</h1>
+            <p class="tagline">Database-first architecture powered by Laravel 12 + Filament 4. Centralized control for domain-based server infrastructure.</p>
+            <div class="cta-group">
+                <a href="https://github.com/markc/ns" class="btn btn-primary">Get Started</a>
+                <a href="#features" class="btn btn-secondary">Learn More</a>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat">
+                    <span class="stat-number">55</span>
+                    <span class="stat-label">Configuration Variables</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">3.0</span>
+                    <span class="stat-label">Current Version</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">SSH-Native</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">4</span>
+                    <span class="stat-label">Architectural Layers</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features -->
+    <section id="features" class="container">
+        <div class="section-header">
+            <h2>NetServa 3.0 Features</h2>
+            <p class="section-subtitle">Complete infrastructure management with database-first architecture and centralized control from your workstation</p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🗄️</div>
+                <h3>Database-First Architecture</h3>
+                <p>All vhost configurations stored in dedicated <code>vconfs</code> table. No more scattered config files. Normalized storage with 55 standard variables.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🏢</div>
+                <h3>Domain-Based Organization</h3>
+                <p>Each domain isolated under <code>/srv/domain.com/</code> with complete separation: web, mail, logs, and user data in one predictable structure.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🖥️</div>
+                <h3>Centralized Management</h3>
+                <p>Manage entire infrastructure from <code>~/.ns/</code> workstation. Laravel 12 + Filament 4 web interface with comprehensive CLI commands.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>SSH-Native Execution</h3>
+                <p>RemoteExecutionService with heredoc-based scripts. Clean variable separation, proper error handling, and comprehensive logging.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>User Isolation</h3>
+                <p>Each domain gets its own user (u1001, u1002...) with SSH chroot. Complete isolation for security and resource management.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Single-File Configs</h3>
+                <p>Dovecot uses one file, Nginx uses variables, PHP-FPM uses shared configs. Simplified management with variable-based architecture.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📧</div>
+                <h3>Production Mail Server</h3>
+                <p>Postfix + Dovecot 2.4.1 + Rspamd. Full-featured mail with spam filtering, DKIM signing, and automated mail management.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>PowerDNS Integration</h3>
+                <p>Authoritative DNS with MySQL backend, API for dynamic updates, DNSSEC support, and automated record management.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3>Automated SSL/TLS</h3>
+                <p>acme.sh integration with Let's Encrypt. Automated certificate issuance, deployment, and renewal with single reload command.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section id="architecture" class="architecture-section">
+        <div class="section-header">
+            <h2>4-Layer Architecture</h2>
+            <p class="section-subtitle">Hierarchical infrastructure organization from venues to virtual hosts</p>
+        </div>
+
+        <div class="architecture-grid">
+            <div class="arch-layer">
+                <div class="arch-number">1</div>
+                <h3>Venue Layer</h3>
+                <p>Physical locations and data centers</p>
+            </div>
+
+            <div class="arch-layer">
+                <div class="arch-number">2</div>
+                <h3>VNode Layer</h3>
+                <p>Server hosts (physical/VPS)</p>
+            </div>
+
+            <div class="arch-layer">
+                <div class="arch-number">3</div>
+                <h3>VHost Layer</h3>
+                <p>Domain configurations + VConf (55 vars)</p>
+            </div>
+
+            <div class="arch-layer">
+                <div class="arch-number">4</div>
+                <h3>VServ Layer</h3>
+                <p>Service-level containers/VMs</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Stack -->
+    <section class="tech-stack-section">
+        <div class="section-header">
+            <h2>Technology Stack</h2>
+            <p class="section-subtitle">Best-in-class open source technologies for enterprise-grade infrastructure</p>
+        </div>
+
+        <div class="tech-stack">
+            <span class="tech-badge">Laravel 12</span>
+            <span class="tech-badge">Filament 4.0</span>
+            <span class="tech-badge">Pest 4.0</span>
+            <span class="tech-badge">Debian Trixie</span>
+            <span class="tech-badge">Alpine Linux</span>
+            <span class="tech-badge">PHP 8.4-FPM</span>
+            <span class="tech-badge">Nginx</span>
+            <span class="tech-badge">MariaDB/MySQL</span>
+            <span class="tech-badge">Postfix</span>
+            <span class="tech-badge">Dovecot 2.4.1</span>
+            <span class="tech-badge">Rspamd</span>
+            <span class="tech-badge">PowerDNS</span>
+            <span class="tech-badge">Incus/LXD</span>
+            <span class="tech-badge">Proxmox</span>
+        </div>
+    </section>
+
+    <!-- NetServa 3.0 vs Traditional -->
+    <section class="container">
+        <div class="section-header">
+            <h2>NetServa 3.0 vs Traditional Setups</h2>
+            <p class="section-subtitle">Modern database-first approach vs scattered file-based configurations</p>
+        </div>
+
+        <div class="comparison">
+            <div class="comparison-header">
+                <div>Feature</div>
+                <div>Traditional Linux</div>
+                <div class="highlight-col">NetServa 3.0</div>
+            </div>
+            <div class="comparison-row">
+                <div>Configuration Storage</div>
+                <div>Scattered across /etc</div>
+                <div class="highlight-col">Database (vconfs table)</div>
+            </div>
+            <div class="comparison-row">
+                <div>Web Root</div>
+                <div>/var/www/html</div>
+                <div class="highlight-col">/srv/domain.com/web/app/public</div>
+            </div>
+            <div class="comparison-row">
+                <div>Mail Storage</div>
+                <div>/var/vmail</div>
+                <div class="highlight-col">/srv/domain.com/msg</div>
+            </div>
+            <div class="comparison-row">
+                <div>Dovecot Config</div>
+                <div>50+ files in conf.d/</div>
+                <div class="highlight-col">Single dovecot.conf file</div>
+            </div>
+            <div class="comparison-row">
+                <div>Management</div>
+                <div>Per-server scripts</div>
+                <div class="highlight-col">Centralized from ~/.ns/</div>
+            </div>
+            <div class="comparison-row">
+                <div>User Isolation</div>
+                <div>Shared www-data</div>
+                <div class="highlight-col">SSH chroot per domain</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation -->
+    <section id="installation" class="code-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 style="color: white;">Quick Start Installation</h2>
+                <p class="section-subtitle" style="color: rgba(255,255,255,0.8);">Get NetServa 3.0 running in minutes with automated setup</p>
+            </div>
+
+            <pre class="code-block"><span class="comment"># Clone the repository</span>
+<span class="command">git clone https://github.com/markc/ns ~/.ns</span>
+<span class="command">cd ~/.ns</span>
+
+<span class="comment"># Install dependencies</span>
+<span class="command">composer install</span>
+<span class="command">php artisan key:generate</span>
+
+<span class="comment"># Initialize database</span>
+<span class="command">php artisan migrate</span>
+
+<span class="comment"># Start development server</span>
+<span class="command">php artisan serve</span>
+
+<span class="comment"># Access web interface</span>
+<span class="command">open http://localhost:8000</span></pre>
+        </div>
+    </section>
+
+    <!-- Key Commands -->
+    <section class="container">
+        <div class="section-header">
+            <h2>Essential Commands</h2>
+            <p class="section-subtitle">Database-first vhost configuration management</p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>shvconf</h3>
+                <p><code>shvconf example.com</code><br>Show all 55 configuration variables for a vhost (shell, JSON, or table format)</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>addvconf</h3>
+                <p><code>addvconf example.com</code><br>Initialize 55 variables for new vhost with auto-generated passwords</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>chvconf</h3>
+                <p><code>chvconf example.com V_PHP 8.4</code><br>Change a single configuration variable</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>delvconf</h3>
+                <p><code>delvconf example.com</code><br>Delete vhost configuration from database</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>fleet:discover</h3>
+                <p><code>php artisan fleet:discover --vnode=markc</code><br>Discover infrastructure topology</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>Remote Execution</h3>
+                <p>All remote operations use RemoteExecutionService with heredoc-based SSH scripts</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="use-cases-section">
+        <div class="section-header">
+            <h2>Perfect For</h2>
+            <p class="section-subtitle">NetServa 3.0 powers infrastructure for organizations of all sizes</p>
+        </div>
+
+        <div class="use-cases-grid">
+            <div class="use-case-card">
+                <h3>🏢 Hosting Providers</h3>
+                <p>Manage hundreds of virtual hosts with automated provisioning and billing integration. Perfect for shared hosting and reseller models.</p>
+            </div>
+
+            <div class="use-case-card">
+                <h3>⚙️ DevOps Teams</h3>
+                <p>Consistent environments from development through production. Container-native with infrastructure as code support.</p>
+            </div>
+
+            <div class="use-case-card">
+                <h3>🔧 Managed Service Providers</h3>
+                <p>Deliver consistent service across diverse client infrastructures with unified management interface and centralized monitoring.</p>
+            </div>
+
+            <div class="use-case-card">
+                <h3>🏛️ Enterprise IT</h3>
+                <p>Standardize infrastructure management across departments. Compliance features and audit trails for regulatory requirements.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://github.com/markc/ns">GitHub</a>
+                <a href="https://github.com/markc/ns/wiki">Documentation</a>
+                <a href="https://github.com/markc/ns/issues">Support</a>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+            </div>
+
+            <p style="margin-top: 3rem;"><strong>NetServa 3.0</strong> - Enterprise Infrastructure Management Platform</p>
+            <p>© 2025 NetServa Project | MIT License</p>
+            <p style="opacity: 0.7;"><em>Copyright (C) 1995-2025 Mark Constable &lt;mc@netserva.org&gt;</em></p>
+        </div>
+    </footer>
+
+    <!-- Social Sharing Widgets -->
+    <div class="social-widgets">
+        <a href="https://bsky.app/intent/compose?text=Check%20out%20NetServa%203.0%20-%20Database-first%20infrastructure%20management%20platform%20https://netserva.org" target="_blank" class="social-btn social-btn-bluesky" title="Share on Bluesky">
+            ☁️
+        </a>
+        <a href="https://www.youtube.com/@netserva" target="_blank" class="social-btn social-btn-youtube" title="YouTube Channel">
+            📺
+        </a>
+    </div>
+</body>
+</html>

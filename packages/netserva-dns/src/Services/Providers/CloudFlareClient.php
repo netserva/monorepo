@@ -156,7 +156,7 @@ class CloudFlareClient implements DnsProviderInterface
                 'type' => $data['type'],
                 'name' => $data['name'],
                 'content' => $data['content'],
-                'ttl' => $data['ttl'] ?? 3600,
+                'ttl' => $data['ttl'] ?? 300,
                 'priority' => $data['priority'] ?? null,
             ]);
 

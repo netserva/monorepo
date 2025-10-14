@@ -20,7 +20,7 @@ class ChangeZoneCommand extends Command
 {
     protected $signature = 'chzone
         {zone : Zone ID or name}
-        {--kind= : Change zone kind (Native, Master, Secondary)}
+        {--kind= : Change zone kind (Native, Primary, Secondary)}
         {--masters= : Update master nameservers (comma-separated)}
         {--ttl= : Update default TTL}
         {--description= : Update description}
@@ -51,9 +51,9 @@ class ChangeZoneCommand extends Command
         // Zone kind
         if ($this->option('kind')) {
             $kind = $this->option('kind');
-            if (! in_array($kind, ['Native', 'Master', 'Secondary', 'Slave'])) {
+            if (! in_array($kind, ['Native', 'Primary', 'Secondary'])) {
                 $this->error("❌ Invalid zone kind: {$kind}");
-                $this->line('   Valid kinds: Native, Master, Secondary, Slave');
+                $this->line('   Valid kinds: Native, Primary, Secondary');
 
                 return self::FAILURE;
             }
@@ -117,9 +117,9 @@ class ChangeZoneCommand extends Command
             $this->info('🔍 Dry run - no changes will be made');
             $this->line('');
             $this->line('Would update zone:');
-            $this->line('  Identifier: ' . $identifier);
-            $this->line('  Updates: ' . json_encode($updates, JSON_PRETTY_PRINT));
-            $this->line('  Options: ' . json_encode($options, JSON_PRETTY_PRINT));
+            $this->line('  Identifier: '.$identifier);
+            $this->line('  Updates: '.json_encode($updates, JSON_PRETTY_PRINT));
+            $this->line('  Options: '.json_encode($options, JSON_PRETTY_PRINT));
 
             return self::SUCCESS;
         }
@@ -190,7 +190,7 @@ class ChangeZoneCommand extends Command
             $this->newLine();
             if ($updates['dnssec_enabled']) {
                 $this->info('🔐 DNSSEC enabled');
-                $this->line('   Run: shzone ' . $zone->id . ' --with-dnssec (to view DS records)');
+                $this->line('   Run: shzone '.$zone->id.' --with-dnssec (to view DS records)');
             } else {
                 $this->warn('⚠️ DNSSEC disabled');
                 $this->line('   Remember to remove DS records from parent zone');
@@ -223,7 +223,7 @@ class ChangeZoneCommand extends Command
         return match ($field) {
             'active', 'dnssec_enabled' => $value ? 'Enabled' : 'Disabled',
             'masters' => is_array($value) ? implode(', ', $value) : (string) $value,
-            'ttl' => $value . 's',
+            'ttl' => $value.'s',
             default => is_null($value) ? 'Not set' : (string) $value,
         };
     }

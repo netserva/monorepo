@@ -2,7 +2,6 @@
 
 namespace NetServa\Cli\Services;
 
-use Exception;
 use Illuminate\Support\Facades\Log;
 use NetServa\Fleet\Models\FleetVHost;
 use NetServa\Fleet\Models\FleetVNode;
@@ -36,14 +35,14 @@ class VhostValidationService
     /**
      * Validate a discovered vhost for NetServa 3.0 compliance
      *
-     * @param FleetVHost $vhost The vhost to validate
+     * @param  FleetVHost  $vhost  The vhost to validate
      * @return array Validation result with issues list
      */
     public function validateVhost(FleetVHost $vhost): array
     {
         $vnode = $vhost->vnode;
 
-        if (!$vnode) {
+        if (! $vnode) {
             return [
                 'success' => false,
                 'error' => 'VHost has no associated VNode',
@@ -78,6 +77,8 @@ class VhostValidationService
         }
 
         // Run validation checks
+        // CRITICAL: Check vconf consistency with actual system first
+        $this->validateVconfConsistency($vnode, $vars, $issues, $warnings, $passed);
         $this->validateUserAndPermissions($vnode, $vars, $issues, $warnings, $passed);
         $this->validateDirectoryStructure($vnode, $vars, $issues, $warnings, $passed);
         $this->validateConfigurationFiles($vnode, $vars, $issues, $warnings, $passed);
@@ -92,7 +93,7 @@ class VhostValidationService
         $validationStatus = match (true) {
             $hasCritical => 'failed',
             $hasErrors => 'needs_fixes',
-            !empty($warnings) => 'passed_with_warnings',
+            ! empty($warnings) => 'passed_with_warnings',
             default => 'passed',
         };
 
@@ -121,6 +122,156 @@ class VhostValidationService
     }
 
     /**
+     * Validate vconf consistency with actual system state
+     *
+     * CRITICAL CHECK: Detects when vconfs don't match actual system reality
+     * This enables bidirectional repair (fix vconfs OR fix system)
+     *
+     * Checks:
+     * 1. UUSER/U_UID/U_GID in vconfs vs actual owner of UPATH
+     * 2. WUGID matches OSTYP (www-data for debian, nginx for alpine/manjaro)
+     */
+    protected function validateVconfConsistency(
+        FleetVNode $vnode,
+        array $vars,
+        array &$issues,
+        array &$warnings,
+        array &$passed
+    ): void {
+        $UPATH = $vars['UPATH'] ?? null;
+        $UUSER = $vars['UUSER'] ?? null;
+        $U_UID = $vars['U_UID'] ?? null;
+        $U_GID = $vars['U_GID'] ?? null;
+        $WUGID = $vars['WUGID'] ?? null;
+        $OSTYP = $vars['OSTYP'] ?? 'debian';
+
+        // Skip if critical vconfs missing
+        if (! $UPATH || ! $UUSER || ! $U_UID || ! $U_GID) {
+            return;
+        }
+
+        // Get actual owner of UPATH directory (username:uid:gid)
+        $result = $this->remoteExecution->executeAsRoot(
+            $vnode->name,
+            "stat -c '%U:%u:%g' {$UPATH} 2>/dev/null || echo 'NOTFOUND'"
+        );
+
+        if (! $result['success'] || trim($result['output']) === 'NOTFOUND') {
+            // UPATH doesn't exist - will be caught by directory validation
+            return;
+        }
+
+        // Parse: username:uid:gid (e.g., "u1001:1001:1001" or "sysadm:1000:1000")
+        $ownerInfo = trim($result['output']);
+        $parts = explode(':', $ownerInfo);
+
+        if (count($parts) !== 3) {
+            $warnings[] = [
+                'category' => 'vconf_mismatch',
+                'message' => 'Could not parse UPATH owner information',
+                'expected' => 'username:uid:gid format',
+                'actual' => $ownerInfo,
+            ];
+
+            return;
+        }
+
+        [$actualUser, $actualUid, $actualGid] = $parts;
+
+        // Check if a vhost-specific user exists (uXXXX pattern)
+        // NetServa 3.0 standard: vhost should use dedicated uXXXX user, not sysadm
+        $result = $this->remoteExecution->executeAsRoot(
+            $vnode->name,
+            "getent passwd | grep -E '^u[0-9]+:.*:{$UPATH}:' || echo 'NOTFOUND'"
+        );
+
+        $vhostSpecificUser = null;
+        $vhostSpecificUid = null;
+        $vhostSpecificGid = null;
+
+        if ($result['success'] && trim($result['output']) !== 'NOTFOUND') {
+            // Found a vhost-specific user with UPATH as home
+            // Format: u1001:x:1001:1001::/srv/nc.goldcoast.org:/bin/bash
+            $passwdEntry = trim($result['output']);
+            $passwdParts = explode(':', $passwdEntry);
+
+            if (count($passwdParts) >= 4) {
+                $vhostSpecificUser = $passwdParts[0];
+                $vhostSpecificUid = $passwdParts[2];
+                $vhostSpecificGid = $passwdParts[3];
+            }
+        }
+
+        // Determine correct state
+        $correctUser = $vhostSpecificUser ?? $actualUser;
+        $correctUid = $vhostSpecificUid ?? $actualUid;
+        $correctGid = $vhostSpecificGid ?? $actualGid;
+
+        // Check if vconfs match correct/ideal state
+        $vconfMismatch = false;
+        $mismatchDetails = [];
+
+        if ($UUSER !== $correctUser) {
+            $vconfMismatch = true;
+            $mismatchDetails[] = "UUSER vconf={$UUSER}, should be={$correctUser}";
+        }
+
+        if ($U_UID !== $correctUid) {
+            $vconfMismatch = true;
+            $mismatchDetails[] = "U_UID vconf={$U_UID}, should be={$correctUid}";
+        }
+
+        if ($U_GID !== $correctGid) {
+            $vconfMismatch = true;
+            $mismatchDetails[] = "U_GID vconf={$U_GID}, should be={$correctGid}";
+        }
+
+        if ($vconfMismatch) {
+            $warnings[] = [
+                'category' => 'vconf_mismatch',
+                'message' => $vhostSpecificUser
+                    ? "VConfs should use vhost-specific user {$vhostSpecificUser} (NetServa 3.0 standard)"
+                    : 'VConfs do not match actual UPATH owner',
+                'expected_vconf' => "UUSER={$correctUser}, U_UID={$correctUid}, U_GID={$correctGid}",
+                'actual_vconf' => "UUSER={$UUSER}, U_UID={$U_UID}, U_GID={$U_GID}",
+                'actual_system' => "owner={$actualUser}:{$actualUid}:{$actualGid}".
+                    ($vhostSpecificUser ? ", vhost_user={$correctUser}:{$correctUid}:{$correctGid}" : ''),
+                'details' => implode(', ', $mismatchDetails),
+                'repair_hint' => 'Use --repair to fix vconfs AND ownership to use correct user',
+            ];
+        } else {
+            $passed[] = [
+                'category' => 'vconf_consistency',
+                'check' => "VConfs use correct user: {$correctUser}:{$correctUid}:{$correctGid}",
+            ];
+        }
+
+        // Check WUGID matches OSTYP
+        if ($WUGID) {
+            $expectedWugid = match ($OSTYP) {
+                'debian' => 'www-data',
+                'alpine', 'manjaro' => 'nginx',
+                default => 'www-data', // Default to www-data for unknown OSTYP
+            };
+
+            if ($WUGID !== $expectedWugid) {
+                $warnings[] = [
+                    'category' => 'vconf_mismatch',
+                    'message' => 'WUGID does not match OSTYP',
+                    'expected' => "WUGID should be '{$expectedWugid}' for OSTYP='{$OSTYP}'",
+                    'actual' => "WUGID='{$WUGID}'",
+                    'repair_hint' => 'Use --repair to update WUGID in vconfs',
+                ];
+            } else {
+                $passed[] = [
+                    'category' => 'vconf_consistency',
+                    'check' => "WUGID '{$WUGID}' matches OSTYP '{$OSTYP}'",
+                ];
+            }
+        }
+    }
+
+    /**
      * Validate user and permissions
      */
     protected function validateUserAndPermissions(
@@ -135,7 +286,7 @@ class VhostValidationService
         $U_GID = $vars['U_GID'] ?? null;
         $UPATH = $vars['UPATH'] ?? null;
 
-        if (!$UUSER || !$U_UID || !$U_GID) {
+        if (! $UUSER || ! $U_UID || ! $U_GID) {
             $issues[] = [
                 'severity' => 'critical',
                 'category' => 'user',
@@ -143,6 +294,7 @@ class VhostValidationService
                 'expected' => 'UUSER, U_UID, U_GID must be set',
                 'actual' => sprintf('UUSER=%s, U_UID=%s, U_GID=%s', $UUSER ?? 'null', $U_UID ?? 'null', $U_GID ?? 'null'),
             ];
+
             return;
         }
 
@@ -152,7 +304,7 @@ class VhostValidationService
             "id -u {$UUSER} 2>/dev/null || echo 'NOTFOUND'"
         );
 
-        if (!$result['success'] || trim($result['output']) === 'NOTFOUND') {
+        if (! $result['success'] || trim($result['output']) === 'NOTFOUND') {
             $issues[] = [
                 'severity' => 'error',
                 'category' => 'user',
@@ -160,6 +312,7 @@ class VhostValidationService
                 'expected' => "User {$UUSER} with UID {$U_UID}",
                 'actual' => 'User not found',
             ];
+
             return;
         }
 
@@ -188,7 +341,7 @@ class VhostValidationService
 
             if ($result['success'] && trim($result['output']) !== 'NOTFOUND') {
                 $ownership = trim($result['output']);
-                if (!str_starts_with($ownership, $UUSER.':')) {
+                if (! str_starts_with($ownership, $UUSER.':')) {
                     $warnings[] = [
                         'category' => 'permissions',
                         'message' => "Directory {$UPATH} has incorrect ownership",
@@ -222,13 +375,14 @@ class VhostValidationService
         ];
 
         foreach ($requiredDirs as $varName => $path) {
-            if (!$path) {
+            if (! $path) {
                 $warnings[] = [
                     'category' => 'directory',
                     'message' => "Missing {$varName} configuration",
                     'expected' => "{$varName} must be set",
                     'actual' => 'Not configured',
                 ];
+
                 continue;
             }
 
@@ -237,7 +391,7 @@ class VhostValidationService
                 "test -d {$path} && echo 'EXISTS' || echo 'NOTFOUND'"
             );
 
-            if (!$result['success'] || trim($result['output']) === 'NOTFOUND') {
+            if (! $result['success'] || trim($result['output']) === 'NOTFOUND') {
                 $issues[] = [
                     'severity' => 'error',
                     'category' => 'directory',
@@ -266,7 +420,7 @@ class VhostValidationService
                     "test -d {$fullPath} && echo 'EXISTS' || echo 'NOTFOUND'"
                 );
 
-                if (!$result['success'] || trim($result['output']) === 'NOTFOUND') {
+                if (! $result['success'] || trim($result['output']) === 'NOTFOUND') {
                     $warnings[] = [
                         'category' => 'directory',
                         'message' => "Required web directory missing: {$fullPath}",
@@ -296,11 +450,12 @@ class VhostValidationService
         $VHOST = $vars['VHOST'] ?? null;
         $UPATH = $vars['UPATH'] ?? null;
 
-        if (!$VHOST) {
+        if (! $VHOST) {
             $warnings[] = [
                 'category' => 'configuration',
                 'message' => 'VHOST variable not set',
             ];
+
             return;
         }
 
@@ -319,7 +474,7 @@ class VhostValidationService
             "test -f {$poolConfig} && echo 'EXISTS' || echo 'NOTFOUND'"
         );
 
-        if (!$result['success'] || trim($result['output']) === 'NOTFOUND') {
+        if (! $result['success'] || trim($result['output']) === 'NOTFOUND') {
             $issues[] = [
                 'severity' => 'error',
                 'category' => 'php',
@@ -341,7 +496,7 @@ class VhostValidationService
             "test -f {$nginxConfig} && echo 'EXISTS' || echo 'NOTFOUND'"
         );
 
-        if (!$result['success'] || trim($result['output']) === 'NOTFOUND') {
+        if (! $result['success'] || trim($result['output']) === 'NOTFOUND') {
             $warnings[] = [
                 'category' => 'nginx',
                 'message' => "Nginx configuration not found: {$nginxConfig}",
@@ -358,6 +513,9 @@ class VhostValidationService
 
     /**
      * Validate database consistency
+     *
+     * NetServa 3.0: Single source of truth - local database only
+     * Validates vconfs completeness (vhost already exists since we're validating it)
      */
     protected function validateDatabaseConsistency(
         FleetVNode $vnode,
@@ -367,34 +525,28 @@ class VhostValidationService
         array &$passed
     ): void {
         $VHOST = $vars['VHOST'] ?? null;
-        $SQCMD = $vars['SQCMD'] ?? 'sqlite3 /var/lib/sqlite/sysadm/sysadm.db';
 
-        if (!$VHOST) {
+        if (! $VHOST) {
             return;
         }
 
-        // Check if vhost exists in remote database
-        $result = $this->remoteExecution->executeAsRoot(
-            $vnode->name,
-            "echo \"SELECT COUNT(*) FROM vhosts WHERE domain = '{$VHOST}'\" | {$SQCMD} 2>/dev/null || echo '0'"
-        );
+        // Check vconfs completeness in local database (NetServa 3.0)
+        // The vars array comes from getAllEnvVars() which reads vconfs
+        // So if we have vars, we have vconfs - just count them for the check
+        $vconfCount = count($vars);
 
-        if ($result['success']) {
-            $count = (int) trim($result['output']);
-
-            if ($count === 0) {
-                $warnings[] = [
-                    'category' => 'database',
-                    'message' => "VHost not registered in remote database",
-                    'expected' => "Entry in vhosts table for {$VHOST}",
-                    'actual' => 'No database entry found',
-                ];
-            } else {
-                $passed[] = [
-                    'category' => 'database',
-                    'check' => 'VHost registered in remote database',
-                ];
-            }
+        if ($vconfCount < 10) {
+            $warnings[] = [
+                'category' => 'database',
+                'message' => "VHost has incomplete vconfs (found {$vconfCount})",
+                'expected' => "At least 10 vconf entries for {$VHOST}",
+                'actual' => "{$vconfCount} vconfs found",
+            ];
+        } else {
+            $passed[] = [
+                'category' => 'database',
+                'check' => "VHost has {$vconfCount} vconfs in local database",
+            ];
         }
     }
 
@@ -431,10 +583,10 @@ class VhostValidationService
             }
         }
 
-        // Check if PHP-FPM is running
+        // Check if PHP-FPM is running (find any php*-fpm service)
         $result = $this->remoteExecution->executeAsRoot(
             $vnode->name,
-            "systemctl is-active 'php*-fpm' 2>/dev/null || echo 'NOTRUNNING'"
+            "systemctl list-units --type=service --state=running 'php*-fpm*' | grep -q 'php.*-fpm' && echo 'active' || echo 'NOTRUNNING'"
         );
 
         if ($result['success']) {
@@ -453,6 +605,52 @@ class VhostValidationService
                 ];
             }
         }
+
+        // Check if Postfix is running (mail server)
+        $result = $this->remoteExecution->executeAsRoot(
+            $vnode->name,
+            "systemctl is-active postfix 2>/dev/null || echo 'NOTRUNNING'"
+        );
+
+        if ($result['success']) {
+            $status = trim($result['output']);
+            if ($status === 'active') {
+                $passed[] = [
+                    'category' => 'service',
+                    'check' => 'Postfix service is running',
+                ];
+            } else {
+                $warnings[] = [
+                    'category' => 'service',
+                    'message' => 'Postfix service is not running',
+                    'expected' => 'Postfix should be active',
+                    'actual' => $status,
+                ];
+            }
+        }
+
+        // Check if Dovecot is running (mail server)
+        $result = $this->remoteExecution->executeAsRoot(
+            $vnode->name,
+            "systemctl is-active dovecot 2>/dev/null || echo 'NOTRUNNING'"
+        );
+
+        if ($result['success']) {
+            $status = trim($result['output']);
+            if ($status === 'active') {
+                $passed[] = [
+                    'category' => 'service',
+                    'check' => 'Dovecot service is running',
+                ];
+            } else {
+                $warnings[] = [
+                    'category' => 'service',
+                    'message' => 'Dovecot service is not running',
+                    'expected' => 'Dovecot should be active',
+                    'actual' => $status,
+                ];
+            }
+        }
     }
 
     /**
@@ -467,7 +665,7 @@ class VhostValidationService
     ): void {
         $WPATH = $vars['WPATH'] ?? null;
 
-        if (!$WPATH) {
+        if (! $WPATH) {
             return;
         }
 
@@ -482,7 +680,7 @@ class VhostValidationService
             if ($perms !== '755') {
                 $warnings[] = [
                     'category' => 'security',
-                    'message' => "Web directory has incorrect permissions",
+                    'message' => 'Web directory has incorrect permissions',
                     'expected' => '755',
                     'actual' => $perms,
                 ];
@@ -506,7 +704,7 @@ class VhostValidationService
             if ($perms !== '750') {
                 $warnings[] = [
                     'category' => 'security',
-                    'message' => "Log directory has incorrect permissions",
+                    'message' => 'Log directory has incorrect permissions',
                     'expected' => '750',
                     'actual' => $perms,
                 ];

@@ -208,7 +208,7 @@ class DnsZone extends Model
                         'name' => $remoteRecord['name'] ?? '',
                         'type' => $remoteRecord['type'],
                         'content' => $remoteRecord['content'],
-                        'ttl' => $remoteRecord['ttl'] ?? 3600,
+                        'ttl' => $remoteRecord['ttl'] ?? 300,
                         'priority' => $remoteRecord['priority'] ?? 0,
                         'disabled' => $remoteRecord['disabled'] ?? false,
                         'last_synced' => now(),

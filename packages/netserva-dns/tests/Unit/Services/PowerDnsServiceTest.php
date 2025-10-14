@@ -189,7 +189,7 @@ class PowerDnsServiceTest extends TestCase
             '*/zones/*/notify*' => Http::response(['result' => 'Notification sent'], 200),
         ]);
 
-        $result = $this->service->notifySlaves($this->provider, 'example.com');
+        $result = $this->service->notifySecondaries($this->provider, 'example.com');
 
         expect($result)->toHaveKey('success', true);
     }

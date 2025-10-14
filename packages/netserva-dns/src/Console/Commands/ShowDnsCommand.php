@@ -36,6 +36,7 @@ class ShowDnsCommand extends Command
     protected $description = 'Show DNS provider(s) (NetServa CRUD pattern)';
 
     protected DnsProviderManagementService $providerService;
+
     protected \NetServa\Dns\Services\PowerDnsTunnelService $tunnelService;
 
     public function __construct(
@@ -54,9 +55,10 @@ class ShowDnsCommand extends Command
 
         // If zone is provided, show records for that zone (like shrec)
         if ($zone) {
-            if (!$provider) {
+            if (! $provider) {
                 $this->error('❌ Provider is required when specifying a zone');
                 $this->line('Usage: shdns <provider> <zone>');
+
                 return self::FAILURE;
             }
 
@@ -65,8 +67,9 @@ class ShowDnsCommand extends Command
                 'with_zones' => true,
             ]);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 $this->error("❌ {$result['message']}");
+
                 return self::FAILURE;
             }
 
@@ -134,14 +137,14 @@ class ShowDnsCommand extends Command
         // Show detailed information only with --all flag
         if ($this->option('all')) {
             // Basic information
-            $this->line('<fg=blue>Type:</>' .str_repeat(' ', 10).ucfirst($provider->type));
-            $this->line('<fg=blue>Active:</>' .str_repeat(' ', 8).($provider->active ? '✅ Yes' : '❌ No'));
+            $this->line('<fg=blue>Type:</>'.str_repeat(' ', 10).ucfirst($provider->type));
+            $this->line('<fg=blue>Active:</>'.str_repeat(' ', 8).($provider->active ? '✅ Yes' : '❌ No'));
 
             if ($provider->version) {
-                $this->line('<fg=blue>Version:</>' .str_repeat(' ', 7).$provider->version);
+                $this->line('<fg=blue>Version:</>'.str_repeat(' ', 7).$provider->version);
             }
 
-            $this->line('<fg=blue>Priority:</>' .str_repeat(' ', 6).$provider->sort_order);
+            $this->line('<fg=blue>Priority:</>'.str_repeat(' ', 6).$provider->sort_order);
 
             // Connection configuration
             $this->newLine();
@@ -186,7 +189,7 @@ class ShowDnsCommand extends Command
                 try {
                     $remoteZones = $this->tunnelService->getZones($provider);
 
-                    if (is_array($remoteZones) && !empty($remoteZones)) {
+                    if (is_array($remoteZones) && ! empty($remoteZones)) {
                         $remoteCount = count($remoteZones);
                         $localCount = $result['zones_count'];
 
@@ -196,22 +199,22 @@ class ShowDnsCommand extends Command
                         if ($remoteCount !== $localCount) {
                             $diff = $remoteCount - $localCount;
                             $this->warn("  ⚠️  {$diff} zone(s) not synced to local database");
-                            $this->line("  💡 Use --import-zones to sync");
+                            $this->line('  💡 Use --import-zones to sync');
                         }
                     } else {
-                        $this->error("  Failed to fetch remote zones or no zones found");
+                        $this->error('  Failed to fetch remote zones or no zones found');
                         $zonesCount = $result['zones_count'];
                         $this->line("  Zones (Local):  <fg=cyan>{$zonesCount}</>");
                     }
                 } catch (\Exception $e) {
-                    $this->error("  Error: " . $e->getMessage());
+                    $this->error('  Error: '.$e->getMessage());
                     $zonesCount = $result['zones_count'];
                     $this->line("  Zones (Local):  <fg=cyan>{$zonesCount}</>");
                 }
             } else {
                 $zonesCount = $result['zones_count'];
                 $this->line("  Zones:      <fg=cyan>{$zonesCount}</> <fg=gray>(local database)</>");
-                $this->line("  <fg=gray>💡 Use --sync-remote to see remote count</>");
+                $this->line('  <fg=gray>💡 Use --sync-remote to see remote count</>');
             }
 
             if ($provider->last_sync) {
@@ -319,8 +322,9 @@ class ShowDnsCommand extends Command
             try {
                 $remoteZones = $this->tunnelService->getZones($provider);
 
-                if (!is_array($remoteZones) || empty($remoteZones)) {
-                    $this->error("Failed to fetch zones or no zones found");
+                if (! is_array($remoteZones) || empty($remoteZones)) {
+                    $this->error('Failed to fetch zones or no zones found');
+
                     return self::FAILURE;
                 }
 
@@ -330,7 +334,7 @@ class ShowDnsCommand extends Command
                 foreach ($remoteZones as $remoteZone) {
                     $zoneName = $remoteZone['name'] ?? null;
 
-                    if (!$zoneName) {
+                    if (! $zoneName) {
                         continue;
                     }
 
@@ -341,10 +345,11 @@ class ShowDnsCommand extends Command
 
                     if ($existingZone) {
                         $skipped++;
+
                         continue;
                     }
 
-                    // Map PowerDNS kind to database kind (Master/Slave → Primary/Secondary)
+                    // Map PowerDNS API kind to database kind (handles legacy Master/Slave from older PowerDNS versions)
                     $kind = $remoteZone['kind'] ?? 'Native';
                     $kindMap = [
                         'Master' => 'Primary',
@@ -373,13 +378,14 @@ class ShowDnsCommand extends Command
                 }
 
                 $this->newLine();
-                $this->info("✅ Zone import complete:");
+                $this->info('✅ Zone import complete:');
                 $this->line("   Imported: <fg=cyan>{$imported}</>");
                 $this->line("   Skipped (already exist): <fg=yellow>{$skipped}</>");
-                $this->line("   Total zones now: <fg=cyan>" . ($imported + $skipped) . "</>");
+                $this->line('   Total zones now: <fg=cyan>'.($imported + $skipped).'</>');
 
             } catch (\Exception $e) {
-                $this->error("Import failed: " . $e->getMessage());
+                $this->error('Import failed: '.$e->getMessage());
+
                 return self::FAILURE;
             }
         }
@@ -472,7 +478,7 @@ class ShowDnsCommand extends Command
                 'powerdns' => isset($config['ssh_host'])
                     ? "SSH: {$config['ssh_host']} → :{$config['api_port']}"
                     : ($config['api_endpoint'] ?? 'Not configured'),
-                'cloudflare' => ($config['email'] ?? 'Email') . ($config['email'] ? ": {$config['email']}" : ''),
+                'cloudflare' => ($config['email'] ?? 'Email').($config['email'] ? ": {$config['email']}" : ''),
                 'route53' => 'Region: '.($config['region'] ?? 'us-east-1'),
                 default => $config['api_endpoint'] ?? 'Not configured',
             };
@@ -538,8 +544,9 @@ class ShowDnsCommand extends Command
                 'with_zones' => true,
             ]);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 $this->error("❌ {$result['message']}");
+
                 return self::FAILURE;
             }
 
@@ -548,6 +555,7 @@ class ShowDnsCommand extends Command
 
             if ($zones->isEmpty()) {
                 $this->warn("⚠️ Provider '{$provider->name}' has no zones");
+
                 return self::SUCCESS;
             }
 
