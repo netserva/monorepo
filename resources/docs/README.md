@@ -14,7 +14,14 @@
 
 ## 🤖 AI-Assisted Development
 
-**New in 2025-10-08:** Comprehensive guides for Claude Code workflows
+**New in 2025-10-13:** BMAD-METHOD integration for structured AI-driven development
+
+### BMAD-METHOD (Structured AI Development)
+- **[BMAD Integration Guide](bmad/README.md)** - Complete setup and workflow for NetServa 3.0
+- Uses specialized AI agents: Analyst, PM, Architect, Scrum Master, Dev
+- Generates PRDs, Architecture docs, and hyper-detailed development stories
+- Prevents context loss, ensures consistency across packages
+- Official: https://github.com/bmad-code-org/BMAD-METHOD
 
 ### Claude Code Essentials
 - **[Claude Code Essentials](ai/claude-code-essentials.md)** - Core patterns, memory system, MCP integration
@@ -23,10 +30,11 @@
 - **[Proven Workflows](ai/proven-workflows.md)** - 4-phase development, TDD, technical debt management
 
 ### Quick Start
-1. Read [claude-code-essentials.md](ai/claude-code-essentials.md) for overview
-2. Optimize your CLAUDE.md files using [memory-management.md](ai/memory-management.md)
-3. Follow [proven-workflows.md](ai/proven-workflows.md) for development process
-4. Use `.claude/commands/` for workflow automation
+1. Read [bmad/README.md](bmad/README.md) for BMAD-METHOD setup (recommended for new features)
+2. Read [claude-code-essentials.md](ai/claude-code-essentials.md) for Claude Code overview
+3. Optimize your CLAUDE.md files using [memory-management.md](ai/memory-management.md)
+4. Follow [proven-workflows.md](ai/proven-workflows.md) for development process
+5. Use `.claude/commands/` for workflow automation
 
 ## 🏗️ Architecture & Patterns
 
