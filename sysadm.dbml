@@ -22,11 +22,12 @@ Table vhosts {
 
 Table vmails {
   id integer [pk, increment]
-  user varchar(255) [unique, not null]
-  pass varchar(255) [not null]
-  home varchar(255) [not null]
+  user varchar(255) [unique, not null, note: 'Full email address (e.g., admin@domain.com)']
+  pass varchar(255) [not null, note: 'Password hash (SHA512-CRYPT, BLF-CRYPT). Query as "pass AS password" for Dovecot']
+  home varchar(255) [not null, note: 'Full maildir path (e.g., /srv/domain.com/msg/user)']
   uid integer [not null]
   gid integer [not null]
+  quota bigint [default: 500000000, note: 'Mailbox quota in bytes (default 500MB)']
   active integer [default: 1]
   created_at datetime [default: `CURRENT_TIMESTAMP`]
   updated_at datetime [default: `CURRENT_TIMESTAMP`]
@@ -34,6 +35,8 @@ Table vmails {
   indexes {
     user [name: 'idx_vmails_user']
   }
+
+  Note: 'Virtual mailboxes - all data in single table, no joins or concatenation required'
 }
 
 Table valias {
