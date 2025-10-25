@@ -1,4 +1,6 @@
-# Claude Code Project Journal Commands
+# Claude Code Session Journal Commands
+
+The **Session Journal** is a persistent memory system for multi-month projects, maintaining continuity across Claude Code sessions.
 
 **Security Notice:** Journal entries, active context, and timeline files contain sensitive data (IPs, passwords, API keys) and are gitignored. Only these command templates are tracked in the repo.
 
@@ -64,9 +66,9 @@ Updates: `.claude/project-timeline.md`
 └── project-timeline.md # GITIGNORED - contains dates/IPs
 ```
 
-## Why This System?
+## Why Session Journal?
 
-NetServa 3.0 is a multi-month project. This journal system prevents:
+NetServa 3.0 is a multi-month project. The Session Journal prevents:
 - ❌ Losing context between sessions
 - ❌ Forgetting why decisions were made
 - ❌ Repeating solved problems
@@ -86,4 +88,10 @@ All journal files are automatically gitignored (see `.gitignore:56-59`). They ma
 - API keys and tokens
 - Infrastructure details
 
-**Never commit journal files to public repos.**
+**Never commit Session Journal files to public repos.**
+
+## Terminology
+
+- **Session Journal** - The formal name for this persistent memory system
+- **journal** - Shorthand reference (e.g., "check the journal", "add to journal")
+- Primary location: `~/.ns/.claude/journal/`

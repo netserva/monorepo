@@ -1,10 +1,10 @@
 ---
-description: "Save current session summary to project journal"
+description: "Save current session summary to Session Journal"
 ---
 
 # Snapshot Current Session
 
-Please create a concise session summary and save it to the project journal.
+Please create a concise session summary and save it to the Session Journal.
 
 ## Instructions
 
@@ -15,7 +15,7 @@ Please create a concise session summary and save it to the project journal.
    - Problems solved or encountered
    - Next steps/blockers
 
-2. **Create journal entry** at `~/.ns/.claude/journal/YYYY-MM-DD_topic-slug.md` with:
+2. **Create Session Journal entry** at `~/.ns/.claude/journal/YYYY-MM-DD_topic-slug.md` with:
    ```markdown
    # [Date] - [Topic Title]
 
@@ -49,10 +49,10 @@ Please create a concise session summary and save it to the project journal.
 3. **Update active context** at `~/.ns/.claude/active-context.md`:
    - Replace content with current focus
    - Keep only the most recent 2-3 sessions summarized
-   - Include links to relevant journal entries
+   - Include links to relevant Session Journal entries
 
 4. **Confirm** by showing:
-   - Journal entry filename
+   - Session Journal entry filename
    - Brief summary of what was captured
    - Top 3 next steps
 

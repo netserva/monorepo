@@ -4,13 +4,13 @@ description: "Load recent context to continue from where we left off"
 
 # Resume From Previous Session
 
-Load recent project context to continue work seamlessly.
+Load recent Session Journal context to continue work seamlessly.
 
 ## Instructions
 
 1. **Read active context** from `~/.ns/.claude/active-context.md`
 
-2. **Read the 3 most recent journal entries** from `~/.ns/.claude/journal/`
+2. **Read the 3 most recent Session Journal entries** from `~/.ns/.claude/journal/`
    - Sort by date (newest first)
    - Load full content of each
 
@@ -42,11 +42,11 @@ Load recent project context to continue work seamlessly.
 
 4. **Ask the user** what they want to focus on today
 
-5. **Be ready to reference** any technical details from the journal entries
+5. **Be ready to reference** any technical details from the Session Journal entries
 
 ## Context Priority
 
 1. Active context file (most important)
-2. Last 3 journal entries
+2. Last 3 Session Journal entries
 3. Project CLAUDE.md
 4. Relevant documentation

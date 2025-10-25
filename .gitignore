@@ -57,3 +57,27 @@ resources/docs-archive-*/
 .claude/journal/
 .claude/active-context.md
 .claude/project-timeline.md
+
+# Critical Files - PowerDNS API Keys & Production Data
+/pdns_localhost_api_summary.md
+/Spiderweb_Zone_Transfer.md
+/MRN_*.md
+
+# NetServa Documentation Security - Added 2025-10-25
+# Sensitive infrastructure documentation
+/resources/docs/private/
+/*_MIGRATION_*.md
+/*_AUDIT_*.md
+/QUERY_EXAMPLES.md
+
+# Root-level status/progress docs (contain sensitive details)
+/COMPLETE_SW_IMPORT_SUMMARY.md
+/DOMAIN_SYNC_REPORT.md
+/FINAL_IMPORT_VERIFICATION.md
+/DELVHOST_READY.md
+/CHVHOST_SHVHOST_COMPLETE.md
+/DNS_PROVIDER_*.md
+/BASHSCRIPTBUILDER_COMPLETE.md
+/PROBLEM_RESOLVED.md
+/SW_CRUD_COMMANDS.md
+/WHMCS_INTEGRATION_ENHANCEMENTS.md
