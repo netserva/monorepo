@@ -52,3 +52,8 @@ resources/docs-archive-*/
 .env.testing
 .env.local
 .env.*.local
+
+# Claude Code Journal - Contains sensitive IPs, passwords, API keys
+.claude/journal/
+.claude/active-context.md
+.claude/project-timeline.md
