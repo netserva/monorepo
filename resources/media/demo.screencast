@@ -2,7 +2,7 @@
 # Simple screencast showing how to use mkpodcast
 
 > Welcome to the NetServa podcast generator demonstration.
-wait:2
+wait:1
 
 > First, let's navigate to the media directory.
 $ cd ~/.ns/resources/media
@@ -10,12 +10,12 @@ wait:1
 
 > Let's see what files we have available.
 $ ls -lh
-wait:2
+wait:1
 
 > Now we'll generate a podcast from a text file using mkpodcast.
 wait:1
 $ ./mkpodcast README.txt demo-podcast.mp3
-wait:8
+wait:15
 
 > The podcast has been generated successfully.
 wait:1

@@ -68,7 +68,8 @@ Output: .cast terminal recording + separate narration MP3.
 
 **Automated Video Generation** (recommended):
 - Use `mkscreencast-auto` for fully automated MP4 creation
-- Requires gpu-screen-recorder and one-time portal permission
+- First run: Grant permission in portal dialog and check "Remember"
+- Subsequent runs: Fully automated, no dialogs, complete hands-off
 - Generates complete video with synchronized narration
 
 **Manual Playback**:

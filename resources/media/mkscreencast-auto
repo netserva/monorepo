@@ -37,7 +37,9 @@ Requirements:
   - konsole (or modify for your terminal)
 
 First run: You'll need to grant screen recording permission via
-the KDE portal dialog. Select "Always" to avoid future prompts.
+the KDE portal dialog. Make sure to check "Remember this choice"
+or similar option. After first run, subsequent recordings will be
+fully automated with no dialog.
 
 Example:
   ./mkscreencast-auto demo.screencast demo.mp4
@@ -196,10 +198,16 @@ echo ""
 echo "Step 3: Automated screen recording..."
 echo "Duration: ${DURATION}s"
 echo ""
-echo "A KDE portal dialog will appear asking for screen recording permission."
-echo "Select the screen/window to record and click 'Share'."
-echo "Check 'Always' to avoid this prompt in future runs."
-echo ""
+
+# Check if session token exists
+SESSION_TOKEN="${XDG_CONFIG_HOME:-$HOME/.config}/gpu-screen-recorder/restore_token"
+if [[ ! -f "$SESSION_TOKEN" ]]; then
+    echo "FIRST RUN: Portal dialog will appear."
+    echo "Select the screen/window to record and check 'Remember this choice'."
+    echo "Future runs will be fully automated with no dialog."
+    echo ""
+fi
+
 echo "Starting in 3 seconds..."
 sleep 3
 
@@ -209,6 +217,7 @@ gpu-screen-recorder \
     -f 30 \
     -c mp4 \
     -k h264 \
+    -restore-portal-session yes \
     -o "$VIDEO_RAW" &
 RECORDER_PID=$!
 
