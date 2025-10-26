@@ -61,8 +61,26 @@ wait:1
 > That completes the demo.
 ```
 
-Output: .cast terminal recording + separate narration MP3. Play both
-simultaneously for complete demonstration.
+Output: .cast terminal recording + separate narration MP3.
+
+Playback options:
+- Play both simultaneously: `asciinema play demo.cast & mpv demo-narration.mp3`
+- Convert to video: Record asciinema playback, merge with `cast2video`
+
+## Converting to Video
+
+To create MP4 videos with synchronized narration:
+
+```bash
+# 1. Play asciinema recording
+asciinema play demo.cast
+
+# 2. Record with screen recorder (Spectacle Meta+Shift+R, OBS, etc.)
+# Save as demo-recording.mp4
+
+# 3. Merge with narration
+./cast2video demo-recording.mp4 demo-narration.mp3 demo-final.mp4
+```
 
 ## Requirements
 
@@ -72,6 +90,10 @@ sudo pacman -S piper-tts piper-tts-voices-en_US ffmpeg
 
 # CachyOS/Arch Linux - Screencasts
 sudo pacman -S asciinema
+
+# Optional: Screen recorders for video conversion
+sudo pacman -S obs-studio
+# or use built-in Spectacle (Meta+Shift+R)
 ```
 
 ## Git Policy
