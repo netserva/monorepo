@@ -1,8 +1,8 @@
 #!/bin/bash
 # NetServa Screencast Generator
-# Creates screencasts from orchestration files using wf-recorder
+# Creates terminal screencasts from orchestration files using asciinema
 #
-# Usage: ./mkscreencast <input.screencast> [output.mp4]
+# Usage: ./mkscreencast <input.screencast> [output-basename]
 
 set -euo pipefail
 
@@ -17,9 +17,9 @@ OUTPUT="${2:-}"
 
 if [[ -z "$INPUT" ]]; then
     cat << 'HELP'
-Usage: mkscreencast <input.screencast> [output.mp4]
+Usage: mkscreencast <input.screencast> [output-basename]
 
-Screencast generator using wf-recorder for Wayland.
+Terminal screencast generator using asciinema.
 
 Orchestration file format:
   # comment
@@ -36,9 +36,10 @@ Example (.screencast file):
   > That completes the demo
 
 Output:
-  - screencast.mp4 (video with synchronized narration)
+  - basename.cast (terminal recording)
+  - basename-narration.mp3 (TTS audio)
 
-Play: mpv output.mp4
+Play both: asciinema play basename.cast & mpv basename-narration.mp3
 HELP
     exit 1
 fi
@@ -54,9 +55,9 @@ if [[ ! -f "$PIPER_BIN" ]]; then
     exit 1
 fi
 
-if ! command -v wf-recorder >/dev/null 2>&1; then
-    echo "Error: wf-recorder not found"
-    echo "Install with: sudo pacman -S wf-recorder"
+if ! command -v asciinema >/dev/null 2>&1; then
+    echo "Error: asciinema not found"
+    echo "Install with: sudo pacman -S asciinema"
     exit 1
 fi
 
@@ -65,30 +66,29 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
     exit 1
 fi
 
-# Set output filename if not provided
+# Set output basename if not provided
 if [[ -z "$OUTPUT" ]]; then
-    OUTPUT="${INPUT%.screencast}.mp4"
+    OUTPUT="${INPUT%.screencast}"
 fi
 
-NARRATION_TXT="/tmp/screencast-narration-$$.txt"
+CAST_FILE="${OUTPUT}.cast"
+NARRATION_TXT="${OUTPUT}-narration.txt"
+NARRATION_MP3="${OUTPUT}-narration.mp3"
 NARRATION_WAV="/tmp/screencast-narration-$$.wav"
-NARRATION_MP3="/tmp/screencast-narration-$$.mp3"
 SCRIPT_FILE="/tmp/screencast-$$.sh"
-VIDEO_RAW="/tmp/screencast-video-$$.mp4"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "NetServa Screencast Generator"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Input:  $INPUT"
-echo "Output: $OUTPUT"
+echo "Input:      $INPUT"
+echo "Terminal:   $CAST_FILE"
+echo "Narration:  $NARRATION_MP3"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 # Cleanup on exit
 cleanup() {
-    rm -f "$SCRIPT_FILE" "$NARRATION_TXT" "$NARRATION_WAV" "$NARRATION_MP3" "$VIDEO_RAW"
-    # Kill wf-recorder if still running
-    pkill -f "wf-recorder.*$VIDEO_RAW" 2>/dev/null || true
+    rm -f "$SCRIPT_FILE" "$NARRATION_WAV"
 }
 trap cleanup EXIT
 
@@ -186,49 +186,30 @@ else
 fi
 
 echo ""
-echo "Step 3: Recording screen..."
+echo "Step 3: Recording terminal session..."
 echo ""
-echo "The screen will now be recorded automatically."
-echo "Make sure your terminal (Konsole) is visible and focused."
+echo "The terminal will now record automatically."
+echo "Commands will be typed and executed as scripted."
 echo ""
-echo "Press ENTER to start recording in 3 seconds..."
+echo "Press ENTER to start recording..."
 read -r
 
-# Start wf-recorder in background (full screen capture)
-wf-recorder -f "$VIDEO_RAW" &
-RECORDER_PID=$!
-
-# Wait for recorder to initialize
-sleep 3
-
-# Execute the script in the terminal
-"$SCRIPT_FILE"
-
-# Stop recording
-kill -INT $RECORDER_PID
-wait $RECORDER_PID 2>/dev/null || true
-
-echo ""
-echo "Step 4: Combining video and audio..."
-
-if [[ -f "$NARRATION_MP3" ]]; then
-    # Merge video with narration audio
-    ffmpeg -i "$VIDEO_RAW" -i "$NARRATION_MP3" \
-        -c:v copy \
-        -c:a aac \
-        -b:a 128k \
-        -shortest \
-        "$OUTPUT" -y 2>&1 | grep -E "(Duration|size=)" || true
-else
-    # No narration, just copy video
-    mv "$VIDEO_RAW" "$OUTPUT"
-fi
+# Record with asciinema, executing our generated script
+asciinema rec \
+    --command "$SCRIPT_FILE" \
+    --overwrite \
+    "$CAST_FILE"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✓ Screencast generated successfully!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-ls -lh "$OUTPUT"
+ls -lh "$CAST_FILE"
+[[ -f "$NARRATION_MP3" ]] && ls -lh "$NARRATION_MP3"
 echo ""
-echo "Play with: mpv $OUTPUT"
+echo "Play terminal: asciinema play $CAST_FILE"
+[[ -f "$NARRATION_MP3" ]] && echo "Play audio:    mpv $NARRATION_MP3"
+echo ""
+echo "Play both simultaneously:"
+echo "  asciinema play $CAST_FILE & mpv $NARRATION_MP3"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -13,8 +13,8 @@ and create terminal demonstrations with synchronized narration.
 # Use different voice
 ./mkpodcast session-journal-quick-reference.txt podcast.mp3 danny
 
-# Generate screencast from orchestration file
-./mkscreencast demo.screencast demo.mp4
+# Generate terminal screencast from orchestration file
+./mkscreencast demo.screencast
 ```
 
 ## Available Voices
@@ -40,7 +40,8 @@ Word wrap to 76 characters for readability.
 
 ## Screencast Format
 
-Orchestration files (.screencast) define terminal demonstrations:
+Orchestration files (.screencast) define terminal demonstrations using
+asciinema for terminal recording:
 
 ```
 # Comment lines start with #
@@ -60,7 +61,8 @@ wait:1
 > That completes the demo.
 ```
 
-Output: MP4 video with synchronized narration audio.
+Output: .cast terminal recording + separate narration MP3. Play both
+simultaneously for complete demonstration.
 
 ## Requirements
 
@@ -69,7 +71,7 @@ Output: MP4 video with synchronized narration audio.
 sudo pacman -S piper-tts piper-tts-voices-en_US ffmpeg
 
 # CachyOS/Arch Linux - Screencasts
-sudo pacman -S wf-recorder
+sudo pacman -S asciinema
 ```
 
 ## Git Policy
