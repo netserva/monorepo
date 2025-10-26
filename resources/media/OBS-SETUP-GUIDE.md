@@ -8,9 +8,9 @@
 sudo pacman -S obs-studio-browser
 ```
 
-### 2. Install obs-cli (Already Done)
+### 2. Install obs-ctl (Already Done)
 
-obs-cli is already installed at `/usr/local/bin/obs-cli`
+obs-ctl is already installed at `/usr/local/bin/obs-ctl` (Node.js-based OBS WebSocket v5 controller)
 
 ### 3. Configure OBS for Automation
 
@@ -61,7 +61,7 @@ obs &
 export OBS_PASSWORD="your-password-here"
 
 # Test connection
-obs-cli --password "$OBS_PASSWORD" scene current
+obs-ctl scene-current
 ```
 
 If successful, you'll see your current scene name.
@@ -118,7 +118,8 @@ echo $OBS_PASSWORD  # Should show your password
 Or use a different scene:
 ```bash
 # List available scenes
-obs-cli --password "$OBS_PASSWORD" scene list
+export OBS_PASSWORD="your-password"
+obs-ctl scene-list
 
 # Use existing scene
 export OBS_SCENE="Scene Name"
@@ -152,11 +153,12 @@ Make sure to:
 # - "Outro" (thank you message)
 
 # Switch scenes programmatically:
-obs-cli scene switch "Intro"
+export OBS_PASSWORD="your-password"
+obs-ctl scene-switch "Intro"
 sleep 3
-obs-cli scene switch "Demo"
+obs-ctl scene-switch "Demo"
 # ... run demo ...
-obs-cli scene switch "Outro"
+obs-ctl scene-switch "Outro"
 sleep 2
 ```
 
@@ -178,13 +180,7 @@ sleep 2
 
 ### Custom Text Overlays
 
-```bash
-# Add text source programmatically
-obs-cli source create "Title Text" text
-
-# Update text content
-obs-cli source text set "Title Text" "NetServa Tutorial"
-```
+Text overlays are best configured manually in OBS Studio for now. The obs-ctl tool focuses on recording control and scene switching.
 
 ## Full Automation Example
 
@@ -199,21 +195,21 @@ pgrep -x obs || obs --minimize-to-tray &
 sleep 3
 
 # INTRO SCENE
-obs-cli scene switch "Intro"
-obs-cli recording start
+obs-ctl scene-switch "Intro"
+obs-ctl recording-start
 sleep 3
 
 # DEMO SCENE
-obs-cli scene switch "Demo"
+obs-ctl scene-switch "Demo"
 ./execute-demo.sh
 sleep 30
 
 # OUTRO SCENE
-obs-cli scene switch "Outro"
+obs-ctl scene-switch "Outro"
 sleep 2
 
 # Stop recording
-obs-cli recording stop
+obs-ctl recording-stop
 
 # Process video
 # (merge audio, render, upload, etc.)

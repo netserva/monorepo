@@ -16,7 +16,11 @@ and create terminal demonstrations with synchronized narration.
 # Generate terminal screencast from orchestration file
 ./mkscreencast demo.screencast
 
-# Fully automated screencast with video (requires gpu-screen-recorder)
+# Fully automated screencast with OBS Studio (recommended)
+export OBS_PASSWORD="your-password"
+./mkscreencast-obs demo.screencast demo.mp4
+
+# Alternative: gpu-screen-recorder (less reliable sync)
 ./mkscreencast-auto demo.screencast demo.mp4
 ```
 
@@ -100,12 +104,52 @@ sudo pacman -S piper-tts piper-tts-voices-en_US ffmpeg
 # Screencasts (basic)
 sudo pacman -S asciinema
 
-# Automated video generation (recommended)
-sudo pacman -S gpu-screen-recorder
+# Automated video generation (OBS Studio - recommended)
+sudo pacman -S obs-studio-browser nodejs npm
 
-# Manual video conversion (alternative)
-sudo pacman -S obs-studio
-# or use built-in Spectacle (Meta+Shift+R)
+# Alternative: gpu-screen-recorder (less reliable sync)
+sudo pacman -S gpu-screen-recorder
+```
+
+## OBS Studio Setup
+
+For automated screencasts with mkscreencast-obs:
+
+```bash
+# 1. Install dependencies
+cd obs-ctl
+./install.sh
+
+# 2. Configure OBS Studio (one-time)
+# - Enable WebSocket: Settings → WebSocket Server Settings
+# - Set password, add to ~/.bashrc: export OBS_PASSWORD="..."
+# - Create scene with Screen Capture (PipeWire) source
+# - Configure VAAPI encoder (Settings → Output → Recording)
+
+# 3. Test connection
+export OBS_PASSWORD="your-password"
+obs-ctl version
+
+# 4. Optional: Global hotkey (Insert key toggles recording)
+# System Settings → Shortcuts → Custom Shortcuts
+# Command: /usr/local/bin/obs-ctl-toggle
+# Trigger: Insert key
+```
+
+See `OBS-SETUP-GUIDE.md` for detailed instructions.
+
+## obs-ctl Commands
+
+```bash
+export OBS_PASSWORD="your-password"
+
+obs-ctl recording-start       # Start recording
+obs-ctl recording-stop        # Stop recording
+obs-ctl recording-status      # Check status
+obs-ctl scene-current         # Get current scene
+obs-ctl scene-list           # List all scenes
+obs-ctl scene-switch "Name"  # Switch scene
+obs-ctl version              # Show OBS version
 ```
 
 ## Git Policy
@@ -113,3 +157,6 @@ sudo pacman -S obs-studio
 Only source text files, orchestration files, and scripts are version
 controlled. Generated MP3 and MP4 files are excluded via gitignore. Users
 generate media locally as needed.
+
+The `obs-ctl/node_modules/` directory is also gitignored. Run `obs-ctl/install.sh`
+after cloning or on a new system to install Node.js dependencies.

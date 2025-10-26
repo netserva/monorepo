@@ -91,3 +91,4 @@ resources/docs-archive-*/
 *.avi
 *.mkv
 *.webm
+resources/media/obs-ctl/node_modules/

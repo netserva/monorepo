@@ -25,8 +25,9 @@ Professional automated screencast using OBS Studio.
 
 Requirements:
   1. OBS Studio installed: sudo pacman -S obs-studio-browser
-  2. obs-cli installed: Available at /usr/local/bin/obs-cli
-  3. OBS WebSocket configured:
+  2. Node.js installed (for obs-ctl)
+  3. obs-ctl installed: Available at /usr/local/bin/obs-ctl
+  4. OBS WebSocket configured:
      - Settings > WebSocket > Enable WebSocket server
      - Port: 4455 (default)
      - Password: Set OBS_PASSWORD environment variable
@@ -58,16 +59,16 @@ if [[ ! -f "$INPUT" ]]; then
 fi
 
 # Check dependencies
-for cmd in obs obs-cli ffmpeg; do
+for cmd in obs obs-ctl ffmpeg; do
     if ! command -v $cmd >/dev/null 2>&1; then
         echo "Error: $cmd not found"
         case $cmd in
             obs)
                 echo "Install with: sudo pacman -S obs-studio-browser"
                 ;;
-            obs-cli)
-                echo "Build from: https://github.com/muesli/obs-cli"
-                echo "Or use install script in docs"
+            obs-ctl)
+                echo "Node.js-based OBS WebSocket v5 controller"
+                echo "Should be installed at /usr/local/bin/obs-ctl"
                 ;;
             ffmpeg)
                 echo "Install with: sudo pacman -S ffmpeg"
@@ -109,7 +110,7 @@ cleanup() {
 
     # Stop recording if still running
     if [[ -n "$OBS_RECORDING" ]]; then
-        obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" recording stop 2>/dev/null || true
+        obs-ctl recording-stop 2>/dev/null || true
     fi
 }
 trap cleanup EXIT
@@ -126,7 +127,8 @@ else
 fi
 
 # Test WebSocket connection
-if ! obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" scene current >/dev/null 2>&1; then
+export OBS_PASSWORD OBS_PORT
+if ! obs-ctl scene-current >/dev/null 2>&1; then
     echo ""
     echo "Error: Cannot connect to OBS WebSocket"
     echo ""
@@ -141,7 +143,7 @@ fi
 echo "  ✓ Connected to OBS WebSocket"
 
 # Switch to recording scene
-if obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" scene switch "$OBS_SCENE" 2>/dev/null; then
+if obs-ctl scene-switch "$OBS_SCENE" 2>/dev/null; then
     echo "  ✓ Switched to scene: $OBS_SCENE"
 else
     echo "  ⚠ Warning: Scene '$OBS_SCENE' not found, using current scene"
@@ -196,7 +198,7 @@ echo ""
 echo "Step 3: Starting OBS recording..."
 
 # Start recording
-obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" recording start
+obs-ctl recording-start
 OBS_RECORDING="yes"
 echo "  ✓ Recording started"
 
@@ -241,9 +243,11 @@ sleep "$DURATION_INT"
 echo ""
 echo "Step 5: Stopping recording..."
 
-# Stop recording
-obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" recording stop
+# Stop recording and capture output path
+STOP_OUTPUT=$(obs-ctl recording-stop 2>&1)
 OBS_RECORDING=""
+
+echo "$STOP_OUTPUT"
 
 # Kill konsole
 kill $KONSOLE_PID 2>/dev/null || true
@@ -251,8 +255,8 @@ kill $KONSOLE_PID 2>/dev/null || true
 # Give OBS time to finalize file
 sleep 2
 
-# Get output file from OBS
-OBS_OUTPUT=$(obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" recording status 2>&1 | grep -oP '(?<=outputPath: ).*' || echo "")
+# Extract output path from stop command
+OBS_OUTPUT=$(echo "$STOP_OUTPUT" | grep -oP '(?<=outputPath: ).*' || echo "")
 
 if [[ -z "$OBS_OUTPUT" ]] || [[ ! -f "$OBS_OUTPUT" ]]; then
     echo ""
