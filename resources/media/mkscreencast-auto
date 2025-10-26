@@ -1,0 +1,259 @@
+#!/bin/bash
+# NetServa Automated Screencast Generator
+# Fully automated terminal recording with synchronized narration
+#
+# Uses gpu-screen-recorder with XDG desktop portal for automated capture
+#
+# Usage: ./mkscreencast-auto <input.screencast> [output.mp4]
+
+set -euo pipefail
+
+# Configuration
+PIPER_BIN="/opt/piper-tts/piper"
+VOICE_MODEL="/usr/share/piper-voices/en/en_US/hfc_male/medium/en_US-hfc_male-medium.onnx"
+TYPING_SPEED="0.05"  # Delay between characters (50ms)
+
+# Parse arguments
+INPUT="${1:-}"
+OUTPUT="${2:-}"
+
+if [[ -z "$INPUT" ]]; then
+    cat << 'HELP'
+Usage: mkscreencast-auto <input.screencast> [output.mp4]
+
+Fully automated screencast generator with synchronized narration.
+
+This script:
+  1. Generates narration audio from orchestration file
+  2. Opens terminal and plays commands automatically
+  3. Records screen using gpu-screen-recorder (portal mode)
+  4. Merges video with narration audio
+
+Requirements:
+  - asciinema
+  - gpu-screen-recorder
+  - piper-tts
+  - ffmpeg
+  - konsole (or modify for your terminal)
+
+First run: You'll need to grant screen recording permission via
+the KDE portal dialog. Select "Always" to avoid future prompts.
+
+Example:
+  ./mkscreencast-auto demo.screencast demo.mp4
+HELP
+    exit 1
+fi
+
+if [[ ! -f "$INPUT" ]]; then
+    echo "Error: Input file not found: $INPUT"
+    exit 1
+fi
+
+# Check dependencies
+for cmd in gpu-screen-recorder asciinema ffmpeg konsole; do
+    if ! command -v $cmd >/dev/null 2>&1; then
+        echo "Error: $cmd not found"
+        exit 1
+    fi
+done
+
+if [[ ! -f "$PIPER_BIN" ]]; then
+    echo "Error: Piper TTS not found at $PIPER_BIN"
+    exit 1
+fi
+
+# Set output filename if not provided
+if [[ -z "$OUTPUT" ]]; then
+    OUTPUT="${INPUT%.screencast}.mp4"
+fi
+
+NARRATION_TXT="/tmp/screencast-narration-$$.txt"
+NARRATION_WAV="/tmp/screencast-narration-$$.wav"
+NARRATION_MP3="/tmp/screencast-narration-$$.mp3"
+SCRIPT_FILE="/tmp/screencast-$$.sh"
+VIDEO_RAW="/tmp/screencast-video-$$.mp4"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "NetServa Automated Screencast Generator"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Input:  $INPUT"
+echo "Output: $OUTPUT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Cleanup on exit
+cleanup() {
+    rm -f "$SCRIPT_FILE" "$NARRATION_TXT" "$NARRATION_WAV" "$VIDEO_RAW"
+    pkill -f "asciinema play" 2>/dev/null || true
+    pkill -f "gpu-screen-recorder.*$VIDEO_RAW" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+echo "Step 1: Parsing orchestration file..."
+
+# Generate executable script from orchestration file
+cat > "$SCRIPT_FILE" << 'SCRIPT_HEADER'
+#!/bin/bash
+set -euo pipefail
+
+# Function to simulate typing
+type_command() {
+    local cmd="$1"
+    local delay="$2"
+
+    # Type character by character
+    for ((i=0; i<${#cmd}; i++)); do
+        echo -n "${cmd:$i:1}"
+        sleep "$delay"
+    done
+    echo ""
+}
+
+# Clear screen and show prompt
+clear
+echo "NetServa Screencast - Recording in progress..."
+echo ""
+
+SCRIPT_HEADER
+
+# Extract narration for TTS
+> "$NARRATION_TXT"
+
+# Process orchestration file
+while IFS= read -r line; do
+    # Skip empty lines and comments
+    [[ -z "$line" ]] && continue
+    [[ "$line" =~ ^#.* ]] && continue
+
+    # Extract narration
+    if [[ "$line" =~ ^\>\ (.+) ]]; then
+        narration="${BASH_REMATCH[1]}"
+        echo "$narration" >> "$NARRATION_TXT"
+        echo "" >> "$NARRATION_TXT"
+        continue
+    fi
+
+    # Execute command with typing simulation
+    if [[ "$line" =~ ^\$\ (.+) ]]; then
+        cmd="${BASH_REMATCH[1]}"
+        echo "echo -n '$ '" >> "$SCRIPT_FILE"
+        echo "type_command '$cmd' $TYPING_SPEED" >> "$SCRIPT_FILE"
+        echo "$cmd" >> "$SCRIPT_FILE"
+        echo "echo ''" >> "$SCRIPT_FILE"
+        continue
+    fi
+
+    # Wait/pause
+    if [[ "$line" =~ ^wait:([0-9.]+) ]]; then
+        seconds="${BASH_REMATCH[1]}"
+        echo "sleep $seconds" >> "$SCRIPT_FILE"
+        continue
+    fi
+done < "$INPUT"
+
+# Add ending
+echo "echo ''" >> "$SCRIPT_FILE"
+echo "echo 'Recording complete.'" >> "$SCRIPT_FILE"
+echo "sleep 2" >> "$SCRIPT_FILE"
+
+chmod +x "$SCRIPT_FILE"
+
+echo "Step 2: Generating narration audio..."
+if [[ -s "$NARRATION_TXT" ]]; then
+    "$PIPER_BIN" \
+        --model "$VOICE_MODEL" \
+        --output_file "$NARRATION_WAV" \
+        --length_scale 1.15 \
+        --sentence_silence 0.75 \
+        --noise_scale 0.5 \
+        --noise_w 0.7 \
+        < "$NARRATION_TXT" 2>&1 | grep -E "audio=" || true
+
+    # Convert to MP3 with audio processing
+    ffmpeg -i "$NARRATION_WAV" \
+        -af "acompressor=threshold=0.5:ratio=3:attack=20:release=250:makeup=2,alimiter=limit=0.95:attack=5:release=50,loudnorm=I=-16:TP=-1.5:LRA=11" \
+        -ar 48000 \
+        -acodec libmp3lame \
+        -ab 128k \
+        "$NARRATION_MP3" -y 2>&1 | grep -E "(Duration|size=)" || true
+
+    echo "  ✓ Narration audio generated"
+else
+    echo "  (No narration found)"
+fi
+
+# Get duration from narration audio
+if [[ -f "$NARRATION_MP3" ]]; then
+    DURATION=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$NARRATION_MP3")
+    DURATION=${DURATION%.*}  # Remove decimal
+    DURATION=$((DURATION + 3))  # Add 3 second buffer
+else
+    DURATION=30
+fi
+
+echo ""
+echo "Step 3: Automated screen recording..."
+echo "Duration: ${DURATION}s"
+echo ""
+echo "A KDE portal dialog will appear asking for screen recording permission."
+echo "Select the screen/window to record and click 'Share'."
+echo "Check 'Always' to avoid this prompt in future runs."
+echo ""
+echo "Starting in 3 seconds..."
+sleep 3
+
+# Start gpu-screen-recorder in background
+gpu-screen-recorder \
+    -w portal \
+    -f 30 \
+    -c mp4 \
+    -k h264 \
+    -o "$VIDEO_RAW" &
+RECORDER_PID=$!
+
+# Wait for portal dialog to be dismissed and recording to start
+sleep 5
+
+# Start terminal with script execution
+konsole --hide-menubar --hide-tabbar -e "$SCRIPT_FILE" &
+KONSOLE_PID=$!
+
+# Wait for script duration
+sleep "$DURATION"
+
+# Stop recording
+kill -INT $RECORDER_PID 2>/dev/null || true
+wait $RECORDER_PID 2>/dev/null || true
+
+# Kill konsole
+kill $KONSOLE_PID 2>/dev/null || true
+
+if [[ ! -f "$VIDEO_RAW" ]] || [[ ! -s "$VIDEO_RAW" ]]; then
+    echo ""
+    echo "Error: Video recording failed or is empty"
+    echo "Check if you granted screen recording permission in the portal dialog"
+    exit 1
+fi
+
+echo ""
+echo "Step 4: Merging video with narration..."
+
+# Merge video with narration audio
+ffmpeg -i "$VIDEO_RAW" -i "$NARRATION_MP3" \
+    -c:v copy \
+    -c:a aac \
+    -b:a 128k \
+    -map 0:v:0 \
+    -map 1:a:0 \
+    -shortest \
+    "$OUTPUT" -y 2>&1 | grep -E "(Duration|frame=|size=)" || true
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✓ Automated screencast generated successfully!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+ls -lh "$OUTPUT"
+echo ""
+echo "Play with: mpv $OUTPUT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

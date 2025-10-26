@@ -15,6 +15,9 @@ and create terminal demonstrations with synchronized narration.
 
 # Generate terminal screencast from orchestration file
 ./mkscreencast demo.screencast
+
+# Fully automated screencast with video (requires gpu-screen-recorder)
+./mkscreencast-auto demo.screencast demo.mp4
 ```
 
 ## Available Voices
@@ -63,7 +66,12 @@ wait:1
 
 Output: .cast terminal recording + separate narration MP3.
 
-Playback options:
+**Automated Video Generation** (recommended):
+- Use `mkscreencast-auto` for fully automated MP4 creation
+- Requires gpu-screen-recorder and one-time portal permission
+- Generates complete video with synchronized narration
+
+**Manual Playback**:
 - Play both simultaneously: `asciinema play demo.cast & mpv demo-narration.mp3`
 - Convert to video: Record asciinema playback, merge with `cast2video`
 
@@ -85,13 +93,16 @@ asciinema play demo.cast
 ## Requirements
 
 ```bash
-# CachyOS/Arch Linux - Podcasts
+# Podcasts
 sudo pacman -S piper-tts piper-tts-voices-en_US ffmpeg
 
-# CachyOS/Arch Linux - Screencasts
+# Screencasts (basic)
 sudo pacman -S asciinema
 
-# Optional: Screen recorders for video conversion
+# Automated video generation (recommended)
+sudo pacman -S gpu-screen-recorder
+
+# Manual video conversion (alternative)
 sudo pacman -S obs-studio
 # or use built-in Spectacle (Meta+Shift+R)
 ```
