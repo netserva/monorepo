@@ -81,3 +81,9 @@ resources/docs-archive-*/
 /PROBLEM_RESOLVED.md
 /SW_CRUD_COMMANDS.md
 /WHMCS_INTEGRATION_ENHANCEMENTS.md
+
+# Audio files (generated from source)
+*.mp3
+*.wav
+*.ogg
+*.m4a

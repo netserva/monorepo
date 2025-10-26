@@ -1,0 +1,151 @@
+#!/bin/bash
+# NetServa Podcast Generator
+# Converts text files to MP3 podcasts using Piper TTS
+#
+# Usage: ./generate-podcast.sh <input.txt> [output.mp3] [voice]
+#
+# Voices available:
+#   hfc_male    - Deep, professional, authoritative (default)
+#   danny       - Deepest, most serious
+#   lessac      - Clear, professional
+#   john        - Serious, corporate
+#   ryan        - Neutral, friendly
+
+set -euo pipefail
+
+# Configuration
+PIPER_BIN="/opt/piper-tts/piper"
+VOICE_DIR="/usr/share/piper-voices/en/en_US"
+DEFAULT_VOICE="hfc_male"
+DEFAULT_QUALITY="medium"
+
+# Check if piper is installed
+if [[ ! -f "$PIPER_BIN" ]]; then
+    echo "Error: Piper TTS not found at $PIPER_BIN"
+    echo "Install with: sudo pacman -S piper-tts piper-tts-voices-en_US"
+    exit 1
+fi
+
+# Check if ffmpeg is installed
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "Error: ffmpeg not found"
+    echo "Install with: sudo pacman -S ffmpeg"
+    exit 1
+fi
+
+# Parse arguments
+INPUT="${1:-}"
+OUTPUT="${2:-}"
+VOICE="${3:-$DEFAULT_VOICE}"
+
+if [[ -z "$INPUT" ]]; then
+    echo "Usage: $0 <input.txt> [output.mp3] [voice]"
+    echo ""
+    echo "Available voices:"
+    echo "  hfc_male  - Deep, professional, authoritative (default)"
+    echo "  danny     - Deepest, most serious"
+    echo "  lessac    - Clear, professional"
+    echo "  john      - Serious, corporate"
+    echo "  ryan      - Neutral, friendly"
+    echo ""
+    echo "Example:"
+    echo "  $0 session-journal-complete-guide.txt session-journal.mp3 hfc_male"
+    exit 1
+fi
+
+if [[ ! -f "$INPUT" ]]; then
+    echo "Error: Input file not found: $INPUT"
+    exit 1
+fi
+
+# Set output filename if not provided
+if [[ -z "$OUTPUT" ]]; then
+    OUTPUT="${INPUT%.txt}.mp3"
+fi
+
+# Determine voice model path
+case "$VOICE" in
+    danny)
+        MODEL="$VOICE_DIR/danny/low/en_US-danny-low.onnx"
+        ;;
+    hfc_male)
+        MODEL="$VOICE_DIR/hfc_male/medium/en_US-hfc_male-medium.onnx"
+        ;;
+    lessac)
+        MODEL="$VOICE_DIR/lessac/medium/en_US-lessac-medium.onnx"
+        ;;
+    john)
+        MODEL="$VOICE_DIR/john/medium/en_US-john-medium.onnx"
+        ;;
+    ryan)
+        MODEL="$VOICE_DIR/ryan/medium/en_US-ryan-medium.onnx"
+        ;;
+    *)
+        echo "Error: Unknown voice '$VOICE'"
+        echo "Available: hfc_male, danny, lessac, john, ryan"
+        exit 1
+        ;;
+esac
+
+if [[ ! -f "$MODEL" ]]; then
+    echo "Error: Voice model not found: $MODEL"
+    echo "Install voices with: sudo pacman -S piper-tts-voices-en_US"
+    exit 1
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "NetServa Podcast Generator"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Input:  $INPUT"
+echo "Output: $OUTPUT"
+echo "Voice:  $VOICE ($MODEL)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Temporary files
+TMP_TEXT="/tmp/podcast-$$.txt"
+TMP_WAV="/tmp/podcast-$$.wav"
+
+# Cleanup on exit
+cleanup() {
+    rm -f "$TMP_TEXT" "$TMP_WAV"
+}
+trap cleanup EXIT
+
+# Preprocess text:
+# - Keep blank lines as-is (Piper ignores them, giving natural paragraph breaks)
+# - For now, rely on sentence_silence for pacing
+echo "Preprocessing text..."
+cat "$INPUT" > "$TMP_TEXT"
+
+# Generate speech with Piper
+echo "Generating speech with Piper TTS..."
+"$PIPER_BIN" \
+    --model "$MODEL" \
+    --output_file "$TMP_WAV" \
+    --length_scale 1.15 \
+    --sentence_silence 0.75 \
+    --noise_scale 0.5 \
+    --noise_w 0.7 \
+    < "$TMP_TEXT"
+
+# Convert WAV to MP3 with ffmpeg
+echo ""
+echo "Converting to MP3..."
+ffmpeg -i "$TMP_WAV" \
+    -ar 48000 \
+    -acodec libmp3lame \
+    -ab 128k \
+    "$OUTPUT" -y 2>&1 | grep -E "(Duration|size=)" || true
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✓ Podcast generated successfully!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+ls -lh "$OUTPUT"
+echo ""
+echo "Audio details:"
+ffprobe "$OUTPUT" 2>&1 | grep -E "(Duration|Audio:)" | head -2
+echo ""
+echo "Play with: mpv $OUTPUT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
