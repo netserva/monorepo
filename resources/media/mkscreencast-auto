@@ -87,6 +87,7 @@ echo ""
 # Cleanup on exit
 cleanup() {
     rm -f "$SCRIPT_FILE" "$NARRATION_TXT" "$NARRATION_WAV" "$VIDEO_RAW"
+    rm -f "/tmp/terminal-ready-$$"
     pkill -f "asciinema play" 2>/dev/null || true
     pkill -f "gpu-screen-recorder.*$VIDEO_RAW" 2>/dev/null || true
 }
@@ -112,10 +113,17 @@ type_command() {
     echo ""
 }
 
-# Clear screen and show prompt
+# Clear screen and show clean title
 clear
-echo "NetServa Screencast - Recording in progress..."
+echo "NetServa Screencast"
 echo ""
+
+# Signal that terminal is ready
+touch /tmp/terminal-ready-$$
+
+# Small pause before starting
+sleep 1
+clear
 
 SCRIPT_HEADER
 
@@ -208,10 +216,30 @@ if [[ ! -f "$SESSION_TOKEN" ]]; then
     echo ""
 fi
 
-echo "Starting in 3 seconds..."
-sleep 3
+echo "Starting terminal..."
+echo ""
 
-# Start gpu-screen-recorder in background
+# Start terminal with script execution FIRST
+konsole --hide-menubar --hide-tabbar -e "$SCRIPT_FILE" &
+KONSOLE_PID=$!
+
+# Wait for terminal ready signal
+READY_SIGNAL="/tmp/terminal-ready-$$"
+echo "Waiting for terminal to be ready..."
+for i in {1..10}; do
+    if [[ -f "$READY_SIGNAL" ]]; then
+        echo "Terminal ready!"
+        break
+    fi
+    sleep 0.5
+done
+
+# Give terminal a moment to clear screen
+sleep 1
+
+echo "Starting screen recording..."
+
+# Now start gpu-screen-recorder - terminal is clean and ready
 gpu-screen-recorder \
     -w portal \
     -f 30 \
@@ -221,12 +249,8 @@ gpu-screen-recorder \
     -o "$VIDEO_RAW" &
 RECORDER_PID=$!
 
-# Wait for portal dialog to be dismissed and recording to start
-sleep 5
-
-# Start terminal with script execution
-konsole --hide-menubar --hide-tabbar -e "$SCRIPT_FILE" &
-KONSOLE_PID=$!
+# Wait for recorder to initialize
+sleep 2
 
 # Wait for script duration
 sleep "$DURATION"
