@@ -121,8 +121,12 @@ echo ""
 # Signal that terminal is ready
 touch /tmp/terminal-ready-$$
 
-# Small pause before starting
-sleep 1
+# Wait for recording to start (coordinated with main script timing)
+# Main script: 1s after signal + 2s recorder init = 3s delay
+echo "Recording starting in 3 seconds..."
+sleep 3
+
+# Clear screen and start demo
 clear
 
 SCRIPT_HEADER
@@ -234,12 +238,9 @@ for i in {1..10}; do
     sleep 0.5
 done
 
-# Give terminal a moment to clear screen
-sleep 1
-
 echo "Starting screen recording..."
 
-# Now start gpu-screen-recorder - terminal is clean and ready
+# Start gpu-screen-recorder immediately
 gpu-screen-recorder \
     -w portal \
     -f 30 \
@@ -249,8 +250,9 @@ gpu-screen-recorder \
     -o "$VIDEO_RAW" &
 RECORDER_PID=$!
 
-# Wait for recorder to initialize
-sleep 2
+# Wait for recorder to initialize and sync with terminal countdown
+# Terminal is counting down 3 seconds, we need recorder ready by then
+sleep 3
 
 # Wait for script duration
 sleep "$DURATION"
