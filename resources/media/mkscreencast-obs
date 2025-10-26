@@ -1,0 +1,292 @@
+#!/bin/bash
+# NetServa OBS-based Automated Screencast Generator
+# Professional-quality automated screen recording using OBS Studio
+#
+# Usage: ./mkscreencast-obs <input.screencast> [output.mp4]
+
+set -euo pipefail
+
+# Configuration
+PIPER_BIN="/opt/piper-tts/piper"
+VOICE_MODEL="/usr/share/piper-voices/en/en_US/hfc_male/medium/en_US-hfc_male-medium.onnx"
+OBS_PASSWORD="${OBS_PASSWORD:-netserva}"  # Set via environment or change here
+OBS_PORT="${OBS_PORT:-4455}"
+OBS_SCENE="${OBS_SCENE:-NetServa-Demo}"
+
+# Parse arguments
+INPUT="${1:-}"
+OUTPUT="${2:-}"
+
+if [[ -z "$INPUT" ]]; then
+    cat << 'HELP'
+Usage: mkscreencast-obs <input.screencast> [output.mp4]
+
+Professional automated screencast using OBS Studio.
+
+Requirements:
+  1. OBS Studio installed: sudo pacman -S obs-studio-browser
+  2. obs-cli installed: Available at /usr/local/bin/obs-cli
+  3. OBS WebSocket configured:
+     - Settings > WebSocket > Enable WebSocket server
+     - Port: 4455 (default)
+     - Password: Set OBS_PASSWORD environment variable
+
+Setup (one-time):
+  1. Start OBS and create profile "NetServa-Automated"
+  2. Create scene "NetServa-Demo"
+  3. Add source: Screen Capture (PipeWire) - full screen
+  4. Enable WebSocket in OBS settings
+  5. Set OBS_PASSWORD environment variable
+
+Example:
+  export OBS_PASSWORD="your-password"
+  ./mkscreencast-obs demo.screencast demo.mp4
+
+This creates professional recordings with:
+  - Reliable timing synchronization
+  - Professional encoding (x264/NVENC)
+  - Overlay/branding support
+  - Scene composition
+  - Studio-quality output
+HELP
+    exit 1
+fi
+
+if [[ ! -f "$INPUT" ]]; then
+    echo "Error: Input file not found: $INPUT"
+    exit 1
+fi
+
+# Check dependencies
+for cmd in obs obs-cli ffmpeg; do
+    if ! command -v $cmd >/dev/null 2>&1; then
+        echo "Error: $cmd not found"
+        case $cmd in
+            obs)
+                echo "Install with: sudo pacman -S obs-studio-browser"
+                ;;
+            obs-cli)
+                echo "Build from: https://github.com/muesli/obs-cli"
+                echo "Or use install script in docs"
+                ;;
+            ffmpeg)
+                echo "Install with: sudo pacman -S ffmpeg"
+                ;;
+        esac
+        exit 1
+    fi
+done
+
+if [[ ! -f "$PIPER_BIN" ]]; then
+    echo "Error: Piper TTS not found at $PIPER_BIN"
+    exit 1
+fi
+
+# Set output filename
+if [[ -z "$OUTPUT" ]]; then
+    OUTPUT="${INPUT%.screencast}.mp4"
+fi
+
+NARRATION_TXT="/tmp/obs-narration-$$.txt"
+NARRATION_WAV="/tmp/obs-narration-$$.wav"
+NARRATION_MP3="/tmp/obs-narration-$$.mp3"
+SCRIPT_FILE="/tmp/obs-script-$$.sh"
+OBS_RECORDING=""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "NetServa OBS-based Screencast Generator"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Input:  $INPUT"
+echo "Output: $OUTPUT"
+echo "Scene:  $OBS_SCENE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Cleanup on exit
+cleanup() {
+    rm -f "$SCRIPT_FILE" "$NARRATION_TXT" "$NARRATION_WAV"
+    pkill -f "konsole.*$SCRIPT_FILE" 2>/dev/null || true
+
+    # Stop recording if still running
+    if [[ -n "$OBS_RECORDING" ]]; then
+        obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" recording stop 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
+echo "Step 1: Checking OBS Studio..."
+
+# Check if OBS is running
+if ! pgrep -x obs >/dev/null; then
+    echo "Starting OBS Studio..."
+    obs --minimize-to-tray &
+    sleep 5
+else
+    echo "OBS already running"
+fi
+
+# Test WebSocket connection
+if ! obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" scene current >/dev/null 2>&1; then
+    echo ""
+    echo "Error: Cannot connect to OBS WebSocket"
+    echo ""
+    echo "Please ensure:"
+    echo "1. OBS is running"
+    echo "2. WebSocket is enabled: Settings > WebSocket"
+    echo "3. Password matches: export OBS_PASSWORD='your-password'"
+    echo "4. Port is correct (default: 4455)"
+    exit 1
+fi
+
+echo "  ✓ Connected to OBS WebSocket"
+
+# Switch to recording scene
+if obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" scene switch "$OBS_SCENE" 2>/dev/null; then
+    echo "  ✓ Switched to scene: $OBS_SCENE"
+else
+    echo "  ⚠ Warning: Scene '$OBS_SCENE' not found, using current scene"
+fi
+
+echo ""
+echo "Step 2: Generating narration audio..."
+
+# Extract narration from orchestration file
+> "$NARRATION_TXT"
+
+while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    [[ "$line" =~ ^#.* ]] && continue
+
+    if [[ "$line" =~ ^\>\ (.+) ]]; then
+        narration="${BASH_REMATCH[1]}"
+        echo "$narration" >> "$NARRATION_TXT"
+        echo "" >> "$NARRATION_TXT"
+    fi
+done < "$INPUT"
+
+if [[ -s "$NARRATION_TXT" ]]; then
+    "$PIPER_BIN" \
+        --model "$VOICE_MODEL" \
+        --output_file "$NARRATION_WAV" \
+        --length_scale 1.15 \
+        --sentence_silence 0.75 \
+        --noise_scale 0.5 \
+        --noise_w 0.7 \
+        < "$NARRATION_TXT" 2>&1 | grep -E "audio=" || true
+
+    # Convert to MP3 with audio processing
+    ffmpeg -i "$NARRATION_WAV" \
+        -af "acompressor=threshold=0.5:ratio=3:attack=20:release=250:makeup=2,alimiter=limit=0.95:attack=5:release=50,loudnorm=I=-16:TP=-1.5:LRA=11" \
+        -ar 48000 \
+        -acodec libmp3lame \
+        -ab 128k \
+        "$NARRATION_MP3" -y 2>&1 | grep -E "(Duration|size=)" || true
+
+    DURATION=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$NARRATION_MP3")
+    DURATION_INT=${DURATION%.*}
+    DURATION_INT=$((DURATION_INT + 5))  # Add 5 second buffer
+
+    echo "  ✓ Narration generated (${DURATION}s)"
+else
+    echo "  (No narration found)"
+    DURATION_INT=30
+fi
+
+echo ""
+echo "Step 3: Starting OBS recording..."
+
+# Start recording
+obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" recording start
+OBS_RECORDING="yes"
+echo "  ✓ Recording started"
+
+# Wait for OBS to initialize recording
+sleep 2
+
+echo ""
+echo "Step 4: Executing demo (${DURATION_INT}s)..."
+
+# Generate and execute demo script
+cat > "$SCRIPT_FILE" << 'SCRIPT_HEADER'
+#!/bin/bash
+clear
+SCRIPT_HEADER
+
+while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    [[ "$line" =~ ^#.* ]] && continue
+    [[ "$line" =~ ^\>.* ]] && continue
+
+    if [[ "$line" =~ ^\$\ (.+) ]]; then
+        cmd="${BASH_REMATCH[1]}"
+        echo "echo '$ $cmd'" >> "$SCRIPT_FILE"
+        echo "$cmd" >> "$SCRIPT_FILE"
+        echo "sleep 1" >> "$SCRIPT_FILE"
+    elif [[ "$line" =~ ^wait:([0-9.]+) ]]; then
+        seconds="${BASH_REMATCH[1]}"
+        echo "sleep $seconds" >> "$SCRIPT_FILE"
+    fi
+done < "$INPUT"
+
+echo "sleep 2" >> "$SCRIPT_FILE"
+chmod +x "$SCRIPT_FILE"
+
+# Execute in terminal
+konsole --hide-menubar --hide-tabbar -e "$SCRIPT_FILE" &
+KONSOLE_PID=$!
+
+# Wait for demo completion
+sleep "$DURATION_INT"
+
+echo ""
+echo "Step 5: Stopping recording..."
+
+# Stop recording
+obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" recording stop
+OBS_RECORDING=""
+
+# Kill konsole
+kill $KONSOLE_PID 2>/dev/null || true
+
+# Give OBS time to finalize file
+sleep 2
+
+# Get output file from OBS
+OBS_OUTPUT=$(obs-cli --password "$OBS_PASSWORD" --port "$OBS_PORT" recording status 2>&1 | grep -oP '(?<=outputPath: ).*' || echo "")
+
+if [[ -z "$OBS_OUTPUT" ]] || [[ ! -f "$OBS_OUTPUT" ]]; then
+    echo ""
+    echo "Error: Could not find OBS output file"
+    echo "Check OBS Settings > Output > Recording Path"
+    exit 1
+fi
+
+echo "  ✓ Recording saved: $OBS_OUTPUT"
+
+if [[ -f "$NARRATION_MP3" ]]; then
+    echo ""
+    echo "Step 6: Merging with narration..."
+
+    ffmpeg -i "$OBS_OUTPUT" -i "$NARRATION_MP3" \
+        -c:v copy \
+        -c:a aac \
+        -b:a 128k \
+        -map 0:v:0 \
+        -map 1:a:0 \
+        -shortest \
+        "$OUTPUT" -y 2>&1 | grep -E "(Duration|size=)" || true
+
+    echo "  ✓ Final output: $OUTPUT"
+else
+    # No narration, just move OBS output
+    mv "$OBS_OUTPUT" "$OUTPUT"
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✓ Screencast generated successfully!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+ls -lh "$OUTPUT"
+echo ""
+echo "Play with: mpv $OUTPUT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
