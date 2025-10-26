@@ -9,8 +9,8 @@ Usage: shhost domain|uid|homedir|all
 
 # Shows all system users
 sca ~ shhost all
-sysadm  mail.motd.com                        /var/ns/mail.motd.com
-u1002   motd.com                            /var/ns/motd.com
+sysadm  mail.motd.com                        /srv/mail.motd.com
+u1002   motd.com                            /srv/motd.com
 
 # Shows specific user
 sca ~ shhost motd.com
@@ -18,7 +18,7 @@ sca ~ shhost motd.com
   user: u1002
    uid: 1002
    gid: 1002
-  home: /var/ns/motd.com
+  home: /srv/motd.com
  shell: /bin/sh
 ```
 
@@ -45,16 +45,16 @@ php artisan shhost all --shost=motd
 ┌─────────┬──────────────┬────────────┬─────┬─────────────────────────┬───────┐
 │ User    │ VHost/Domain │ IP Address │ UID │ Home Directory          │ Shell │
 ├─────────┼──────────────┼────────────┼─────┼─────────────────────────┼───────┤
-│ sysadm  │ mail.motd.com│ N/A        │ 1000│ /var/ns/mail.motd.com   │ bash  │
-│ u1002   │ motd.com     │ N/A        │ 1002│ /var/ns/motd.com        │ sh    │
+│ sysadm  │ mail.motd.com│ N/A        │ 1000│ /srv/mail.motd.com   │ bash  │
+│ u1002   │ motd.com     │ N/A        │ 1002│ /srv/motd.com        │ sh    │
 └─────────┴──────────────┴────────────┴─────┴─────────────────────────┴───────┘
 
 💡 Use --format=original for NetServa classic output
 
 # Original format output:
 php artisan shhost all --shost=motd --format=original
-sysadm  mail.motd.com                        /var/ns/mail.motd.com
-u1002   motd.com                            /var/ns/motd.com
+sysadm  mail.motd.com                        /srv/mail.motd.com
+u1002   motd.com                            /srv/motd.com
 
 # Specific user details:
 php artisan shhost u1002 --shost=motd
@@ -64,7 +64,7 @@ php artisan shhost u1002 --shost=motd
   user: u1002
   uid: 1002
   gid: 1002
-  home: /var/ns/motd.com
+  home: /srv/motd.com
   shell: /bin/sh
 
 💡 Use "shvhost motd.com" for vhost details
@@ -85,7 +85,7 @@ php artisan shhost u1002 --shost=motd
 - **`shhost all`** - Show all NetServa users
 - **`shhost u1002`** - Show specific user by UID
 - **`shhost motd.com`** - Show user by domain
-- **`shhost /var/ns/motd.com`** - Show user by home directory
+- **`shhost /srv/motd.com`** - Show user by home directory
 
 ### **4. Integration with NetServa CRUD**
 - **Links to other commands:** `shvhost motd.com` for full vhost details
@@ -107,8 +107,8 @@ The command is fully implemented but requires SSH host configurations to be stor
 ### **Direct SSH Test Confirms Data:**
 ```bash
 ssh motd "getent passwd | grep -E \"^u[0-9]|sysadm\" | sort"
-sysadm:x:1000:1000:mail.motd.com:/var/ns/mail.motd.com:/bin/bash
-u1002:x:1002:1002:motd.com:/var/ns/motd.com:/bin/sh
+sysadm:x:1000:1000:mail.motd.com:/srv/mail.motd.com:/bin/bash
+u1002:x:1002:1002:motd.com:/srv/motd.com:/bin/sh
 ```
 
 This shows the exact data that would be parsed and displayed by the new `shhost` command.

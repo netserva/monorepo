@@ -1,6 +1,6 @@
 <?php
 
-namespace Ns\Dns\Services\Providers;
+namespace NetServa\Dns\Services\Providers;
 
 use Illuminate\Support\Facades\Http;
 

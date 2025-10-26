@@ -13,12 +13,12 @@ All web services must be Laravel-compatible to support the NetServa Central Mana
 
 **Web Document Root Standard:**
 ```
-/var/ns/{domain}/var/www/public/  ← REQUIRED (Laravel standard)
+/srv/{domain}/web/app/public/  ← REQUIRED (Laravel standard)
 ```
 
 **NOT:**
 ```
-/var/ns/{domain}/var/www/html/    ← DEPRECATED
+/srv/{domain}/web/app/html/    ← DEPRECATED
 ```
 
 **Rationale:** Laravel and modern PHP frameworks expect `public/` as the web-accessible directory for security and framework compatibility.
@@ -71,22 +71,25 @@ NSVAR=/home/user/.ns/var       # Variable data
 #### Document Root Configuration
 **nginx common.conf:**
 ```nginx
-root /var/ns/$host/var/www/public;
+root /srv/$host/web/app/public;
 index index.html index.php;
 ```
 
 #### Domain Directory Structure
 ```
-/var/ns/{domain}/
-├── var/
-│   ├── www/
+/srv/{domain}/
+├── web/
+│   ├── app/
 │   │   ├── public/          ← Web document root (Laravel compatible)
-│   │   │   ├── index.html   
-│   │   │   ├── index.php    
-│   │   │   └── assets/      
+│   │   │   ├── index.html
+│   │   │   ├── index.php
+│   │   │   └── assets/
 │   │   └── storage/         ← Laravel storage directory
-│   └── log/                 ← Domain-specific logs
-└── mail/                    ← Mail storage (if applicable)
+│   ├── log/                 ← Web logs
+│   ├── run/                 ← Runtime files (sockets, PIDs)
+│   └── tmp/                 ← Temporary files
+└── msg/                     ← Mail storage (if applicable)
+    └── {user}/Maildir/
 ```
 
 ### Mail Services Standards

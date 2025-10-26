@@ -44,4 +44,10 @@ return [
         'timeout' => env('CLOUDFLARE_TIMEOUT', 30),
     ],
 
+    'synergy_wholesale' => [
+        'reseller_id' => env('SW_RESELLER_ID'),
+        'api_key' => env('SW_API_KEY'),
+        'api_endpoint' => env('SW_API_URL', 'https://api.synergywholesale.com/server.php?wsdl'),
+    ],
+
 ];

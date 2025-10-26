@@ -3,9 +3,8 @@
 namespace NetServa\Fleet;
 
 use Illuminate\Support\ServiceProvider;
-use NetServa\Fleet\Console\Commands\FleetDiscoverCommand;
-use NetServa\Fleet\Console\Commands\FleetImportCommand;
-use NetServa\Fleet\Console\Commands\FleetMigrateVarCommand;
+use NetServa\Fleet\Console\Commands\AddfleetCommand;
+use NetServa\Fleet\Console\Commands\ChfleetCommand;
 use NetServa\Fleet\Console\Commands\VNodeSetupCommand;
 
 /**
@@ -33,13 +32,37 @@ class FleetServiceProvider extends ServiceProvider
         // Load migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
-        // Register commands
+        // Register commands (NetServa 3.0 CRUD pattern)
         if ($this->app->runningInConsole()) {
             $this->commands([
-                FleetImportCommand::class,
-                FleetDiscoverCommand::class,
-                FleetMigrateVarCommand::class,
-                VNodeSetupCommand::class,
+                // Fleet Commands
+                AddfleetCommand::class,     // CREATE: Discover/register fleet infrastructure
+                ChfleetCommand::class,      // UPDATE: Sync fleet from var/ directory
+                VNodeSetupCommand::class,   // Legacy: VNode-specific setup
+
+                // Venue CRUD Commands
+                Console\Commands\AddvenueCommand::class,    // CREATE
+                Console\Commands\ShvenueCommand::class,     // READ
+                Console\Commands\ChvenueCommand::class,     // UPDATE
+                Console\Commands\DelvenueCommand::class,    // DELETE
+
+                // VSite CRUD Commands
+                Console\Commands\AddvsiteCommand::class,    // CREATE
+                Console\Commands\ShvsiteCommand::class,     // READ
+                Console\Commands\ChvsiteCommand::class,     // UPDATE
+                Console\Commands\DelvsiteCommand::class,    // DELETE
+
+                // VNode CRUD Commands
+                Console\Commands\AddvnodeCommand::class,    // CREATE
+                Console\Commands\ShvnodeCommand::class,     // READ
+                Console\Commands\ChvnodeCommand::class,     // UPDATE
+                Console\Commands\DelvnodeCommand::class,    // DELETE
+
+                // Dnsmasq CRUD Commands (Infrastructure - Router/Gateway DNS)
+                Console\Commands\AddDnsmasqCommand::class,  // CREATE: Add DNS host
+                Console\Commands\ShDnsmasqCommand::class,   // READ: Show DNS hosts (--sync to refresh)
+                Console\Commands\ChDnsmasqCommand::class,   // UPDATE: Modify DNS host
+                Console\Commands\DelDnsmasqCommand::class,  // DELETE: Remove DNS host
             ]);
         }
 

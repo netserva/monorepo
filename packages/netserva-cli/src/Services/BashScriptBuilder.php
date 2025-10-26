@@ -328,8 +328,8 @@ class BashScriptBuilder
         return <<<'BASH'
         # 8. Final commands (if shell functions are available)
         echo ">>> Step 8: Finalization"
-        if [[ -f ~/.sh/_shrc ]]; then
-            source ~/.sh/_shrc
+        if [[ -f ~/.rc/_shrc ]]; then
+            source ~/.rc/_shrc
 
             # Update logging
             if command -v logging &>/dev/null; then

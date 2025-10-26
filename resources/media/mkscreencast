@@ -1,0 +1,234 @@
+#!/bin/bash
+# NetServa Screencast Generator
+# Creates screencasts from orchestration files using wf-recorder
+#
+# Usage: ./mkscreencast <input.screencast> [output.mp4]
+
+set -euo pipefail
+
+# Configuration
+PIPER_BIN="/opt/piper-tts/piper"
+VOICE_MODEL="/usr/share/piper-voices/en/en_US/hfc_male/medium/en_US-hfc_male-medium.onnx"
+TYPING_SPEED="0.05"  # Delay between characters (50ms)
+
+# Parse arguments
+INPUT="${1:-}"
+OUTPUT="${2:-}"
+
+if [[ -z "$INPUT" ]]; then
+    cat << 'HELP'
+Usage: mkscreencast <input.screencast> [output.mp4]
+
+Screencast generator using wf-recorder for Wayland.
+
+Orchestration file format:
+  # comment
+  > narration (text-to-speech audio)
+  $ command (typed and executed)
+  wait:N (pause for N seconds)
+
+Example (.screencast file):
+  > Welcome to this demonstration
+  wait:1
+  $ cd /tmp
+  $ ls -la
+  wait:2
+  > That completes the demo
+
+Output:
+  - screencast.mp4 (video with synchronized narration)
+
+Play: mpv output.mp4
+HELP
+    exit 1
+fi
+
+if [[ ! -f "$INPUT" ]]; then
+    echo "Error: Input file not found: $INPUT"
+    exit 1
+fi
+
+# Check dependencies
+if [[ ! -f "$PIPER_BIN" ]]; then
+    echo "Error: Piper TTS not found at $PIPER_BIN"
+    exit 1
+fi
+
+if ! command -v wf-recorder >/dev/null 2>&1; then
+    echo "Error: wf-recorder not found"
+    echo "Install with: sudo pacman -S wf-recorder"
+    exit 1
+fi
+
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "Error: ffmpeg not found"
+    exit 1
+fi
+
+# Set output filename if not provided
+if [[ -z "$OUTPUT" ]]; then
+    OUTPUT="${INPUT%.screencast}.mp4"
+fi
+
+NARRATION_TXT="/tmp/screencast-narration-$$.txt"
+NARRATION_WAV="/tmp/screencast-narration-$$.wav"
+NARRATION_MP3="/tmp/screencast-narration-$$.mp3"
+SCRIPT_FILE="/tmp/screencast-$$.sh"
+VIDEO_RAW="/tmp/screencast-video-$$.mp4"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "NetServa Screencast Generator"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Input:  $INPUT"
+echo "Output: $OUTPUT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Cleanup on exit
+cleanup() {
+    rm -f "$SCRIPT_FILE" "$NARRATION_TXT" "$NARRATION_WAV" "$NARRATION_MP3" "$VIDEO_RAW"
+    # Kill wf-recorder if still running
+    pkill -f "wf-recorder.*$VIDEO_RAW" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+echo "Step 1: Parsing orchestration file..."
+
+# Generate executable script from orchestration file
+cat > "$SCRIPT_FILE" << 'SCRIPT_HEADER'
+#!/bin/bash
+set -euo pipefail
+
+# Function to simulate typing
+type_command() {
+    local cmd="$1"
+    local delay="$2"
+
+    # Type character by character
+    for ((i=0; i<${#cmd}; i++)); do
+        echo -n "${cmd:$i:1}"
+        sleep "$delay"
+    done
+    echo ""
+}
+
+# Clear screen and show prompt
+clear
+echo "NetServa Screencast - Recording in progress..."
+echo ""
+
+SCRIPT_HEADER
+
+# Extract narration for TTS
+> "$NARRATION_TXT"
+
+# Process orchestration file
+while IFS= read -r line; do
+    # Skip empty lines and comments
+    [[ -z "$line" ]] && continue
+    [[ "$line" =~ ^#.* ]] && continue
+
+    # Extract narration
+    if [[ "$line" =~ ^\>\ (.+) ]]; then
+        narration="${BASH_REMATCH[1]}"
+        echo "$narration" >> "$NARRATION_TXT"
+        echo "" >> "$NARRATION_TXT"
+        continue
+    fi
+
+    # Execute command with typing simulation
+    if [[ "$line" =~ ^\$\ (.+) ]]; then
+        cmd="${BASH_REMATCH[1]}"
+        echo "echo -n '$ '" >> "$SCRIPT_FILE"
+        echo "type_command '$cmd' $TYPING_SPEED" >> "$SCRIPT_FILE"
+        echo "$cmd" >> "$SCRIPT_FILE"
+        echo "echo ''" >> "$SCRIPT_FILE"
+        continue
+    fi
+
+    # Wait/pause
+    if [[ "$line" =~ ^wait:([0-9.]+) ]]; then
+        seconds="${BASH_REMATCH[1]}"
+        echo "sleep $seconds" >> "$SCRIPT_FILE"
+        continue
+    fi
+done < "$INPUT"
+
+# Add ending
+echo "echo ''" >> "$SCRIPT_FILE"
+echo "echo 'Recording complete.'" >> "$SCRIPT_FILE"
+echo "sleep 2" >> "$SCRIPT_FILE"
+
+chmod +x "$SCRIPT_FILE"
+
+echo "Step 2: Generating narration audio..."
+if [[ -s "$NARRATION_TXT" ]]; then
+    "$PIPER_BIN" \
+        --model "$VOICE_MODEL" \
+        --output_file "$NARRATION_WAV" \
+        --length_scale 1.15 \
+        --sentence_silence 0.75 \
+        --noise_scale 0.5 \
+        --noise_w 0.7 \
+        < "$NARRATION_TXT" 2>&1 | grep -E "audio=" || true
+
+    # Convert to MP3 with audio processing
+    ffmpeg -i "$NARRATION_WAV" \
+        -af "acompressor=threshold=0.5:ratio=3:attack=20:release=250:makeup=2,alimiter=limit=0.95:attack=5:release=50,loudnorm=I=-16:TP=-1.5:LRA=11" \
+        -ar 48000 \
+        -acodec libmp3lame \
+        -ab 128k \
+        "$NARRATION_MP3" -y 2>&1 | grep -E "(Duration|size=)" || true
+
+    echo "  ✓ Narration audio generated"
+else
+    echo "  (No narration found)"
+fi
+
+echo ""
+echo "Step 3: Recording screen..."
+echo ""
+echo "The screen will now be recorded automatically."
+echo "Make sure your terminal (Konsole) is visible and focused."
+echo ""
+echo "Press ENTER to start recording in 3 seconds..."
+read -r
+
+# Start wf-recorder in background (full screen capture)
+wf-recorder -f "$VIDEO_RAW" &
+RECORDER_PID=$!
+
+# Wait for recorder to initialize
+sleep 3
+
+# Execute the script in the terminal
+"$SCRIPT_FILE"
+
+# Stop recording
+kill -INT $RECORDER_PID
+wait $RECORDER_PID 2>/dev/null || true
+
+echo ""
+echo "Step 4: Combining video and audio..."
+
+if [[ -f "$NARRATION_MP3" ]]; then
+    # Merge video with narration audio
+    ffmpeg -i "$VIDEO_RAW" -i "$NARRATION_MP3" \
+        -c:v copy \
+        -c:a aac \
+        -b:a 128k \
+        -shortest \
+        "$OUTPUT" -y 2>&1 | grep -E "(Duration|size=)" || true
+else
+    # No narration, just copy video
+    mv "$VIDEO_RAW" "$OUTPUT"
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✓ Screencast generated successfully!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+ls -lh "$OUTPUT"
+echo ""
+echo "Play with: mpv $OUTPUT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

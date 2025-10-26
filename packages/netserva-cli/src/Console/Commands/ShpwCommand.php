@@ -2,156 +2,173 @@
 
 namespace NetServa\Cli\Console\Commands;
 
-use NetServa\Cli\Services\VhostConfigService;
+use Illuminate\Console\Command;
+use NetServa\Cli\Console\Traits\ResolvesVPassOwner;
+use NetServa\Cli\Models\VPass;
+
+use function Laravel\Prompts\info;
+use function Laravel\Prompts\warning;
 
 /**
- * Show Password Command
+ * Show Password Command - NetServa 3.0
  *
- * Follows NetServa CRUD pattern: shpw (show passwords)
- * Usage: shpw admin@motd.com [--shost=motd]
- * With context: export VNODE=motd; shpw admin@motd.com
+ * CRUD: Read - List credentials from unified vault
+ *
+ * Usage:
+ *   shpw                          # Interactive mode
+ *   shpw vnode mgo               # List all credentials for mgo vnode
+ *   shpw vhost example.com        # List all credentials for vhost
+ *   shpw --service=cloudflare     # List all Cloudflare credentials
+ *   shpw --type=APKEY             # List all API keys
+ *
+ * NetServa 3.0 Security Architecture:
+ * - Shows encrypted credentials from workstation vault
+ * - Supports filtering by owner, service, type
+ * - Optional masked display (default shows cleartext)
  */
-class ShpwCommand extends BaseNetServaCommand
+class ShpwCommand extends Command
 {
-    protected $signature = 'shpw {vhost : Domain name or email to show passwords for}
-                           {--shost= : SSH host identifier}
-                           {--type= : Specific password type (user|database|email|web|admin|wordpress)}
-                           {--all : Show all passwords}
-                           {--masked : Show passwords masked with asterisks}
-                           {--dry-run : Show what would be done}';
+    use ResolvesVPassOwner;
 
-    protected $description = 'Show passwords for virtual host (NetServa CRUD pattern)';
+    protected $signature = 'shpw
+                            {name? : VNode name, domain, or vnode+domain}
+                            {domain? : Domain (if first arg is vnode)}
+                            {--service= : Filter by service (cloudflare, binarylane, etc.)}
+                            {--type= : Filter by type (VMAIL, APKEY, DBPWD, SSLKY, OAUTH)}
+                            {--active : Show only active credentials}
+                            {--expired : Show only expired credentials}
+                            {--needs-rotation : Show credentials needing rotation}
+                            {--show-secrets : Show actual passwords (default hidden)}';
 
-    protected VhostConfigService $vhostConfig;
-
-    public function __construct(VhostConfigService $vhostConfig)
-    {
-        parent::__construct();
-        $this->vhostConfig = $vhostConfig;
-    }
+    protected $description = 'Show credentials from unified vault (READ)';
 
     public function handle(): int
     {
-        return $this->executeWithContext(function () {
-            // Get parameters - handle email format (admin@motd.com -> motd.com)
-            $input = $this->argument('vhost');
-            $VHOST = $this->parseVhostFromInput($input);
-            $VNODE = $this->requireShost();
+        try {
+            // Build query
+            $query = VPass::query();
 
-            // Check if VHost exists
-            if (! $this->vhostConfig->exists("{$VNODE}/{$VHOST}")) {
-                $this->error("❌ VHost {$VHOST} not found on {$VNODE}");
-                $this->line("   Use 'shvhost --list --shost={$VNODE}' to see available vhosts");
+            // Smart owner resolution
+            $name = $this->argument('name');
+            $domain = $this->argument('domain');
 
-                return 1;
-            }
-
-            try {
-                // Load VHost configuration
-                $config = $this->vhostConfig->loadVhostConfig($VNODE, $VHOST);
-
-                $this->line("🔑 Passwords for VHost: <fg=yellow>{$VHOST}</> on server <fg=cyan>{$VNODE}</>");
-                $this->line('');
-
-                // Show specific password type or all
-                if ($type = $this->option('type')) {
-                    $this->showSpecificPassword($config, $type);
-                } else {
-                    $this->showAllPasswords($config);
+            if ($name) {
+                $owner = $this->resolveOwner($name, $domain);
+                if (! $owner) {
+                    return Command::FAILURE;
                 }
 
-                // Security warning
+                $query->byOwner($owner);
+                $context = $this->getOwnerContext($owner, $name, $domain);
+            } else {
+                $context = 'All owners';
+            }
+
+            // Apply filters
+            if ($service = $this->option('service')) {
+                $query->byService($service);
+            }
+
+            if ($type = $this->option('type')) {
+                $query->byType($type);
+            }
+
+            if ($this->option('active')) {
+                $query->active();
+            }
+
+            if ($this->option('expired')) {
+                $query->expired();
+            }
+
+            if ($this->option('needs-rotation')) {
+                $query->needsRotation(90);
+            }
+
+            // Execute query
+            $credentials = $query->with('owner')->orderBy('owner_type')->orderBy('pserv')->get();
+
+            if ($credentials->isEmpty()) {
+                warning('No credentials found matching criteria');
+
+                return Command::SUCCESS;
+            }
+
+            // Display header
+            info("Credentials Vault - {$context}");
+            $this->line('');
+
+            // Prepare table data
+            $showSecrets = $this->option('show-secrets');
+            $rows = [];
+
+            foreach ($credentials as $cred) {
+                $secret = $showSecrets ? $this->truncateSecret($cred->getSecret()) : '***HIDDEN***';
+
+                $status = [];
+                if (! $cred->pstat) {
+                    $status[] = '✗ Disabled';
+                }
+                if ($cred->isExpired()) {
+                    $status[] = '⏰ Expired';
+                }
+                if ($cred->needsRotation()) {
+                    $status[] = '⚠ Needs Rotation';
+                }
+                $statusStr = empty($status) ? '✓ Active' : implode(', ', $status);
+
+                $rows[] = [
+                    $cred->owner_type_display,
+                    $cred->owner->domain ?? $cred->owner->name ?? $cred->owner->fqdn ?? 'N/A',
+                    $cred->type_display,
+                    $cred->pserv,
+                    $cred->pname,
+                    $secret,
+                    $statusStr,
+                    $cred->pdate?->format('Y-m-d') ?? 'Never',
+                ];
+            }
+
+            // Display table
+            $this->table(
+                ['Owner Type', 'Owner', 'Type', 'Service', 'Name', 'Secret', 'Status', 'Rotated'],
+                $rows
+            );
+
+            // Summary
+            $this->line('');
+            $this->line("Total credentials: {$credentials->count()}");
+
+            if (! $showSecrets) {
                 $this->line('');
-                $this->line('<fg=red>⚠️  Security Warning:</> Store these passwords securely!');
-                $this->line('<fg=gray>💡 Use --masked to show asterisks instead of actual passwords</>');
-
-                return 0;
-
-            } catch (\Exception $e) {
-                $this->error('❌ Failed to load passwords: '.$e->getMessage());
-
-                return 1;
-            }
-        });
-    }
-
-    protected function parseVhostFromInput(string $input): string
-    {
-        // Handle email format: admin@motd.com -> motd.com
-        if (str_contains($input, '@')) {
-            $parts = explode('@', $input);
-
-            return end($parts); // Get domain part
-        }
-
-        return $input; // Regular domain
-    }
-
-    protected function showSpecificPassword(array $config, string $type): void
-    {
-        $passwordKey = $this->getPasswordKey($type);
-
-        if (! $passwordKey) {
-            $this->error("❌ Invalid password type: {$type}");
-            $this->line('   Valid types: user, database, email, web, admin, wordpress');
-
-            return;
-        }
-
-        if (! isset($config[$passwordKey])) {
-            $this->error("❌ {$type} password not found in configuration");
-
-            return;
-        }
-
-        $password = $config[$passwordKey];
-        $displayPassword = $this->option('masked') ? str_repeat('*', strlen($password)) : $password;
-
-        $this->line("<fg=blue>🔑 {$type} password:</> <fg=yellow>{$displayPassword}</>");
-    }
-
-    protected function showAllPasswords(array $config): void
-    {
-        $passwords = [
-            'Admin' => $config['APASS'] ?? 'N/A',
-            'User' => $config['UPASS'] ?? 'N/A',
-            'Database' => $config['DPASS'] ?? 'N/A',
-            'Email' => $config['EPASS'] ?? 'N/A',
-            'Web' => $config['WPASS'] ?? 'N/A',
-            'WordPress User' => $config['WPUSR'] ?? 'N/A',
-        ];
-
-        $masked = $this->option('masked');
-
-        foreach ($passwords as $type => $password) {
-            if ($password === 'N/A') {
-                $this->line("   <fg=gray>{$type}:</> <fg=gray>Not set</>");
-
-                continue;
+                warning('Use --show-secrets to display actual passwords');
             }
 
-            $displayPassword = $masked ? str_repeat('*', strlen($password)) : $password;
-            $this->line("   <fg=blue>{$type}:</> <fg=yellow>{$displayPassword}</>");
-        }
+            return Command::SUCCESS;
 
-        // Show additional info
-        $this->line('');
-        $this->line('<fg=blue>📋 Related Information:</>');
-        $this->line('   Username: <fg=yellow>'.($config['UUSER'] ?? 'N/A').'</>');
-        $this->line('   Database: <fg=yellow>'.($config['DNAME'] ?? 'N/A').'</>');
-        $this->line('   DB User: <fg=yellow>'.($config['DUSER'] ?? 'N/A').'</>');
+        } catch (\Exception $e) {
+            error('Failed to retrieve credentials: '.$e->getMessage());
+            $this->error($e->getTraceAsString());
+
+            return Command::FAILURE;
+        }
     }
 
-    protected function getPasswordKey(string $type): ?string
+    /**
+     * Truncate secret for display (first/last chars only)
+     */
+    private function truncateSecret(string $secret): string
     {
-        return match ($type) {
-            'user' => 'UPASS',
-            'database' => 'DPASS',
-            'email' => 'EPASS',
-            'web' => 'WPASS',
-            'admin' => 'APASS',
-            'wordpress' => 'WPUSR',
-            default => null,
-        };
+        $len = strlen($secret);
+
+        if ($len <= 12) {
+            return $secret;
+        }
+
+        if ($len <= 24) {
+            return substr($secret, 0, 4).'...'.substr($secret, -4);
+        }
+
+        return substr($secret, 0, 8).'...'.substr($secret, -8);
     }
 }

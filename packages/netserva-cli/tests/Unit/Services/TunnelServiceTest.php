@@ -230,4 +230,190 @@ describe('Tunnel Closure', function () {
         expect($result)->toHaveKeys(['success'])
             ->and($result['success'])->toBeTrue();
     });
+
+    it('handles closing non-existent tunnel gracefully', function () {
+        Process::fake([
+            'ssh *' => Process::result(exitCode: 1),
+        ]);
+
+        $result = $this->service->close('nonexistent', 99999);
+
+        expect($result['success'])->toBeTrue()
+            ->and($result['message'])->toContain('No active tunnel');
+    });
+
+    it('closes all tunnels for a host', function () {
+        $basePath = config('netserva-cli.ssh_mux_dir', env('HOME').'/.ssh/mux');
+        @mkdir($basePath, 0700, true);
+
+        // Create mock socket files
+        @touch("{$basePath}/testhost_10001");
+        @touch("{$basePath}/testhost_10002");
+
+        Process::fake([
+            'ls *' => Process::result(output: "{$basePath}/testhost_10001\n{$basePath}/testhost_10002"),
+            'ssh *' => Process::result(output: ''),
+        ]);
+
+        $result = $this->service->close('testhost');
+
+        expect($result['success'])->toBeTrue()
+            ->and($result['message'])->toContain('Closed 2 tunnel');
+
+        // Cleanup
+        @unlink("{$basePath}/testhost_10001");
+        @unlink("{$basePath}/testhost_10002");
+    });
+});
+
+describe('List Active Tunnels', function () {
+    it('returns empty array when no tunnels exist', function () {
+        Process::fake([
+            'ls *' => Process::result(exitCode: 1),
+        ]);
+
+        $tunnels = $this->service->listActive();
+
+        expect($tunnels)->toBeArray()
+            ->and($tunnels)->toBeEmpty();
+    });
+
+    it('lists all active tunnels', function () {
+        $basePath = config('netserva-cli.ssh_mux_dir', env('HOME').'/.ssh/mux');
+        @mkdir($basePath, 0700, true);
+
+        @touch("{$basePath}/host1_10001");
+        @touch("{$basePath}/host2_10002");
+
+        Process::fake([
+            'ls *' => Process::result(output: "{$basePath}/host1_10001\n{$basePath}/host2_10002"),
+            'ssh *' => Process::result(output: ''), // Active check
+        ]);
+
+        $tunnels = $this->service->listActive();
+
+        expect($tunnels)->toBeArray()
+            ->and($tunnels)->toHaveCount(2)
+            ->and($tunnels[0])->toHaveKeys(['host', 'local_port', 'endpoint'])
+            ->and($tunnels[0]['host'])->toBe('host1')
+            ->and($tunnels[0]['local_port'])->toBe(10001)
+            ->and($tunnels[0]['endpoint'])->toBe('http://localhost:10001');
+
+        // Cleanup
+        @unlink("{$basePath}/host1_10001");
+        @unlink("{$basePath}/host2_10002");
+    });
+
+    it('filters out inactive tunnels', function () {
+        $basePath = config('netserva-cli.ssh_mux_dir', env('HOME').'/.ssh/mux');
+        @mkdir($basePath, 0700, true);
+
+        @touch("{$basePath}/active_10001");
+        @touch("{$basePath}/stale_10002");
+
+        Process::fake([
+            'ls *' => Process::result(output: "{$basePath}/active_10001\n{$basePath}/stale_10002"),
+            'ssh -S *active* -O check *' => Process::result(output: ''), // Active
+            'ssh -S *stale* -O check *' => Process::result(exitCode: 1), // Inactive
+        ]);
+
+        $tunnels = $this->service->listActive();
+
+        expect($tunnels)->toHaveCount(1)
+            ->and($tunnels[0]['host'])->toBe('active');
+
+        // Cleanup
+        @unlink("{$basePath}/active_10001");
+        @unlink("{$basePath}/stale_10002");
+    });
+});
+
+describe('Port Calculation Edge Cases', function () {
+    it('handles host with special characters', function () {
+        $port1 = $this->service->calculateLocalPort('ns1.example.com', 'powerdns');
+        $port2 = $this->service->calculateLocalPort('ns1.example.com', 'powerdns');
+
+        expect($port1)->toBe($port2)
+            ->and($port1)->toBeGreaterThan(10000)
+            ->and($port1)->toBeLessThan(20000);
+    });
+
+    it('handles all service types consistently', function () {
+        $services = ['powerdns', 'pdns', 'mysql', 'db', 'redis', 'api'];
+
+        foreach ($services as $service) {
+            $port = $this->service->calculateLocalPort('testhost', $service);
+
+            expect($port)->toBeGreaterThan(10000)
+                ->and($port)->toBeLessThan(20000);
+        }
+    });
+
+    it('generates ports in valid range', function () {
+        $hosts = ['ns1gc', 'ns2gc', 'ns3gc', 'ns1rn', 'ns2rn', 'ns3rn'];
+
+        foreach ($hosts as $host) {
+            $port = $this->service->calculateLocalPort($host, 'powerdns');
+
+            // Ports should be 5-digit numbers starting with 1
+            expect($port)->toBeGreaterThan(10000)
+                ->and($port)->toBeLessThan(20000)
+                ->and((string) $port)->toStartWith('1');
+        }
+    });
+});
+
+describe('Tunnel Reuse', function () {
+    it('reuses existing tunnel instead of creating duplicate', function () {
+        $basePath = config('netserva-cli.ssh_mux_dir', env('HOME').'/.ssh/mux');
+        @mkdir($basePath, 0700, true);
+        @touch("{$basePath}/markc_18371");
+
+        Process::fake([
+            'ssh -S * -O check *' => Process::result(output: ''), // Active
+        ]);
+
+        $result = $this->service->create('markc', 'powerdns');
+
+        expect($result['success'])->toBeTrue()
+            ->and($result['message'])->toContain('already active');
+
+        // Cleanup
+        @unlink("{$basePath}/markc_18371");
+    });
+});
+
+describe('Error Handling', function () {
+    it('logs errors on tunnel creation failure', function () {
+        Log::spy();
+
+        Process::fake([
+            'ssh *' => Process::result(exitCode: 255, errorOutput: 'Permission denied'),
+        ]);
+
+        $result = $this->service->create('markc', 'powerdns');
+
+        expect($result['success'])->toBeFalse()
+            ->and($result['error'])->toContain('Permission denied');
+
+        Log::shouldHaveReceived('error')
+            ->once()
+            ->with('Failed to create SSH tunnel', \Mockery::type('array'));
+    });
+
+    it('logs successful tunnel creation', function () {
+        Log::spy();
+
+        Process::fake([
+            'ssh *' => Process::result(output: ''),
+        ]);
+
+        $result = $this->service->create('markc', 'powerdns');
+
+        expect($result['success'])->toBeTrue();
+
+        Log::shouldHaveReceived('info')
+            ->once()
+            ->with('SSH tunnel created', \Mockery::type('array'));
+    });
 });

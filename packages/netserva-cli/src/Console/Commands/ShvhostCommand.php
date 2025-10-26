@@ -67,7 +67,7 @@ class ShvhostCommand extends BaseNetServaCommand
 
         if ($vhosts->isEmpty()) {
             $this->line('   <fg=gray>No vhosts found in database</>');
-            $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+            $this->line("   💡 Run: php artisan addfleet {$VNODE}");
 
             return 0;
         }
@@ -103,7 +103,7 @@ class ShvhostCommand extends BaseNetServaCommand
 
             if (! $vhost) {
                 $this->error("❌ VHost {$VHOST} not found on {$VNODE}");
-                $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+                $this->line("   💡 Run: php artisan addfleet {$VNODE}");
 
                 return 1;
             }
@@ -199,7 +199,7 @@ class ShvhostCommand extends BaseNetServaCommand
 
         if ($vnodes->isEmpty()) {
             $this->line('<fg=gray>No VHosts found in database</>');
-            $this->line('   💡 Run: php artisan fleet:discover');
+            $this->line('   💡 Run: php artisan addfleet');
 
             return 0;
         }

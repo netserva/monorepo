@@ -46,7 +46,7 @@ class VNodeSetupCommand extends Command
 
         if (! $vnode) {
             $this->error("VNode not found: {$vnodeName}");
-            $this->line("Run 'php artisan fleet:discover --vnode={$vnodeName}' first");
+            $this->line("Run 'php artisan addfleet {$vnodeName}' first");
 
             return 1;
         }

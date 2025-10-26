@@ -65,7 +65,7 @@ class VhostManagementService
             // Step 1: Find VNode in database
             $vnode = FleetVNode::where('name', $vnodeName)->first();
             if (! $vnode) {
-                throw new Exception("VNode '{$vnodeName}' not found. Run 'php artisan fleet:discover --vnode={$vnodeName}' first.");
+                throw new Exception("VNode '{$vnodeName}' not found. Run 'php artisan addfleet {$vnodeName}' first.");
             }
 
             // Step 2: Check if vhost already exists

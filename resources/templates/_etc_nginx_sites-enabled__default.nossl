@@ -4,18 +4,18 @@
 server {
     listen                      80;
     server_name                 ~^cdn\.(?<domain>.+)$;
-    location                    ^~ /.well-known { root /home/u/$host/var/www/html; }
+    location                    ^~ /.well-known { root /srv/$host/web/app/public; }
     include                     /etc/nginx/common.conf;
 }
 server {
     listen                      80;
     server_name                 ~^www\.(?<domain>.+)$;
-    location                    ^~ /.well-known { root /home/u/$host/var/www/html; }
+    location                    ^~ /.well-known { root /srv/$host/web/app/public; }
     include                     /etc/nginx/common.conf;
 }
 server {
     listen                      80;
     server_name                 ~^(?<domain>.+);
-    location                    ^~ /.well-known { root /home/u/$host/var/www/html; }
+    location                    ^~ /.well-known { root /srv/$host/web/app/public; }
     include                     /etc/nginx/common.conf;
 }

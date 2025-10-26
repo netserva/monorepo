@@ -2,7 +2,7 @@
 
 ## Overview
 
-NetServa provides comprehensive mail server functionality using Postfix (SMTP) and Dovecot (IMAP/POP3) with support for multiple mailbox formats, spam filtering, and sieve scripting. All mail data is stored under the new `/var/ns/$VHOST/mail/` directory structure.
+NetServa provides comprehensive mail server functionality using Postfix (SMTP) and Dovecot (IMAP/POP3) with support for multiple mailbox formats, spam filtering, and sieve scripting. All mail data is stored under the new `/srv/$VHOST/msg/` directory structure.
 
 **Recommended Setup**: NetServa uses a **lean dovecot configuration** with a single `dovecot.conf` file (no conf.d/ directory) for maximum simplicity and maintainability. See [Dovecot Lean Setup Guide](dovecot-lean-setup.md) for details.
 
@@ -10,7 +10,7 @@ NetServa provides comprehensive mail server functionality using Postfix (SMTP) a
 
 ### Legacy Structure (deprecated)
 ```
-/home/u/$VHOST/home/
+# Legacy v1.0: /home/u/$VHOST/home/
 ├── Maildir/                    # Maildir mailboxes
 ├── .spamprobe/                 # SpamProbe database (hidden)
 └── .sieve/                     # Sieve scripts (hidden)
@@ -18,7 +18,7 @@ NetServa provides comprehensive mail server functionality using Postfix (SMTP) a
 
 ### New Structure
 ```
-/var/ns/$VHOST/mail/           # MPATH - Mail storage root
+/srv/$VHOST/msg/           # MPATH - Mail storage root
 ├── Maildir/                    # Maildir format mailboxes
 ├── mdbox/                      # mdbox format mailboxes (alternative)
 ├── sieve/                      # Sieve filtering scripts (no dot prefix)
@@ -33,7 +33,7 @@ NetServa provides comprehensive mail server functionality using Postfix (SMTP) a
 Dovecot Maildir is the default mailbox format, storing each email as a separate file:
 
 ```
-/var/ns/example.com/mail/Maildir/
+/srv/example.com/msg/Maildir/
 ├── cur/                        # Current messages
 ├── new/                        # New messages  
 ├── tmp/                        # Temporary files
@@ -56,7 +56,7 @@ Dovecot Maildir is the default mailbox format, storing each email as a separate 
 **Configuration:**
 ```
 # dovecot.conf
-mail_location = maildir:/var/ns/%d/mail/Maildir
+mail_location = maildir:/srv/%d/msg/Maildir
 ```
 
 ### mdbox Format (Alternative)
@@ -64,7 +64,7 @@ mail_location = maildir:/var/ns/%d/mail/Maildir
 Dovecot mdbox format stores multiple emails in indexed database files:
 
 ```
-/var/ns/example.com/mail/mdbox/
+/srv/example.com/msg/mdbox/
 ├── mailboxes/                  # Mailbox metadata
 │   ├── INBOX/
 │   ├── Sent/
@@ -88,17 +88,17 @@ Dovecot mdbox format stores multiple emails in indexed database files:
 **Configuration:**
 ```
 # dovecot.conf
-mail_location = mdbox:/var/ns/%d/mail/mdbox
+mail_location = mdbox:/srv/%d/msg/mdbox
 ```
 
 ## Sieve Filtering
 
 ### Directory Structure
 
-Sieve scripts are stored in `/var/ns/$VHOST/mail/sieve/` (note: no dot prefix):
+Sieve scripts are stored in `/srv/$VHOST/msg/sieve/` (note: no dot prefix):
 
 ```
-/var/ns/example.com/mail/sieve/
+/srv/example.com/msg/sieve/
 ├── default.sieve               # Default sieve script
 ├── spam-filter.sieve           # Spam filtering rules
 ├── vacation.sieve              # Vacation responder
@@ -167,9 +167,9 @@ protocol lmtp {
 }
 
 plugin {
-    sieve = /var/ns/%d/mail/sieve/default.sieve
-    sieve_dir = /var/ns/%d/mail/sieve/
-    sieve_before = /var/ns/%d/mail/sieve/spam-filter.sieve
+    sieve = /srv/%d/msg/sieve/default.sieve
+    sieve_dir = /srv/%d/msg/sieve/
+    sieve_before = /srv/%d/msg/sieve/spam-filter.sieve
     sieve_global_dir = /etc/dovecot/sieve/global/
 }
 ```
@@ -178,10 +178,10 @@ plugin {
 
 ### SpamProbe Integration
 
-SpamProbe database is stored in `/var/ns/$VHOST/mail/spamprobe/` (note: no dot prefix):
+SpamProbe database is stored in `/srv/$VHOST/msg/spamprobe/` (note: no dot prefix):
 
 ```
-/var/ns/example.com/mail/spamprobe/
+/srv/example.com/msg/spamprobe/
 ├── spam.db                     # Spam training database
 ├── good.db                     # Ham training database  
 ├── config                      # SpamProbe configuration
@@ -192,8 +192,8 @@ SpamProbe database is stored in `/var/ns/$VHOST/mail/spamprobe/` (note: no dot p
 **SpamProbe Configuration (`config`):**
 ```
 # Database files
-spam_db=/var/ns/example.com/mail/spamprobe/spam.db
-good_db=/var/ns/example.com/mail/spamprobe/good.db
+spam_db=/srv/example.com/msg/spamprobe/spam.db
+good_db=/srv/example.com/msg/spamprobe/good.db
 
 # Scoring thresholds
 spam_threshold=0.9
@@ -211,7 +211,7 @@ require ["fileinto", "environment", "vnd.dovecot.execute"];
 
 # SpamProbe scoring
 if environment :matches "spamprobe" "*" {
-    if execute :pipe "spamprobe" ["-d", "/var/ns/%d/mail/spamprobe", "receive"] {
+    if execute :pipe "spamprobe" ["-d", "/srv/%d/msg/spamprobe", "receive"] {
         if header :contains "X-SpamProbe" "SPAM" {
             fileinto :create "Spam";
             stop;
@@ -303,7 +303,7 @@ protocol lmtp {
 ```
 # /etc/opendkim.conf
 Domain                  example.com
-KeyFile                 /var/ns/example.com/mail/dkim/default.private
+KeyFile                 /srv/example.com/msg/dkim/default.private
 Selector                default
 Socket                  inet:8891@localhost
 ```
@@ -311,9 +311,9 @@ Socket                  inet:8891@localhost
 **Key Generation:**
 ```bash
 # Generate DKIM keys
-mkdir -p /var/ns/example.com/mail/dkim/
-opendkim-genkey -D /var/ns/example.com/mail/dkim/ -d example.com -s default
-chown -R opendkim:opendkim /var/ns/example.com/mail/dkim/
+mkdir -p /srv/example.com/msg/dkim/
+opendkim-genkey -D /srv/example.com/msg/dkim/ -d example.com -s default
+chown -R opendkim:opendkim /srv/example.com/msg/dkim/
 ```
 
 ### DMARC Policy
@@ -391,10 +391,10 @@ service quota-warning {
 ```bash
 # Backup Maildir format
 tar -czf /backup/example.com-mail-$(date +%Y%m%d).tar.gz \
-    -C /var/ns/example.com/mail/ .
+    -C /srv/example.com/msg/ .
 
 # Incremental backup with rsync
-rsync -av --delete /var/ns/example.com/mail/ \
+rsync -av --delete /srv/example.com/msg/ \
     backup-server:/backups/example.com/mail/
 ```
 
@@ -415,8 +415,8 @@ doveadm backup -A \
 ```bash
 # Convert existing Maildir to mdbox
 doveadm backup -u user@example.com \
-    maildir:/var/ns/example.com/mail/Maildir \
-    mdbox:/var/ns/example.com/mail/mdbox
+    maildir:/srv/example.com/msg/Maildir \
+    mdbox:/srv/example.com/msg/mdbox
 ```
 
 **IMAP Migration:**
@@ -435,7 +435,7 @@ imapsync --host1 old.server.com --user1 user@example.com --password1 pass1 \
 /var/log/mail.log               # Main mail log
 /var/log/dovecot.log           # Dovecot specific log
 /var/log/postfix.log           # Postfix specific log
-/var/ns/example.com/mail/logs/ # Domain-specific logs
+/srv/example.com/msg/logs/ # Domain-specific logs
 ```
 
 ### Performance Monitoring

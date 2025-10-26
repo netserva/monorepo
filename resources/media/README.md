@@ -1,7 +1,8 @@
-# NetServa Media - Podcast Generator
+# NetServa Media - Podcast & Screencast Generator
 
-Text-to-speech podcast generator using local Piper TTS. Convert plain text
-files to professional-quality MP3 audio.
+Text-to-speech podcast generator and screencast creator using local Piper TTS
+and wf-recorder. Convert plain text files to professional-quality MP3 audio
+and create terminal demonstrations with synchronized narration.
 
 ## Quick Start
 
@@ -11,6 +12,9 @@ files to professional-quality MP3 audio.
 
 # Use different voice
 ./mkpodcast session-journal-quick-reference.txt podcast.mp3 danny
+
+# Generate screencast from orchestration file
+./mkscreencast demo.screencast demo.mp4
 ```
 
 ## Available Voices
@@ -34,14 +38,42 @@ Word wrap to 76 characters for readability.
 - Sample rate: 48kHz
 - Bitrate: 128 kbps
 
+## Screencast Format
+
+Orchestration files (.screencast) define terminal demonstrations:
+
+```
+# Comment lines start with #
+> Narration text (converted to speech)
+$ command (typed and executed)
+wait:N (pause for N seconds)
+```
+
+Example:
+
+```
+> Welcome to the NetServa podcast generator demonstration.
+wait:2
+$ cd ~/.ns/resources/media
+$ ls -lh
+wait:1
+> That completes the demo.
+```
+
+Output: MP4 video with synchronized narration audio.
+
 ## Requirements
 
 ```bash
-# CachyOS/Arch Linux
+# CachyOS/Arch Linux - Podcasts
 sudo pacman -S piper-tts piper-tts-voices-en_US ffmpeg
+
+# CachyOS/Arch Linux - Screencasts
+sudo pacman -S wf-recorder
 ```
 
 ## Git Policy
 
-Only source text files and scripts are version controlled. Generated MP3 files
-are excluded via gitignore. Users generate podcasts locally as needed.
+Only source text files, orchestration files, and scripts are version
+controlled. Generated MP3 and MP4 files are excluded via gitignore. Users
+generate media locally as needed.

@@ -4,11 +4,11 @@
 server {
     listen                      80;
     server_name                 _;
-    location                    ^~ /.well-known/acme-challenge/ { root /home/u/_MHOST/var/www/html; break; }
+    location                    ^~ /.well-known/acme-challenge/ { root /srv/_MHOST/web/app/public; break; }
     location                    ~* (/.well-known/autoconfig/|/mail/config-v1.1.xml|/autodiscover/autodiscover.xml) {
-        root                    /home/u/_MHOST/var/www/html/.well-known/;
+        root                    /srv/_MHOST/web/app/public/.well-known/;
         try_files               /autodiscover.php =404;
-        fastcgi_pass            unix:/home/u/_MHOST/var/run/fpm.sock;
+        fastcgi_pass            unix:/srv/_MHOST/web/run/fpm.sock;
         include                 fastcgi.conf;
         fastcgi_param           SERVER_ADDR "";
         fastcgi_param           REMOTE_ADDR $http_x_real_ip;

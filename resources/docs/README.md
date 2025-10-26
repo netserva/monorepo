@@ -14,14 +14,15 @@
 
 ## 🤖 AI-Assisted Development
 
-**New in 2025-10-13:** BMAD-METHOD integration for structured AI-driven development
+**New in 2025-10-26:** Session Journal system for lightweight context management
 
-### BMAD-METHOD (Structured AI Development)
-- **[BMAD Integration Guide](bmad/README.md)** - Complete setup and workflow for NetServa 3.0
-- Uses specialized AI agents: Analyst, PM, Architect, Scrum Master, Dev
-- Generates PRDs, Architecture docs, and hyper-detailed development stories
-- Prevents context loss, ensures consistency across packages
-- Official: https://github.com/bmad-code-org/BMAD-METHOD
+### Session Journal (Recommended)
+- **[Session Journal Guide](../../../.claude/journal/SESSION-JOURNAL-GUIDE.md)** - Lightweight context management
+- **[Session Template](../../../.claude/journal/SESSION-TEMPLATE.md)** - Full session documentation template
+- **[Quick Template](../../../.claude/journal/QUICK-CAPTURE-TEMPLATE.md)** - Simple session capture
+- Captures decisions, progress, and next steps without heavy overhead
+- Enables easy context recovery after `/clear` commands
+- NetServa pattern compliance built into templates
 
 ### Claude Code Essentials
 - **[Claude Code Essentials](ai/claude-code-essentials.md)** - Core patterns, memory system, MCP integration
@@ -30,11 +31,11 @@
 - **[Proven Workflows](ai/proven-workflows.md)** - 4-phase development, TDD, technical debt management
 
 ### Quick Start
-1. Read [bmad/README.md](bmad/README.md) for BMAD-METHOD setup (recommended for new features)
-2. Read [claude-code-essentials.md](ai/claude-code-essentials.md) for Claude Code overview
-3. Optimize your CLAUDE.md files using [memory-management.md](ai/memory-management.md)
-4. Follow [proven-workflows.md](ai/proven-workflows.md) for development process
-5. Use `.claude/commands/` for workflow automation
+1. Read [Session Journal Guide](../../../.claude/journal/SESSION-JOURNAL-GUIDE.md) for context management
+2. Use `/snapshot` at end of sessions to capture work
+3. Use `/resume` at start of sessions to load context
+4. Read [claude-code-essentials.md](ai/claude-code-essentials.md) for Claude Code overview
+5. Follow [proven-workflows.md](ai/proven-workflows.md) for development process
 
 ## 🏗️ Architecture & Patterns
 

@@ -154,7 +154,7 @@ class NetServaConfigurationService implements ConfigManagerInterface
         Log::warning('Could not determine valid FQDN for VNode', [
             'vnode' => $VNODE,
             'fallback' => $VNODE,
-            'suggestion' => "Run 'php artisan fleet:discover --vnode={$VNODE} --force' to detect FQDN",
+            'suggestion' => "Run 'php artisan addfleet {$VNODE} --force' to detect FQDN",
         ]);
 
         return $VNODE;

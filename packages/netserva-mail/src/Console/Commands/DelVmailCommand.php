@@ -333,7 +333,7 @@ class DelVmailCommand extends Command
     {
         // Generate user details for backup (like original shuser command)
         $this->remoteExecution->executeAsRoot($vnode,
-            "source ~/.sh/shrc.sh && shuser {$email} >{$mpath}/shuser_details"
+            "source ~/.rc/_shrc && shuser {$email} >{$mpath}/shuser_details"
         );
     }
 

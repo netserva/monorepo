@@ -1,6 +1,6 @@
 <?php
 
-namespace Ns\Dns\Services\Providers;
+namespace NetServa\Dns\Services\Providers;
 
 use Illuminate\Support\Facades\Http;
 
@@ -15,8 +15,22 @@ class CloudFlareClient implements DnsProviderInterface
 
     public function testConnection(): bool
     {
-        // TODO: Implement CloudFlare API connection test
-        return false;
+        try {
+            // Test connection by listing zones (token may not have user permissions)
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.($this->config['api_token'] ?? $this->config['api_key'] ?? ''),
+                'Content-Type' => 'application/json',
+            ])->get('https://api.cloudflare.com/client/v4/zones?per_page=1');
+
+            $data = $response->json();
+
+            // Check if the request was successful
+            return ($data['success'] ?? false) === true;
+        } catch (\Exception $e) {
+            \Log::error('CloudFlare connection test failed: '.$e->getMessage());
+
+            return false;
+        }
     }
 
     public function getAllZones(): array
@@ -32,6 +46,12 @@ class CloudFlareClient implements DnsProviderInterface
             if ($data['success'] ?? false) {
                 return $data['result'] ?? [];
             }
+
+            // Log the error for debugging
+            \Log::error('CloudFlare API getAllZones failed', [
+                'errors' => $data['errors'] ?? [],
+                'messages' => $data['messages'] ?? [],
+            ]);
 
             return [];
         } catch (\Exception $e) {

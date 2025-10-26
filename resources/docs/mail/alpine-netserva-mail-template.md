@@ -233,9 +233,9 @@ CREATE TABLE valias (
 ### 6. NetServa Directory Structure
 
 ```
-/var/ns/
+/srv/
 └── example.org/
-    └── home/
+    └── # Removed: home/{user}/ directory
         └── admin/
             └── Maildir/
                 ├── cur/

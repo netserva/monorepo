@@ -221,8 +221,8 @@ All variables stored in `fleet_vhosts.environment_vars` JSON column:
 {
   "VHOST": "nc.goldcoast.org",
   "VNODE": "markc",
-  "UPATH": "/home/u/nc.goldcoast.org",
-  "WPATH": "/home/u/nc.goldcoast.org/var/www/html",
+  "UPATH": "/srv/nc.goldcoast.org",
+  "WPATH": "/srv/nc.goldcoast.org/web/app/public",
   "UUSER": "u1003",
   "U_UID": "1003",
   "DNAME": "nc_goldcoast_org",

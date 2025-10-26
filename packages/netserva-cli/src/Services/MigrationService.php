@@ -183,7 +183,7 @@ class MigrationService
     protected function checkShellEnvironment(string $host): array
     {
         try {
-            $result = $this->sshService->exec($host, 'test -f ~/.sh/_shrc && echo "present" || echo "missing"');
+            $result = $this->sshService->exec($host, 'test -f ~/.rc/_shrc && echo "present" || echo "missing"');
 
             $isPresent = trim($result['output']) === 'present';
 
@@ -295,7 +295,7 @@ class MigrationService
             return true;
         }
 
-        // Implementation would sync ~/.sh/ environment
+        // Implementation would sync ~/.rc/ environment
         return true;
     }
 
@@ -309,7 +309,7 @@ class MigrationService
             return true;
         }
 
-        // Implementation would use rsync via SSH to upload ~/.sh/
+        // Implementation would use rsync via SSH to upload ~/.rc/
         return true;
     }
 
@@ -324,7 +324,7 @@ class MigrationService
         }
 
         try {
-            $result = $this->sshService->exec($host, 'chmod -R 755 ~/.sh/');
+            $result = $this->sshService->exec($host, 'chmod -R 755 ~/.rc/');
 
             return $result['success'];
         } catch (Exception $e) {
@@ -339,7 +339,7 @@ class MigrationService
         Log::info("Verifying sync on {$host}");
 
         try {
-            $result = $this->sshService->exec($host, 'test -f ~/.sh/_shrc && echo "verified"');
+            $result = $this->sshService->exec($host, 'test -f ~/.rc/_shrc && echo "verified"');
 
             return trim($result['output']) === 'verified';
         } catch (Exception $e) {

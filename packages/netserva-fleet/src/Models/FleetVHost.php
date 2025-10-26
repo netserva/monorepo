@@ -236,9 +236,9 @@ class FleetVHost extends Model
      */
     public function setEnvVar(string $key, ?string $value): void
     {
-        // Validate variable name (5 chars max, uppercase with underscore)
+        // Validate variable name (5 chars max: uppercase letters, numbers, underscore)
         if (! VConf::validateName($key)) {
-            throw new \InvalidArgumentException("Invalid variable name: {$key}. Must be 5-char uppercase with optional underscore.");
+            throw new \InvalidArgumentException("Invalid variable name: {$key}. Must be 5 chars max: A-Z, 0-9, underscore (e.g., VHOST, IP4_0, U_UID).");
         }
 
         // Store in dedicated vconfs table

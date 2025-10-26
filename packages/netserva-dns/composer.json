@@ -27,7 +27,8 @@
     "autoload": {
         "psr-4": {
             "NetServa\\Dns\\": "src/",
-            "NetServa\\Dns\\Database\\Factories\\": "database/factories/"
+            "NetServa\\Dns\\Database\\Factories\\": "database/factories/",
+            "NetServa\\Dns\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {

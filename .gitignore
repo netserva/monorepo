@@ -82,8 +82,13 @@ resources/docs-archive-*/
 /SW_CRUD_COMMANDS.md
 /WHMCS_INTEGRATION_ENHANCEMENTS.md
 
-# Audio files (generated from source)
+# Media files (generated from source)
 *.mp3
 *.wav
 *.ogg
 *.m4a
+*.mp4
+*.avi
+*.mkv
+*.webm
+*.cast

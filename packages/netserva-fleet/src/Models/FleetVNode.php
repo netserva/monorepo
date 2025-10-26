@@ -38,6 +38,8 @@ class FleetVNode extends Model
         'vsite_id',
         'ssh_host_id',
         'dns_provider_id',
+        'database_type',
+        'mail_db_path',
         'role',
         'environment',
         'ip_address',
@@ -369,5 +371,90 @@ class FleetVNode extends Model
     public function usesCloudflare(): bool
     {
         return $this->getDnsProviderType() === 'cloudflare';
+    }
+
+    /**
+     * Validate hostname resolution on remote vnode
+     *
+     * Checks if `hostname -f` returns expected FQDN
+     * Used for health checks and post-configuration validation
+     *
+     * @return array{success: bool, fqdn: ?string, error: ?string}
+     */
+    public function validateHostnameResolution(): array
+    {
+        if (! $this->hasSshAccess()) {
+            return [
+                'success' => false,
+                'fqdn' => null,
+                'error' => 'No SSH access configured',
+            ];
+        }
+
+        try {
+            $sshCommand = sprintf(
+                'ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no %s@%s -p %d "hostname -f" 2>&1',
+                $this->sshHost->user,
+                $this->sshHost->hostname,
+                $this->sshHost->port
+            );
+
+            $result = \Illuminate\Support\Facades\Process::timeout(15)->run($sshCommand);
+
+            if (! $result->successful()) {
+                return [
+                    'success' => false,
+                    'fqdn' => null,
+                    'error' => 'hostname -f command failed: '.trim($result->errorOutput() ?: $result->output()),
+                ];
+            }
+
+            $remoteFqdn = trim($result->output());
+
+            // Check if it matches expected FQDN
+            if ($this->fqdn && $remoteFqdn !== $this->fqdn) {
+                return [
+                    'success' => false,
+                    'fqdn' => $remoteFqdn,
+                    'error' => "FQDN mismatch: expected '{$this->fqdn}', got '{$remoteFqdn}'",
+                ];
+            }
+
+            return [
+                'success' => true,
+                'fqdn' => $remoteFqdn,
+                'error' => null,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'fqdn' => null,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Get hostname resolution status for display
+     *
+     * @return string 'valid'|'mismatch'|'unavailable'|'error'
+     */
+    public function getHostnameStatus(): string
+    {
+        $validation = $this->validateHostnameResolution();
+
+        if ($validation['success']) {
+            return 'valid';
+        }
+
+        if ($validation['fqdn']) {
+            return 'mismatch';
+        }
+
+        if (str_contains($validation['error'] ?? '', 'No SSH access')) {
+            return 'unavailable';
+        }
+
+        return 'error';
     }
 }

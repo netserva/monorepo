@@ -566,14 +566,28 @@ class PowerDnsService
             if ($statsResult['success']) {
                 $stats = $statsResult['stats'];
 
-                // Check for high error rates
+                // Check for high ACTUAL error rates (not normal counters)
                 $errorStats = array_filter($stats, function ($stat) {
-                    return str_contains($stat['name'], 'servfail') || str_contains($stat['name'], 'error');
+                    $name = $stat['name'] ?? '';
+                    // Only check real error metrics, not normal operational counters
+                    return (str_contains($name, 'servfail') ||
+                            str_contains($name, 'error')) &&
+                           ! str_contains($name, 'noerror') &&      // Exclude "noerror" (successful queries)
+                           ! str_contains($name, 'capacity') &&     // Exclude capacity metrics
+                           ! str_contains($name, 'size') &&         // Exclude size metrics
+                           ! str_contains($name, 'noport') &&       // Exclude UDP no-port errors (normal)
+                           ! str_contains($name, 'ring-');          // Exclude ring buffer stats
                 });
 
                 foreach ($errorStats as $stat) {
-                    if (($stat['value'] ?? 0) > 100) {
-                        $results['warnings'][] = "High error count for {$stat['name']}: {$stat['value']}";
+                    $value = $stat['value'] ?? 0;
+                    // Handle arrays (some stats return arrays)
+                    if (is_array($value)) {
+                        $value = array_sum($value);
+                    }
+
+                    if ($value > 100) {
+                        $results['warnings'][] = "High error count for {$stat['name']}: {$value}";
                     }
                 }
 

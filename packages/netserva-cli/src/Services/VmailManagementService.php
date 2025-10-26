@@ -4,85 +4,108 @@ namespace NetServa\Cli\Services;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
+use NetServa\Cli\Models\MailCredential;
+use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVNode;
 
 /**
- * Virtual Mail Management Service
+ * Virtual Mail Management Service - NetServa 3.0
  *
- * Pure PHP implementation of NetServa's addvmail functionality.
- * Replaces bash dependency with type-safe Laravel service.
+ * NetServa 3.0 Security Architecture:
+ * - Cleartext passwords stored ONLY on workstation (encrypted at rest in mail_credentials)
+ * - Remote servers receive SHA512-CRYPT hashes only (Dovecot compatible)
+ * - Dual-database pattern: workstation DB + remote vnode DB
+ *
+ * Database-first implementation for virtual mailbox management.
+ * Works with consolidated schema: vhosts, vmails, valias
  */
 class VmailManagementService
 {
     protected RemoteExecutionService $remoteExecution;
 
-    public function __construct(RemoteExecutionService $remoteExecution)
-    {
+    protected DovecotPasswordService $passwordService;
+
+    public function __construct(
+        RemoteExecutionService $remoteExecution,
+        DovecotPasswordService $passwordService
+    ) {
         $this->remoteExecution = $remoteExecution;
+        $this->passwordService = $passwordService;
     }
 
     /**
-     * Create virtual mail user
+     * Create virtual mail user (NetServa 3.0 database-first)
      */
-    public function createVmailUser(string $VNODE, string $email, string $password): array
+    public function createVmailUser(string $vnodeName, string $email, string $password): array
     {
         Log::info('Creating virtual mail user', [
-            'VNODE' => $VNODE,
+            'vnode' => $vnodeName,
             'email' => $email,
         ]);
 
         try {
             // Extract components
-            $VHOST = substr(strstr($email, '@'), 1);
-            $VUSER = substr($email, 0, strpos($email, '@'));
+            $domain = substr(strstr($email, '@'), 1);
+            $localpart = substr($email, 0, strpos($email, '@'));
 
-            // Load VHost configuration
-            $configPath = base_path("../var/{$VNODE}/{$VHOST}");
-            if (! file_exists($configPath)) {
+            // Get vnode from database
+            $vnode = FleetVNode::where('name', $vnodeName)->first();
+            if (! $vnode) {
                 return [
                     'success' => false,
-                    'error' => "VHost configuration not found: ~/.ns/var/{$VNODE}/{$VHOST}. Run 'addvhost {$VHOST} --vnode={$VNODE}' first.",
+                    'error' => "VNode not found: {$vnodeName}. Run 'addfleet {$vnodeName}' first.",
                 ];
             }
 
-            // Load environment variables
-            $config = $this->loadVhostConfig($configPath);
+            // Check if vhost exists in fleet_vhosts
+            $vhost = FleetVHost::where('vnode_id', $vnode->id)
+                ->where('fqdn', $domain)
+                ->first();
 
-            // Check if VHost exists in database
-            $hid = $this->getVhostId($VNODE, $VHOST, $config['SQCMD']);
-            if (! $hid) {
+            if (! $vhost) {
                 return [
                     'success' => false,
-                    'error' => "VHost {$VHOST} does not exist in database",
+                    'error' => "Domain {$domain} not found. Run 'addvhost {$vnodeName} {$domain}' first.",
+                ];
+            }
+
+            // SQLite database on remote vnode
+            $sqlCmd = 'sqlite3 /var/lib/sqlite/sysadm/sysadm.db';
+
+            // Check if domain exists in vhosts table (remote database)
+            if (! $this->domainExistsInVhosts($vnodeName, $domain, $sqlCmd)) {
+                return [
+                    'success' => false,
+                    'error' => "Domain {$domain} not found in vhosts table on {$vnodeName}",
                 ];
             }
 
             // Check if user already exists
-            $existingUserId = $this->getVmailUserId($VNODE, $email, $config['SQCMD']);
-            if ($existingUserId) {
-                Log::warning('Virtual mail user already exists', ['email' => $email]);
-            } else {
-                // Create database entries
-                $this->createVmailDatabaseEntries($VNODE, $email, $password, $hid, $config);
+            if ($this->vmailExists($vnodeName, $email, $sqlCmd)) {
+                return [
+                    'success' => false,
+                    'error' => "Virtual mail user already exists: {$email}",
+                ];
             }
 
-            // Create mailbox directory structure
-            $this->createMailboxStructure($VNODE, $VUSER, $config);
+            // Create database entries (dual-database: remote hash + local cleartext)
+            $this->createVmailDatabaseEntries($vnodeName, $email, $password, $domain, $localpart, $vhost->uid, $vhost->gid, $vhost->id, $sqlCmd);
 
-            // Update local configuration file
-            $this->updateLocalConfigFile($VNODE, $VHOST, $email, $password);
+            // Create mailbox directory structure
+            $this->createMailboxStructure($vnodeName, $domain, $localpart, $vhost->uid, $vhost->gid);
 
             return [
                 'success' => true,
                 'details' => [
                     'email' => $email,
-                    'maildir' => $config['MPATH']."/{$VUSER}/Maildir",
+                    'maildir' => "/srv/{$domain}/msg/{$localpart}/Maildir",
                     'password' => $password,
                 ],
             ];
 
         } catch (Exception $e) {
             Log::error('Failed to create virtual mail user', [
-                'VNODE' => $VNODE,
+                'vnode' => $vnodeName,
                 'email' => $email,
                 'error' => $e->getMessage(),
             ]);
@@ -95,229 +118,166 @@ class VmailManagementService
     }
 
     /**
-     * Load VHost configuration file
+     * Check if domain exists in vhosts table
      */
-    private function loadVhostConfig(string $configPath): array
-    {
-        $content = file_get_contents($configPath);
-        $config = [];
-
-        foreach (explode("\n", $content) as $line) {
-            $line = trim($line);
-            if (empty($line) || str_starts_with($line, '#')) {
-                continue;
-            }
-
-            if (preg_match('/^([A-Z_]+)=\'?([^\']+)\'?$/', $line, $matches)) {
-                $config[$matches[1]] = $matches[2];
-            }
-        }
-
-        return $config;
-    }
-
-    /**
-     * Get VHost ID from database
-     */
-    private function getVhostId(string $VNODE, string $VHOST, string $sqlCmd): ?int
+    private function domainExistsInVhosts(string $vnode, string $domain, string $sqlCmd): bool
     {
         $sql = "cat <<EOS | {$sqlCmd}
-SELECT id FROM vhosts
- WHERE domain = \"{$VHOST}\"
+SELECT COUNT(*) FROM vhosts WHERE domain = '{$domain}' AND active = 1
 EOS";
 
-        $result = $this->remoteExecution->executeAsRoot($VNODE, $sql);
+        $result = $this->remoteExecution->executeAsRoot($vnode, $sql);
 
-        if (! $result['success'] || empty(trim($result['output']))) {
-            return null;
-        }
-
-        return (int) trim($result['output']);
+        return $result['success'] && trim($result['output']) === '1';
     }
 
     /**
-     * Get existing vmail user ID
+     * Check if vmail user exists
      */
-    private function getVmailUserId(string $VNODE, string $email, string $sqlCmd): ?int
+    private function vmailExists(string $vnode, string $email, string $sqlCmd): bool
     {
         $sql = "cat <<EOS | {$sqlCmd}
-SELECT id FROM vmails
- WHERE user = \"{$email}\"
+SELECT COUNT(*) FROM vmails WHERE user = '{$email}'
 EOS";
 
-        $result = $this->remoteExecution->executeAsRoot($VNODE, $sql);
+        $result = $this->remoteExecution->executeAsRoot($vnode, $sql);
 
-        if (! $result['success'] || empty(trim($result['output']))) {
-            return null;
-        }
-
-        return (int) trim($result['output']);
+        return $result['success'] && trim($result['output']) === '1';
     }
 
     /**
-     * Create database entries for virtual mail user
+     * Create database entries for virtual mail user (NetServa 3.0 Dual-Database Security)
+     *
+     * Architecture:
+     * 1. Generate SHA512-CRYPT hash locally (PHP native, no remote doveadm call)
+     * 2. Store HASH ONLY on remote server (vmails table)
+     * 3. Store CLEARTEXT on workstation (mail_credentials table, encrypted at rest)
      */
-    private function createVmailDatabaseEntries(string $VNODE, string $email, string $password, int $hid, array $config): void
-    {
-        $VUSER = substr($email, 0, strpos($email, '@'));
-        $VHOST = substr(strstr($email, '@'), 1);
+    private function createVmailDatabaseEntries(
+        string $vnode,
+        string $email,
+        string $password,
+        string $domain,
+        string $localpart,
+        int $uid,
+        int $gid,
+        int $vhostId,
+        string $sqlCmd
+    ): void {
         $date = date('Y-m-d H:i:s');
-        $mpath = $config['MPATH']."/{$VUSER}";
+        $maildir = "{$domain}/msg/{$localpart}";
 
-        // Generate dovecot password hash
-        $result = $this->remoteExecution->executeAsRoot($VNODE,
-            "doveadm pw -s SHA512-CRYPT -p '{$password}'"
-        );
+        // 1. Generate SHA512-CRYPT hash locally (Dovecot compatible)
+        $passwordHash = $this->passwordService->generateHash($password);
 
-        if (! $result['success']) {
-            throw new Exception('Failed to generate password hash: '.$result['error']);
-        }
-
-        $passwordHash = trim($result['output']);
-
-        // Create vmails entry
-        $vmailsSql = "cat <<EOS | {$config['SQCMD']}
+        // 2. Store HASH ONLY on remote server (NO CLEARTEXT!)
+        $vmailsSql = "cat <<EOS | {$sqlCmd}
 INSERT INTO vmails (
-        hid,
-        uid,
-        gid,
-        active,
-        user,
-        home,
-        password,
-        updated,
-        created
+    user,
+    password,
+    maildir,
+    uid,
+    gid,
+    active,
+    created_at,
+    updated_at
 ) VALUES (
-        {$hid},
-        {$config['U_UID']},
-        {$config['U_GID']},
-        1,
-        '{$email}',
-        '{$mpath}',
-        '{$passwordHash}',
-        '{$date}',
-        '{$date}'
+    '{$email}',
+    '{$passwordHash}',
+    '{$maildir}',
+    {$uid},
+    {$gid},
+    1,
+    '{$date}',
+    '{$date}'
 )
 EOS";
 
-        $result = $this->remoteExecution->executeAsRoot($VNODE, $vmailsSql);
+        $result = $this->remoteExecution->executeAsRoot($vnode, $vmailsSql);
 
         if (! $result['success']) {
             throw new Exception('Failed to create vmails entry: '.$result['error']);
         }
 
-        // Get the created user ID
-        $mid = $this->getVmailUserId($VNODE, $email, $config['SQCMD']);
-        if (! $mid) {
-            throw new Exception('Failed to retrieve created vmail user ID');
-        }
-
-        // Create vmail_log entry
-        $ymd = date('Y-m-d');
-        $logSql = "cat <<EOS | {$config['SQCMD']}
-INSERT INTO vmail_log (
-        mid,
-        ymd
-) VALUES (
-        {$mid},
-        '{$ymd}'
-)
-EOS";
-
-        $this->remoteExecution->executeAsRoot($VNODE, $logSql);
+        // 3. Store CLEARTEXT on workstation only (encrypted at rest via Laravel)
+        MailCredential::create([
+            'fleet_vhost_id' => $vhostId,
+            'email' => $email,
+            'cleartext_password' => $password, // Auto-encrypted by Laravel
+            'notes' => "Created via addvmail on {$vnode} at ".date('Y-m-d H:i:s'),
+            'last_rotated_at' => now(),
+            'is_active' => true,
+        ]);
 
         // Create valias entry (admin gets catch-all @domain, others get specific)
-        $source = ($VUSER === 'admin') ? "@{$VHOST}" : $email;
-        $aliasSql = "cat <<EOS | {$config['SQCMD']}
+        $source = ($localpart === 'admin') ? "@{$domain}" : $email;
+        $aliasSql = "cat <<EOS | {$sqlCmd}
 INSERT INTO valias (
-        hid,
-        source,
-        target,
-        updated,
-        created
+    source,
+    target,
+    active,
+    created_at,
+    updated_at
 ) VALUES (
-        {$hid},
-        '{$source}',
-        '{$email}',
-        '{$date}',
-        '{$date}'
+    '{$source}',
+    '{$email}',
+    1,
+    '{$date}',
+    '{$date}'
 )
 EOS";
 
-        $this->remoteExecution->executeAsRoot($VNODE, $aliasSql);
+        $this->remoteExecution->executeAsRoot($vnode, $aliasSql);
     }
 
     /**
      * Create mailbox directory structure on remote server
      */
-    private function createMailboxStructure(string $VNODE, string $VUSER, array $config): void
-    {
-        // Use MPATH from config for mail-centric structure
-        $mpath = $config['MPATH']."/{$VUSER}";
-
-        // Check if mail path base exists
-        $result = $this->remoteExecution->executeAsRoot($VNODE, "test -d {$config['MPATH']}");
-        if (! $result['success']) {
-            throw new Exception("Mail path {$config['MPATH']} does not exist on {$VNODE}");
-        }
+    private function createMailboxStructure(
+        string $vnode,
+        string $domain,
+        string $localpart,
+        int $uid,
+        int $gid
+    ): void {
+        $mailPath = "/srv/{$domain}/msg/{$localpart}";
 
         // Create Maildir and sieve directories
-        $this->remoteExecution->executeAsRoot($VNODE,
-            "mkdir -p {$mpath}/{Maildir,sieve}"
+        $result = $this->remoteExecution->executeAsRoot($vnode,
+            "mkdir -p {$mailPath}/{Maildir,sieve}"
         );
 
+        if (! $result['success']) {
+            throw new Exception("Failed to create mailbox directories: {$result['error']}");
+        }
+
         // Set up SpamProbe if not exists
-        $result = $this->remoteExecution->executeAsRoot($VNODE, "test -d {$mpath}/.spamprobe");
+        $result = $this->remoteExecution->executeAsRoot($vnode, "test -d {$mailPath}/.spamprobe");
         if (! $result['success']) {
             // Check if global spamprobe exists
-            $globalExists = $this->remoteExecution->executeAsRoot($VNODE, 'test -d /etc/spamprobe');
+            $globalExists = $this->remoteExecution->executeAsRoot($vnode, 'test -d /etc/spamprobe');
             if (! $globalExists['success']) {
                 // Download spamprobe configuration
-                $this->remoteExecution->executeAsRoot($VNODE,
+                $this->remoteExecution->executeAsRoot($vnode,
                     'cd /etc && wget -q https://renta.net/public/_etc_spamprobe.tgz && tar xf _etc_spamprobe.tgz >/dev/null 2>&1'
                 );
             }
 
             // Copy spamprobe configuration
-            $this->remoteExecution->executeAsRoot($VNODE,
-                "mkdir {$mpath}/.spamprobe && cp -a /etc/spamprobe/* {$mpath}/.spamprobe"
+            $this->remoteExecution->executeAsRoot($vnode,
+                "mkdir -p {$mailPath}/.spamprobe && cp -a /etc/spamprobe/* {$mailPath}/.spamprobe 2>/dev/null || true"
             );
         }
 
-        // Set correct ownership and permissions (use MPATH parent directory for ownership reference)
-        $this->remoteExecution->executeAsRoot($VNODE,
-            "chown \$(stat -c '%u:%g' {$config['MPATH']}) -R {$mpath}"
+        // Set correct ownership and permissions
+        $this->remoteExecution->executeAsRoot($vnode,
+            "chown {$uid}:{$gid} -R {$mailPath}"
         );
-        $this->remoteExecution->executeAsRoot($VNODE,
-            "find {$mpath} -type d -exec chmod 00750 {} +"
+        $this->remoteExecution->executeAsRoot($vnode,
+            "find {$mailPath} -type d -exec chmod 00750 {} +"
         );
-        $this->remoteExecution->executeAsRoot($VNODE,
-            "find {$mpath} -type f -exec chmod 00640 {} +"
+        $this->remoteExecution->executeAsRoot($vnode,
+            "find {$mailPath} -type f -exec chmod 00640 {} +"
         );
-    }
-
-    /**
-     * Update local .conf file with mail credentials
-     */
-    private function updateLocalConfigFile(string $VNODE, string $VHOST, string $email, string $password): void
-    {
-        $confPath = base_path("../var/{$VNODE}/{$VHOST}.conf");
-
-        // Check if Mail section already exists
-        $hasMailSection = false;
-        if (file_exists($confPath)) {
-            $content = file_get_contents($confPath);
-            $hasMailSection = str_contains($content, "\nMail\n");
-        }
-
-        // Append mail information
-        if ($hasMailSection) {
-            // Append to existing Mail section
-            file_put_contents($confPath, "Username: {$email}\nPassword: {$password}\n\n", FILE_APPEND);
-        } else {
-            // Create new Mail section
-            $mailSection = "\nMail\n=========\n\nUsername: {$email}\nPassword: {$password}\n\n";
-            file_put_contents($confPath, $mailSection, FILE_APPEND);
-        }
     }
 }

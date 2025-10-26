@@ -48,11 +48,12 @@ class VConf extends Model
     ];
 
     /**
-     * Variable name must be 5 chars uppercase (with optional underscore)
+     * Variable name must be 5 chars max: uppercase letters, numbers, and underscore
+     * Examples: VHOST, AHOST, IP4_0, IP4_1, IP6_0, U_UID, V_PHP
      */
     public static function validateName(string $name): bool
     {
-        return (bool) preg_match('/^[A-Z_]{1,5}$/', $name) && strlen($name) <= 5;
+        return (bool) preg_match('/^[A-Z0-9_]{1,5}$/', $name) && strlen($name) <= 5;
     }
 
     /**

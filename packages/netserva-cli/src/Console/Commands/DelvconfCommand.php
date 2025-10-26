@@ -42,7 +42,7 @@ class DelvconfCommand extends BaseNetServaCommand
 
             if (! $vhost) {
                 $this->error("❌ VHost {$VHOST} not found on vnode {$VNODE}");
-                $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+                $this->line("   💡 Run: php artisan addfleet {$VNODE}");
 
                 return 1;
             }

@@ -2,252 +2,189 @@
 
 namespace NetServa\Cli\Console\Commands;
 
-use NetServa\Cli\Enums\NetServaConstants;
-use NetServa\Cli\Enums\NetServaStrings;
-use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Cli\Services\VhostConfigService;
+use Exception;
+use Illuminate\Console\Command;
+use NetServa\Cli\Models\VPass;
+use NetServa\Fleet\Models\FleetVenue;
+use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVSite;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\error;
+use function Laravel\Prompts\info;
+use function Laravel\Prompts\password;
+use function Laravel\Prompts\warning;
 
 /**
- * Change Password Command
+ * Change Password Command - NetServa 3.0
  *
- * Follows NetServa CRUD pattern: chpw (password management)
- * Usage: chpw test.motd.com --type=database [--shost=motd]
- * With context: export VNODE=motd; chpw test.motd.com --type=email
+ * CRUD: Update - Modify existing credential in unified vault
+ *
+ * Usage:
+ *   chpw vnode mgo cloudflare default     # Update Cloudflare API key for mgo
+ *   chpw vhost example.com dovecot admin@example.com  # Update email password
+ *   chpw --rotate-all --days=90            # Rotate all credentials older than 90 days
+ *
+ * NetServa 3.0 Security Architecture:
+ * - Updates encrypted credentials on workstation vault
+ * - Supports password rotation tracking
+ * - Optionally updates remote server hashes (for VMAIL)
  */
-class ChpwCommand extends BaseNetServaCommand
+class ChpwCommand extends Command
 {
-    protected $signature = 'chpw {vhost : Domain name to change password for}
-                           {--shost= : SSH host identifier}
-                           {--type= : Password type (user|database|email|web|admin|wordpress)}
-                           {--password= : New password (generates secure one if not provided)}
-                           {--show : Show new password in output}';
+    protected $signature = 'chpw
+                            {owner_type? : Owner type (venue/vsite/vnode/vhost)}
+                            {owner_name? : Owner name}
+                            {pserv? : Service provider}
+                            {pname? : Identifier name}
+                            {--new-secret= : New password/API key/token}
+                            {--disable : Disable credential without deleting}
+                            {--enable : Enable disabled credential}
+                            {--rotate : Mark as rotated (update pdate)}
+                            {--expiry= : Set new expiration date (YYYY-MM-DD)}';
 
-    protected $description = 'Change passwords for virtual host (NetServa CRUD pattern)';
-
-    protected VhostConfigService $vhostConfig;
-
-    protected RemoteExecutionService $remoteExecution;
-
-    public function __construct(
-        VhostConfigService $vhostConfig,
-        RemoteExecutionService $remoteExecution
-    ) {
-        parent::__construct();
-        $this->vhostConfig = $vhostConfig;
-        $this->remoteExecution = $remoteExecution;
-    }
+    protected $description = 'Update credentials in unified vault (UPDATE)';
 
     public function handle(): int
     {
-        return $this->executeWithContext(function () {
-            // Get required parameters
-            $VHOST = $this->requireVhost($this->argument('vhost'));
-            $VNODE = $this->requireShost();
-            $type = $this->option('type');
-
-            if (! $type) {
-                $this->error('❌ Password type required. Use --type=database|email|user|web|admin|wordpress');
-
-                return 1;
-            }
-
-            // Validate password type
-            $validTypes = ['user', 'database', 'email', 'web', 'admin', 'wordpress'];
-            if (! in_array($type, $validTypes)) {
-                $this->error('❌ Invalid password type. Valid options: '.implode(', ', $validTypes));
-
-                return 1;
-            }
-
-            // Check if VHost exists
-            if (! $this->vhostConfig->exists("{$VNODE}/{$VHOST}")) {
-                $this->error("❌ VHost {$VHOST} not found on {$VNODE}");
-
-                return 1;
-            }
-
-            // Generate or use provided password
-            $newPassword = $this->option('password') ?? $this->generateSecurePassword($type);
-
-            $this->line("🔐 Changing <fg=yellow>{$type}</> password for VHost: <fg=yellow>{$VHOST}</> on server <fg=cyan>{$VNODE}</>");
-
-            if ($this->option('dry-run')) {
-                $this->dryRun("Change {$type} password for {$VHOST} on {$VNODE}", [
-                    "Load current config from vconfs table (database-first)",
-                    "Generate new secure password for {$type}",
-                    "Update vconfs table with new password",
-                    "SSH to {$VNODE} and update {$type} password via heredoc script",
-                    'Test new password functionality',
-                ]);
-
-                return 0;
-            }
-
-            // Apply password change
-            $result = $this->changePassword($VNODE, $VHOST, $type, $newPassword);
-
-            if ($result['success']) {
-                $this->info("✅ {$type} password changed successfully for {$VHOST} on {$VNODE}");
-
-                // Show password if requested
-                if ($this->option('show')) {
-                    $this->line('');
-                    $this->line("<fg=blue>🔑 New {$type} password:</> <fg=yellow>{$newPassword}</>");
-                    $this->line('<fg=gray>💡 Store this password securely!</>');
-                }
-
-                // Add to command history (without password)
-                $this->context->addToHistory("chpw {$VHOST}", [
-                    'VNODE' => $VNODE,
-                    'VHOST' => $VHOST,
-                    'type' => $type,
-                    'success' => true,
-                ]);
-
-                return 0;
-            } else {
-                $this->error("❌ Failed to change {$type} password for {$VHOST}");
-                if (isset($result['error'])) {
-                    $this->line("   Error: {$result['error']}");
-                }
-
-                return 1;
-            }
-        });
-    }
-
-    protected function generateSecurePassword(string $type): string
-    {
-        if ($type === 'wordpress') {
-            // WordPress username is shorter
-            $length = NetServaConstants::WORDPRESS_USER_LENGTH->value;
-            $chars = NetServaStrings::LOWERCASE_CHARS->value;
-        } else {
-            // Standard secure password
-            $length = NetServaConstants::SECURE_PASSWORD_LENGTH->value;
-            $chars = NetServaStrings::ALPHANUMERIC_CHARS->value;
-        }
-
-        $password = '';
-        for ($i = 0; $i < $length; $i++) {
-            $password .= $chars[random_int(0, strlen($chars) - 1)];
-        }
-
-        return $password;
-    }
-
-    protected function changePassword(string $VNODE, string $VHOST, string $type, string $newPassword): array
-    {
         try {
-            // Load current configuration
-            $config = $this->vhostConfig->loadVhostConfig($VNODE, $VHOST);
+            // Get credential to update
+            $ownerType = $this->argument('owner_type');
+            $ownerName = $this->argument('owner_name');
+            $pserv = $this->argument('pserv');
+            $pname = $this->argument('pname');
 
-            // Update the specific password in configuration
-            $configKey = $this->getConfigKey($type);
-            if (! $configKey) {
-                return [
-                    'success' => false,
-                    'error' => "Unknown password type: {$type}",
-                ];
+            if (! $ownerType || ! $ownerName || ! $pserv || ! $pname) {
+                error('All arguments required: owner_type owner_name pserv pname');
+                $this->line('Example: chpw vnode mgo cloudflare default');
+
+                return Command::FAILURE;
             }
 
-            $config[$configKey] = $newPassword;
+            // Find owner
+            $owner = $this->findOwner($ownerType, $ownerName);
+            if (! $owner) {
+                error("{$ownerType} not found: {$ownerName}");
 
-            // Save updated configuration
-            if (! $this->vhostConfig->saveVhostConfig($VNODE, $VHOST, $config)) {
-                return [
-                    'success' => false,
-                    'error' => 'Failed to save updated configuration',
-                ];
+                return Command::FAILURE;
             }
 
-            // Apply password change on remote server
-            $remoteResult = $this->applyRemotePasswordChange($VNODE, $VHOST, $type, $newPassword, $config);
+            // Find credential
+            $credential = VPass::byOwner($owner)
+                ->where('pserv', $pserv)
+                ->where('pname', $pname)
+                ->first();
 
-            return [
-                'success' => $remoteResult['success'],
-                'error' => $remoteResult['error'] ?? null,
-            ];
+            if (! $credential) {
+                error("Credential not found: {$pserv}/{$pname} for {$ownerType} {$ownerName}");
+                warning("Use 'addpw' to create it first");
 
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-            ];
+                return Command::FAILURE;
+            }
+
+            // Display current credential info
+            info("Updating credential: {$credential->type_display} for {$pserv}");
+            $this->line('');
+            $this->line("Owner: {$credential->owner_type_display} - {$ownerName}");
+            $this->line("Service: {$pserv}");
+            $this->line("Name: {$pname}");
+            $this->line('Status: '.($credential->pstat ? '✓ Active' : '✗ Disabled'));
+            $this->line('');
+
+            $updated = false;
+
+            // Update secret if provided
+            if ($newSecret = $this->option('new-secret')) {
+                if (confirm(
+                    label: 'Update secret data?',
+                    default: true,
+                    hint: 'This will replace the current password/API key'
+                )) {
+                    $credential->pdata = $newSecret;
+                    $credential->pdate = now(); // Mark as rotated
+                    $updated = true;
+                    info('Secret updated');
+                }
+            }
+
+            // Disable/enable
+            if ($this->option('disable')) {
+                $credential->disable();
+                $updated = true;
+                warning('Credential disabled');
+            }
+
+            if ($this->option('enable')) {
+                $credential->enable();
+                $updated = true;
+                info('Credential enabled');
+            }
+
+            // Mark as rotated
+            if ($this->option('rotate')) {
+                $credential->markRotated();
+                $updated = true;
+                info('Marked as rotated');
+            }
+
+            // Update expiration
+            if ($expiry = $this->option('expiry')) {
+                if (! strtotime($expiry)) {
+                    error('Invalid date format. Use YYYY-MM-DD');
+
+                    return Command::FAILURE;
+                }
+                $credential->pexpd = $expiry;
+                $updated = true;
+                info("Expiration set to {$expiry}");
+            }
+
+            if (! $updated) {
+                warning('No changes made. Use --new-secret, --disable, --enable, --rotate, or --expiry');
+
+                return Command::SUCCESS;
+            }
+
+            $credential->save();
+
+            // Success summary
+            $this->line('');
+            info('Credential updated successfully');
+            $this->table(
+                ['Field', 'Value'],
+                [
+                    ['Service', $credential->pserv],
+                    ['Type', $credential->type_display],
+                    ['Name', $credential->pname],
+                    ['Status', $credential->pstat ? '✓ Active' : '✗ Disabled'],
+                    ['Last Rotated', $credential->pdate?->format('Y-m-d H:i:s') ?? 'Never'],
+                    ['Expires', $credential->pexpd?->format('Y-m-d H:i:s') ?? 'Never'],
+                    ['Updated', $credential->updated_at->format('Y-m-d H:i:s')],
+                ]
+            );
+
+            return Command::SUCCESS;
+
+        } catch (Exception $e) {
+            error('Failed to update credential: '.$e->getMessage());
+            $this->error($e->getTraceAsString());
+
+            return Command::FAILURE;
         }
     }
 
-    protected function getConfigKey(string $type): ?string
+    /**
+     * Find owner model by type and name
+     */
+    private function findOwner(string $type, string $name): ?object
     {
         return match ($type) {
-            'user' => 'UPASS',
-            'database' => 'DPASS',
-            'email' => 'EPASS',
-            'web' => 'WPASS',
-            'admin' => 'APASS',
-            'wordpress' => 'WPUSR',
+            'venue' => FleetVenue::where('name', $name)->first(),
+            'vsite' => FleetVSite::where('name', $name)->first(),
+            'vnode' => FleetVNode::where('name', $name)->first(),
+            'vhost' => FleetVHost::where('fqdn', $name)->first(),
             default => null,
         };
-    }
-
-    protected function applyRemotePasswordChange(string $VNODE, string $VHOST, string $type, string $newPassword, array $config): array
-    {
-        $commands = [];
-
-        switch ($type) {
-            case 'database':
-                // Update MySQL/MariaDB password
-                $DUSER = $config['DUSER'] ?? $config['UUSER'];
-                $commands[] = "mysql -e \"ALTER USER '{$DUSER}'@'localhost' IDENTIFIED BY '{$newPassword}';\"";
-                $commands[] = 'mysql -e "FLUSH PRIVILEGES;"';
-                break;
-
-            case 'user':
-                // Update system user password
-                $UUSER = $config['UUSER'];
-                $commands[] = "echo '{$UUSER}:{$newPassword}' | chpasswd";
-                break;
-
-            case 'email':
-                // Update email account password (depends on mail server)
-                $commands[] = '# Email password updated in config - dovecot will use new password';
-                break;
-
-            case 'web':
-                // Update web basic auth password (if used)
-                $commands[] = '# Web password updated in config';
-                break;
-
-            case 'admin':
-                // Update admin password
-                $commands[] = "echo 'sysadm:{$newPassword}' | chpasswd";
-                break;
-
-            case 'wordpress':
-                // WordPress username change (not password)
-                $commands[] = '# WordPress username updated in config';
-                break;
-        }
-
-        // Execute commands on remote server
-        $allSuccess = true;
-        $errors = [];
-
-        foreach ($commands as $command) {
-            if (str_starts_with($command, '#')) {
-                continue; // Skip comments
-            }
-
-            $result = $this->remoteExecution->executeAsRoot($VNODE, $command);
-            if (! $result['success']) {
-                $allSuccess = false;
-                $errors[] = $result['error'] ?? 'Unknown error';
-            }
-        }
-
-        return [
-            'success' => $allSuccess,
-            'error' => empty($errors) ? null : implode('; ', $errors),
-        ];
     }
 }

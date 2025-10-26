@@ -2,20 +2,25 @@
 
 namespace NetServa\Cli\Console\Commands;
 
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use NetServa\Cli\Services\VmailManagementService;
+use NetServa\Fleet\Models\FleetVNode;
 
 /**
  * Add Virtual Mail Command
  *
- * Follows NetServa CRUD pattern: addvmail (not "ns vmail add")
- * Usage: addvmail user@domain.com [--vnode=motd] [password]
- * With context: export VNODE=motd; addvmail admin@motd.com
+ * NetServa 3.0 CRUD: CREATE operation for virtual mailboxes
+ * Usage: addvmail <vnode> <email> [password]
  */
-class AddvmailCommand extends BaseNetServaCommand
+class AddvmailCommand extends Command
 {
-    protected $signature = 'addvmail {email : Email address to add} {password? : Optional password (auto-generated if not provided)} {--vnode= : Virtual node identifier} {--shost= : SSH host identifier (legacy)} {--dry-run : Show what would be done}';
+    protected $signature = 'addvmail
+                            {vnode : The vnode to create on}
+                            {email : Email address to add}
+                            {password? : Optional password (auto-generated if not provided)}';
 
-    protected $description = 'Add a new virtual mail user (NetServa CRUD pattern)';
+    protected $description = 'Add a new virtual mail user (NetServa 3.0 CRUD: Create)';
 
     protected VmailManagementService $vmailService;
 
@@ -27,82 +32,74 @@ class AddvmailCommand extends BaseNetServaCommand
 
     public function handle(): int
     {
-        return $this->executeWithContext(function () {
-            // Get required parameters using NetServa patterns
-            $email = strtolower($this->argument('email')); // Force lowercase like bash script
-            $password = $this->argument('password');
-            $VNODE = $this->requireShost(); // Still returns VNODE internally for compatibility
+        $vnodeName = $this->argument('vnode');
+        $email = strtolower($this->argument('email')); // Force lowercase
+        $password = $this->argument('password');
 
-            // Validate email format
-            if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $this->error("❌ Invalid email format: {$email}");
+        // Validate email format
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->error("Invalid email format: {$email}");
 
-                return 1;
+            return Command::FAILURE;
+        }
+
+        // Extract domain from email
+        $domain = substr(strstr($email, '@'), 1);
+        $localpart = substr($email, 0, strpos($email, '@'));
+
+        // Generate password if not provided
+        if (! $password) {
+            $password = $this->generateSecurePassword();
+        }
+
+        $this->info("Creating virtual mail user: {$email} on {$vnodeName}");
+
+        // NetServa 3.0: Get vnode from database
+        $vnode = FleetVNode::where('name', $vnodeName)->first();
+
+        if (! $vnode) {
+            $this->error("VNode not found: {$vnodeName}");
+            $this->warn("Run 'addfleet {$vnodeName}' first.");
+
+            return Command::FAILURE;
+        }
+
+        // Create the virtual mail user using NetServa service
+        $result = $this->vmailService->createVmailUser($vnodeName, $email, $password);
+
+        if ($result['success']) {
+            $this->info('✓ Virtual mail user created successfully');
+            $this->newLine();
+
+            // Show key information
+            if (isset($result['details'])) {
+                $details = $result['details'];
+                $this->line('Mail User Details:');
+                $this->line("  Email: {$email}");
+                $this->line("  Maildir: {$details['maildir']}");
+                $this->line("  Password: {$password}");
             }
 
-            // Extract domain from email
-            $VHOST = substr(strstr($email, '@'), 1);
-            $VUSER = substr($email, 0, strpos($email, '@'));
+            Log::info('Virtual mail user created', [
+                'vnode' => $vnodeName,
+                'email' => $email,
+            ]);
 
-            // Generate password if not provided (using Laravel addpw command)
-            if (! $password) {
-                $password = $this->generateSecurePassword();
+            return Command::SUCCESS;
+        } else {
+            $this->error("Failed to create virtual mail user: {$email}");
+            if (isset($result['error'])) {
+                $this->line("  Error: {$result['error']}");
             }
 
-            // Show what we're about to do
-            $this->line("📧 Adding Virtual Mail User: <fg=yellow>{$email}</> on node <fg=cyan>{$VNODE}</>");
+            Log::error('Failed to create virtual mail user', [
+                'vnode' => $vnodeName,
+                'email' => $email,
+                'error' => $result['error'] ?? 'Unknown error',
+            ]);
 
-            if ($this->option('dry-run')) {
-                $this->dryRun("Add Virtual Mail User {$email} on {$VNODE}", [
-                    "Validate VHost {$VHOST} exists in fleet_vhosts table",
-                    "Check if {$email} already exists",
-                    'Create mailbox entry in vmails table',
-                    'Create alias entry in valias table',
-                    'Create mail log entry in vmail_log table',
-                    'Update vconfs table with mail credentials (database-first)',
-                    "SSH to {$VNODE} and create Maildir structure via heredoc script",
-                    'Set up SpamProbe filters',
-                    'Set correct file permissions',
-                ]);
-
-                return 0;
-            }
-
-            // Create the virtual mail user using NetServa service
-            $result = $this->vmailService->createVmailUser($VNODE, $email, $password);
-
-            if ($result['success']) {
-                $this->info("✅ Virtual mail user {$email} created successfully on {$VNODE}");
-
-                // Show key NetServa information
-                if (isset($result['details'])) {
-                    $details = $result['details'];
-                    $this->line('');
-                    $this->line('<fg=blue>📧 Mail User Details:</>');
-                    $this->line("   User: <fg=yellow>{$VUSER}@{$VHOST}</>");
-                    $this->line("   Maildir: <fg=yellow>{$details['maildir']}</>");
-                    $this->line("   Password: <fg=yellow>{$password}</>");
-                    $this->line("   Config: <fg=green>vconfs table</> (database-first)");
-                }
-
-                // Add to command history
-                $this->context->addToHistory("addvmail {$email}", [
-                    'VNODE' => $VNODE,
-                    'EMAIL' => $email,
-                    'VHOST' => $VHOST,
-                    'success' => true,
-                ]);
-
-                return 0;
-            } else {
-                $this->error("❌ Failed to create virtual mail user {$email} on {$VNODE}");
-                if (isset($result['error'])) {
-                    $this->line("   Error: {$result['error']}");
-                }
-
-                return 1;
-            }
-        });
+            return Command::FAILURE;
+        }
     }
 
     /**

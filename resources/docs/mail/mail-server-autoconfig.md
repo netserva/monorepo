@@ -18,7 +18,7 @@ Autoconfig allows email clients like Thunderbird and Outlook to automatically de
 
 Create the following directory structure:
 ```
-/var/ns/_MAILHOST_/var/www/public/
+/srv/_MAILHOST_/web/app/public/
 ├── mail/
 │   └── config-v1.1.xml
 ├── .well-known/

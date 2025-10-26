@@ -436,18 +436,39 @@ class DnsProviderManagementService
     }
 
     /**
-     * Test Cloudflare connection (stub - to be implemented)
+     * Test Cloudflare connection
      *
      * @param  DnsProvider  $provider
      * @return array
      */
     protected function testCloudflareConnection(DnsProvider $provider): array
     {
-        // TODO: Implement Cloudflare API connection test
-        return [
-            'success' => false,
-            'message' => 'Cloudflare connection test not yet implemented',
-        ];
+        try {
+            $client = $provider->getClient();
+
+            if ($client->testConnection()) {
+                // Get zones count as additional info
+                $zones = $client->getAllZones();
+                $zonesCount = is_array($zones) ? count($zones) : 0;
+
+                return [
+                    'success' => true,
+                    'message' => 'Connected to Cloudflare API successfully',
+                    'server_info' => 'Cloudflare API',
+                    'zones_count' => $zonesCount,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Cloudflare API authentication failed',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Cloudflare connection test failed: ' . $e->getMessage(),
+            ];
+        }
     }
 
     /**

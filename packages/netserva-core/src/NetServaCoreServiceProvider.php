@@ -81,6 +81,13 @@ class NetServaCoreServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \NetServa\Core\Console\Commands\ImportSshHostsCommand::class,
+
+                // SSH Host CRUD Commands (NetServa 3.0)
+                \NetServa\Core\Console\Commands\AddsshCommand::class,   // CREATE
+                \NetServa\Core\Console\Commands\ShsshCommand::class,    // READ
+                \NetServa\Core\Console\Commands\ChsshCommand::class,    // UPDATE
+                \NetServa\Core\Console\Commands\DelsshCommand::class,   // DELETE
+
                 // TODO: Re-enable when commands are implemented
                 // \NetServa\Core\Console\Commands\InstallCommand::class,
                 // \NetServa\Core\Console\Commands\PluginCommand::class,

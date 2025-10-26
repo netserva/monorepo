@@ -1,0 +1,39 @@
+# NetServa 3.0 - Dovecot MySQL User Configuration
+# Copyright (C) 2025 Mark Constable <markc@renta.net> (AGPL-3.0)
+#
+# This replaces /etc/dovecot/user-mysql.conf for NS 3.0
+# Key changes from NS 1.0:
+# - Removed mdbox support (maildir only)
+# - Updated column names (password → pass)
+# - New home path structure: /srv/<domain>/msg/<user>/Maildir
+# - Simplified user_query (no CASE statement)
+
+driver = mysql
+connect = "host=localhost dbname=sysadm user=sysadm password=xNi32V4TKU3a7vu9"
+default_pass_scheme = SHA512-CRYPT
+
+# Password query - NS 3.0 uses 'pass' column instead of 'password'
+password_query = SELECT user, pass AS password FROM vmails WHERE user='%u' AND active=1;
+
+# User query - NS 3.0 uses only maildir format
+# Path structure: /srv/<domain>/msg/<user>/Maildir
+user_query = SELECT \
+  CONCAT( \
+    '/srv/', \
+    SUBSTRING_INDEX(user, '@', -1), \
+    '/msg/', \
+    SUBSTRING_INDEX(user, '@', 1) \
+  ) AS home, \
+  gid, \
+  uid, \
+  CONCAT( \
+    'maildir:/srv/', \
+    SUBSTRING_INDEX(user, '@', -1), \
+    '/msg/', \
+    SUBSTRING_INDEX(user, '@', 1), \
+    '/Maildir' \
+  ) AS mail \
+FROM vmails WHERE user='%u' AND active=1;
+
+# Iterate query for doveadm operations
+iterate_query = SELECT user FROM vmails WHERE active=1;

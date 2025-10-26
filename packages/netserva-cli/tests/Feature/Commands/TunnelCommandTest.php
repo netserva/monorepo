@@ -180,4 +180,146 @@ describe('Service Types', function () {
         artisan('tunnel create test-server api')
             ->assertSuccessful();
     });
+
+    it('handles pdns alias for powerdns', function () {
+        artisan('tunnel create test-server pdns')
+            ->assertSuccessful();
+    });
+
+    it('handles db alias for mysql', function () {
+        artisan('tunnel create test-server db')
+            ->assertSuccessful();
+    });
+});
+
+describe('Tunnel Persistence', function () {
+    it('reuses existing tunnel when called twice', function () {
+        // Mock active tunnel
+        $muxDir = config('netserva-cli.ssh_mux_dir', env('HOME').'/.ssh/mux');
+        @mkdir($muxDir, 0700, true);
+        @touch("{$muxDir}/test-server_19041");
+
+        Process::fake([
+            'ssh -S * -O check *' => Process::result(output: ''), // Active
+        ]);
+
+        artisan('tunnel create test-server powerdns')
+            ->expectsOutputToContain('already active')
+            ->assertSuccessful();
+
+        @unlink("{$muxDir}/test-server_19041");
+    });
+});
+
+describe('Real World Nameserver Scenarios', function () {
+    beforeEach(function () {
+        // Create nameserver VNodes
+        FleetVNode::create([
+            'name' => 'ns1gc',
+            'technology' => 'native',
+            'ssh_host' => 'ns1gc',
+            'status' => 'active',
+        ]);
+
+        FleetVNode::create([
+            'name' => 'ns2gc',
+            'technology' => 'native',
+            'ssh_host' => 'ns2gc',
+            'status' => 'active',
+        ]);
+    });
+
+    it('creates tunnel for ns1gc nameserver', function () {
+        artisan('tunnel create ns1gc powerdns')
+            ->assertSuccessful();
+    });
+
+    it('creates tunnel for ns2gc nameserver', function () {
+        artisan('tunnel create ns2gc powerdns')
+            ->assertSuccessful();
+    });
+
+    it('handles multiple simultaneous tunnels', function () {
+        $muxDir = config('netserva-cli.ssh_mux_dir', env('HOME').'/.ssh/mux');
+        @mkdir($muxDir, 0700, true);
+
+        // Create mock socket files for both nameservers
+        @touch("{$muxDir}/ns1gc_14291");
+        @touch("{$muxDir}/ns2gc_14131");
+
+        Process::fake([
+            "ls {$muxDir}/* 2>/dev/null" => Process::result(
+                output: "{$muxDir}/ns1gc_14291\n{$muxDir}/ns2gc_14131"
+            ),
+            'ssh -S * -O check *' => Process::result(output: ''),
+        ]);
+
+        artisan('tunnel list')
+            ->expectsOutputToContain('ns1gc')
+            ->expectsOutputToContain('ns2gc')
+            ->expectsOutputToContain('14291')
+            ->expectsOutputToContain('14131')
+            ->expectsOutputToContain('Total: 2 tunnel(s)')
+            ->assertSuccessful();
+
+        @unlink("{$muxDir}/ns1gc_14291");
+        @unlink("{$muxDir}/ns2gc_14131");
+    });
+});
+
+describe('Remote Host Override', function () {
+    it('accepts custom remote host', function () {
+        artisan('tunnel create test-server powerdns --remote-host=127.0.0.1')
+            ->assertSuccessful();
+    });
+
+    it('uses localhost as default remote host', function () {
+        artisan('tunnel create test-server powerdns')
+            ->assertSuccessful();
+    });
+});
+
+describe('Error Messages', function () {
+    it('provides helpful message when VNode not found', function () {
+        artisan('tunnel create nonexistent powerdns')
+            ->expectsOutput("❌ VNode 'nonexistent' not found in database")
+            ->expectsOutputToContain('💡 Run: php artisan addfleet')
+            ->assertFailed();
+    });
+
+    it('provides clear error on SSH failure', function () {
+        Process::fake([
+            'ssh *' => Process::result(
+                exitCode: 255,
+                errorOutput: 'Connection refused'
+            ),
+        ]);
+
+        artisan('tunnel create test-server powerdns')
+            ->expectsOutput('❌ Failed to create tunnel: Connection refused')
+            ->assertFailed();
+    });
+});
+
+describe('Cleanup Operations', function () {
+    it('successfully closes multiple tunnels', function () {
+        $muxDir = config('netserva-cli.ssh_mux_dir', env('HOME').'/.ssh/mux');
+        @mkdir($muxDir, 0700, true);
+        @touch("{$muxDir}/test-server_10001");
+        @touch("{$muxDir}/test-server_10002");
+
+        Process::fake([
+            'ls *' => Process::result(
+                output: "{$muxDir}/test-server_10001\n{$muxDir}/test-server_10002"
+            ),
+            'ssh *' => Process::result(output: ''),
+        ]);
+
+        artisan('tunnel close test-server')
+            ->expectsOutputToContain('Closed 2 tunnel')
+            ->assertSuccessful();
+
+        @unlink("{$muxDir}/test-server_10001");
+        @unlink("{$muxDir}/test-server_10002");
+    });
 });

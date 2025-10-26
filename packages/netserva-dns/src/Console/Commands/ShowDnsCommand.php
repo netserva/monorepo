@@ -187,7 +187,14 @@ class ShowDnsCommand extends Command
                 $this->line('  <fg=yellow>Fetching zones from remote server...</>');
 
                 try {
-                    $remoteZones = $this->tunnelService->getZones($provider);
+                    // Use the appropriate client based on provider type
+                    if ($provider->type === 'powerdns') {
+                        $remoteZones = $this->tunnelService->getZones($provider);
+                    } else {
+                        // For non-PowerDNS providers (Cloudflare, Route53, etc), use their client
+                        $client = $provider->getClient();
+                        $remoteZones = $client->getAllZones();
+                    }
 
                     if (is_array($remoteZones) && ! empty($remoteZones)) {
                         $remoteCount = count($remoteZones);
@@ -311,6 +318,24 @@ class ShowDnsCommand extends Command
                         $this->line("   {$icon} ".str_replace('_', ' ', ucfirst($check)));
                     }
                 }
+
+                // Show warnings
+                if (! empty($health['health']['warnings'])) {
+                    $this->newLine();
+                    $this->warn('⚠️  Warnings:');
+                    foreach ($health['health']['warnings'] as $warning) {
+                        $this->line("   • {$warning}");
+                    }
+                }
+
+                // Show errors
+                if (! empty($health['health']['errors'])) {
+                    $this->newLine();
+                    $this->error('❌ Errors:');
+                    foreach ($health['health']['errors'] as $error) {
+                        $this->line("   • {$error}");
+                    }
+                }
             }
         }
 
@@ -320,7 +345,14 @@ class ShowDnsCommand extends Command
             $this->info('📥 Importing zones from remote server...');
 
             try {
-                $remoteZones = $this->tunnelService->getZones($provider);
+                // Use the appropriate client based on provider type
+                if ($provider->type === 'powerdns') {
+                    $remoteZones = $this->tunnelService->getZones($provider);
+                } else {
+                    // For non-PowerDNS providers (Cloudflare, Route53, etc), use their client
+                    $client = $provider->getClient();
+                    $remoteZones = $client->getAllZones();
+                }
 
                 if (! is_array($remoteZones) || empty($remoteZones)) {
                     $this->error('Failed to fetch zones or no zones found');
@@ -478,7 +510,10 @@ class ShowDnsCommand extends Command
                 'powerdns' => isset($config['ssh_host'])
                     ? "SSH: {$config['ssh_host']} → :{$config['api_port']}"
                     : ($config['api_endpoint'] ?? 'Not configured'),
-                'cloudflare' => ($config['email'] ?? 'Email').($config['email'] ? ": {$config['email']}" : ''),
+                'dnsmasq' => isset($config['ssh_host'])
+                    ? "SSH: {$config['ssh_host']} (manual config)"
+                    : 'Manual config',
+                'cloudflare' => 'API: '.($config['email'] ?? 'No email configured'),
                 'route53' => 'Region: '.($config['region'] ?? 'us-east-1'),
                 default => $config['api_endpoint'] ?? 'Not configured',
             };

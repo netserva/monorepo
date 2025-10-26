@@ -91,6 +91,14 @@ class SshHost extends Model
     }
 
     /**
+     * Get vnodes that use this SSH host
+     */
+    public function vnodes(): HasMany
+    {
+        return $this->hasMany(\NetServa\Fleet\Models\FleetVNode::class, 'ssh_host_id');
+    }
+
+    /**
      * Scope to get only active hosts
      */
     public function scopeActive($query)

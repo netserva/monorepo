@@ -67,14 +67,22 @@ class RemoteExecutionService extends RemoteConnectionService
      */
     protected function executeDirectSsh(string $host, string $command, bool $useSudo = true): array
     {
-        // Escape the command for shell execution
-        $escapedCommand = escapeshellarg($command);
+        // Build the SSH command using printf %q for proper quoting
+        // This ensures complex commands with quotes, pipes, etc. work correctly
+        $quotedCommand = escapeshellarg(
+            sprintf("bash -c %s", escapeshellarg($command))
+        );
 
-        // Build the SSH command
         if ($useSudo) {
-            $sshCommand = "ssh {$host} 'sudo -n {$command}'";
+            $sshCommand = sprintf("ssh %s 'sudo -n bash -c %s'",
+                escapeshellarg($host),
+                escapeshellarg($command)
+            );
         } else {
-            $sshCommand = "ssh {$host} {$escapedCommand}";
+            $sshCommand = sprintf("ssh %s %s",
+                escapeshellarg($host),
+                $quotedCommand
+            );
         }
 
         // Execute the command
@@ -120,6 +128,7 @@ class RemoteExecutionService extends RemoteConnectionService
 
         try {
             // Use rsync to sync the shell environment
+            // Personal config (~/.myrc) is outside ~/.rc/ so no exclusions needed
             $rsyncCommand = sprintf(
                 'rsync -av --delete --exclude=.git %s/ %s:%s/',
                 escapeshellarg($localShellPath),

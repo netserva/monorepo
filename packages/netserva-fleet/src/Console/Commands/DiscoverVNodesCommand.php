@@ -168,7 +168,7 @@ class DiscoverVNodesCommand extends Command
             info('🔧 Next steps:');
             info('   1. Configure SSH access for each node');
             info('   2. Run: php artisan fleet:discover-vhosts --vnode=<node-name>');
-            info('   3. Test discovery with: php artisan fleet:discover');
+            info('   3. Test discovery with: php artisan addfleet <vnode>');
         }
 
         return self::SUCCESS;

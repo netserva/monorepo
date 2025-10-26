@@ -68,7 +68,7 @@ class ChpermsCommand extends BaseNetServaCommand
 
             if (! $vhost) {
                 $this->error("❌ VHost {$VHOST} not found on {$VNODE}");
-                $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+                $this->line("   💡 Run: php artisan addfleet {$VNODE}");
 
                 return 1;
             }
@@ -154,7 +154,7 @@ class ChpermsCommand extends BaseNetServaCommand
 
         if (empty($vhosts)) {
             $this->line("ℹ️  No vhosts found on server {$VNODE}");
-            $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+            $this->line("   💡 Run: php artisan addfleet {$VNODE}");
 
             return 0;
         }
@@ -190,6 +190,7 @@ class ChpermsCommand extends BaseNetServaCommand
      * - Paths: web/app/public (webroot), var/msg (mail), var/log, var/run, var/tmp
      * - Security: SSH chroot, restrictive permissions, root-owned sensitive dirs
      * - WUGID: www-data (group name, not numeric GID)
+     * - CRITICAL: Top-level /srv/vhost must be user:www-data with setgid (02750)
      */
     protected function buildPermissionScript(): string
     {
@@ -201,9 +202,9 @@ set -euo pipefail
 upath=$1      # /srv/domain.com
 wpath=$2      # /srv/domain.com/web/app/public
 mpath=$3      # /srv/domain.com/msg
-uuser=$4      # u1001
-p_uid=$5      # 1001
-p_gid=$6      # 1001
+uuser=$4      # u1001 or sysadm
+p_uid=$5      # 1001 or 1000
+p_gid=$6      # 1001 or 1000
 wugid=$7      # www-data (web server group)
 domain=$8
 
@@ -221,18 +222,18 @@ fi
 
 echo "🔧 Fixing permissions for: $domain (UID: $p_uid, User: $uuser)"
 
-# Step 1: Set base ownership and restrictive permissions
-chown "$p_uid:$p_gid" -R "$upath"
+# Step 1: Set base ownership and restrictive permissions for subdirectories
+chown "$p_uid:$p_gid" -R "$upath"/*
 find "$upath" -type d -exec chmod 00750 {} +
 find "$upath" -type f -exec chmod 00640 {} +
-echo "✓ Base permissions applied (750/640)"
+echo "✓ Base permissions applied to subdirectories (750/640)"
 
-# Step 2: Exception for UPATH root - owned by root if UID > 1000 (chroot security)
-if [ "$p_uid" -gt 1000 ]; then
-    chown 0:0 "$upath"
-fi
-chmod 755 "$upath"
-echo "✓ UPATH root: 755 (chroot-safe)"
+# Step 2: CRITICAL - Fix top-level /srv/vhost LAST (required for nginx/ACME access)
+# Must be user:www-data with setgid bit (02750) for nginx to traverse path
+# Done AFTER recursive chown to preserve correct top-level ownership
+chown "$uuser:$wugid" "$upath"
+chmod 02750 "$upath"
+echo "✓ Top-level $upath: 02750 $uuser:$wugid (CRITICAL for nginx/ACME)"
 
 # Step 3: Directory structure - create if missing (NS 3.0 paths)
 mkdir -p "$upath/msg"
@@ -263,14 +264,14 @@ fi
 [ -f "$upath/bin/nano" ] && chmod 750 "$upath/bin/nano"
 [ -f "$upath/bin/rsync" ] && chmod 750 "$upath/bin/rsync"
 
-# Step 7: Shell scripts (if using .sh/ directory pattern)
-if [ -d "$upath/.sh/bin" ]; then
-    chmod 700 "$upath/.sh/bin"/*
-    echo "✓ .sh/bin/ scripts: 700"
+# Step 7: Shell scripts (NS 3.0 uses ~/.rc/, legacy .sh/ support for migration)
+if [ -d "$upath/.rc/bin" ]; then
+    chmod 700 "$upath/.rc/bin"/*
+    echo "✓ .rc/bin/ scripts: 700"
 fi
-if [ -d "$upath/.sh/www" ]; then
-    chmod 700 "$upath/.sh/www"/*
-    echo "✓ .sh/www/ scripts: 700"
+if [ -d "$upath/.rc/www" ]; then
+    chmod 700 "$upath/.rc/www"/*
+    echo "✓ .rc/www/ scripts: 700"
 fi
 
 # Step 8: Create log files if missing (NS 3.0: logs under web/)
@@ -284,19 +285,30 @@ if [ -d "$mpath" ]; then
     echo "✓ msg/: 750 (mail only)"
 fi
 
-chown "$p_uid:$wugid" -R "$upath/web"/*
-chmod 660 "$upath/web/log/access.log"
-chmod 660 "$upath/web/log/cache.log"
+# Fix web directory ownership to www-data group (CRITICAL for nginx access)
+chown "$p_uid:$wugid" -R "$upath/web"
+chmod 00755 "$upath/web"             # web/ needs world execute for path traversal
+echo "✓ web/: 755 (world-executable for nginx)"
+
+# Set proper permissions for web subdirectories
+chmod 660 "$upath/web/log/access.log" 2>/dev/null || true
+chmod 660 "$upath/web/log/cache.log" 2>/dev/null || true
 chmod 02770 "$upath/web/log"         # setgid for log rotation
 chmod 02750 "$upath/web/run"         # setgid for PHP-FPM sockets
 chmod 02750 "$upath/web/tmp"         # setgid for temp files
-echo "✓ web/log, web/run, web/tmp: 02750/02770 (setgid)"
+echo "✓ web/log: 02770, web/run: 02750, web/tmp: 02750 (setgid)"
 
-# Step 10: Web root - setgid on all directories
+# Step 10: Web root - setgid on all directories (CRITICAL for ACME challenges)
 if [ -d "$wpath" ]; then
-    chmod 02750 "$wpath"
-    find "$wpath" -type d -exec chmod 02750 {} +
-    echo "✓ web/app: 02750 (setgid on dirs)"
+    # Apply setgid to webroot and all subdirectories
+    find "$wpath" -type d -exec chown "$p_uid:$wugid" {} \;
+    find "$wpath" -type d -exec chmod 02750 {} \;
+    echo "✓ web/app/public: 02750 (setgid on all dirs, www-data group)"
+
+    # Ensure files are group-readable
+    find "$wpath" -type f -exec chown "$p_uid:$wugid" {} \;
+    find "$wpath" -type f -exec chmod 00640 {} \;
+    echo "✓ web/app/public files: 640 (group-readable by www-data)"
 fi
 
 # Step 11: WHMCS configuration files (read-only for security)

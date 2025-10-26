@@ -1,0 +1,16 @@
+Welcome to the NetServa podcast generator demonstration.
+
+First, let's navigate to the media directory.
+
+Let's see what files we have available.
+
+Now we'll generate a podcast from a text file using mkpodcast.
+
+The podcast has been generated successfully.
+
+Let's check the output file.
+
+That's how easy it is to create professional podcasts with NetServa.
+
+Thank you for watching this demonstration.
+

@@ -2,417 +2,266 @@
 
 namespace NetServa\Cli\Console\Commands;
 
-use NetServa\Cli\Services\VHostResolverService;
+use Exception;
+use Illuminate\Console\Command;
+use NetServa\Cli\Models\VPass;
+use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVHostCredential;
+use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVSite;
 
+use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
 use function Laravel\Prompts\info;
+use function Laravel\Prompts\password;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
+use function Laravel\Prompts\warning;
 
 /**
- * Add Password/Credential Command - NetServa 3.0 Database-First
+ * Add Password/Credential Command - NetServa 3.0
  *
- * Create new credentials for VHosts (email accounts, admin logins, etc.)
- * Smart VHost resolution: addpw cloud.goldcoast.org mail admin@cloud.goldcoast.org
+ * CRUD: Create - Add new credential to unified vault
+ *
+ * Usage:
+ *   addpw                              # Interactive mode (prompts for all)
+ *   addpw vnode mgo cloudflare         # Add Cloudflare API key for mgo vnode
+ *   addpw vhost example.com dovecot    # Add Dovecot password for vhost
+ *
+ * NetServa 3.0 Security Architecture:
+ * - ALL credentials stored on workstation only (encrypted at rest)
+ * - Polymorphic ownership: venue/vsite/vnode/vhost
+ * - Hierarchical inheritance resolution
+ * - Supports: VMAIL, APKEY, DBPWD, SSLKY, OAUTH
  */
-class AddpwCommand extends BaseNetServaCommand
+class AddpwCommand extends Command
 {
-    protected $signature = 'addpw {domain_or_vnode? : Domain name or VNode (smart detection)}
-                           {service_or_domain? : Service type or Domain (if first arg is VNode)}
-                           {account_or_domain? : Account name or Domain (if first two args are VSite/VNode)}
-                           {account_name? : Account name (if full VSite/VNode/Domain provided)}
-                           {--service= : Service type (mail|ssh|wordpress|private|ftp|phpmyadmin|hcp)}
-                           {--username= : Login username}
-                           {--password= : Password (generates secure one if not provided)}
-                           {--url= : Admin URL or access URL}
-                           {--port= : Port number (for SSH/FTP)}
-                           {--path= : Path (for SSH/FTP)}
-                           {--notes= : Additional notes}
-                           {--interactive : Interactive mode with prompts}
-                           {--dry-run : Show what would be created}';
+    protected $signature = 'addpw
+                            {name? : VNode name, domain, or vnode+domain}
+                            {service_or_domain? : Service provider OR domain (if first arg is vnode)}
+                            {pserv? : Service provider (if first two args are vnode+domain)}
+                            {--ptype= : Password type (VMAIL, APKEY, DBPWD, SSLKY, OAUTH)}
+                            {--pname= : Identifier name (email, key name, username, default)}
+                            {--pdata= : Secret data (password, API key, token)}
+                            {--pmeta= : Metadata JSON}
+                            {--pnote= : Admin notes}
+                            {--pexpd= : Expiration date (YYYY-MM-DD)}';
 
-    protected $description = 'Add credentials for virtual hosts (NetServa 3.0 Database-First)';
-
-    protected VHostResolverService $resolver;
-
-    public function __construct(VHostResolverService $resolver)
-    {
-        parent::__construct();
-        $this->resolver = $resolver;
-    }
+    protected $description = 'Add credential to unified vault (VMAIL, APKEY, DBPWD, SSLKY, OAUTH)';
 
     public function handle(): int
     {
-        return $this->executeWithContext(function () {
-            if ($this->option('interactive')) {
-                return $this->handleInteractive();
-            }
-
-            // Parse smart arguments for domain resolution
-            $args = $this->parseSmartArguments();
-
-            if (! $args['domain']) {
-                $this->error('❌ Domain required. Use one of:');
-                $this->line('  • addpw cloud.goldcoast.org mail admin@cloud.goldcoast.org');
-                $this->line('  • addpw mgo cloud.goldcoast.org wordpress admin');
-                $this->line('  • addpw --interactive');
-
-                return 1;
-            }
-
-            // Resolve VHost
-            try {
-                $context = $this->resolver->resolveVHost(
-                    $args['domain'],
-                    $args['vnode'] ?? null,
-                    $args['vsite'] ?? null
-                );
-
-                $vhost = FleetVHost::where('domain', $context['vhost'])
-                    ->whereHas('vnode', function ($q) use ($context) {
-                        $q->where('name', $context['vnode']);
-                    })->first();
-
-                if (! $vhost) {
-                    $this->error("❌ VHost {$context['vhost']} not found in database");
-
-                    return 1;
-                }
-
-                $this->line("🔍 Resolved: <fg=cyan>{$context['vsite']}</fg=cyan>/<fg=yellow>{$context['vnode']}</fg=yellow>/<fg=green>{$context['vhost']}</fg=green>");
-
-                return $this->createCredential($vhost, $args);
-
-            } catch (\Exception $e) {
-                $this->error("❌ {$e->getMessage()}");
-
-                return 1;
-            }
-        });
-    }
-
-    /**
-     * Parse smart arguments supporting email-first syntax
-     */
-    protected function parseSmartArguments(): array
-    {
-        $arg1 = $this->argument('domain_or_vnode');
-        $arg2 = $this->argument('service_or_domain');
-        $arg3 = $this->argument('account_or_domain');
-        $arg4 = $this->argument('account_name');
-
-        // Extract service type from arguments or options
-        $serviceType = $this->option('service');
-
-        // Pattern 1: Email-first syntax - addpw admin@cloud.goldcoast.org password
-        if ($arg1 && str_contains($arg1, '@')) {
-            // Extract domain from email and infer mail service
-            $domain = substr($arg1, strpos($arg1, '@') + 1);
-
-            return [
-                'domain' => $domain,
-                'vnode' => null,
-                'vsite' => null,
-                'service_type' => 'mail',
-                'account_name' => $arg1,
-            ];
-        }
-
-        // Pattern 2: addpw domain service account
-        if ($arg1 && str_contains($arg1, '.') && $arg2 && $arg3) {
-            return [
-                'domain' => $arg1,
-                'vnode' => null,
-                'vsite' => null,
-                'service_type' => $serviceType ?: $arg2,
-                'account_name' => $arg3,
-            ];
-        }
-
-        // Pattern 3: addpw vnode domain service account
-        if ($arg1 && $arg2 && str_contains($arg2, '.') && $arg3 && $arg4) {
-            return [
-                'domain' => $arg2,
-                'vnode' => $arg1,
-                'vsite' => null,
-                'service_type' => $serviceType ?: $arg3,
-                'account_name' => $arg4,
-            ];
-        }
-
-        // Pattern 4: addpw vsite vnode domain (interactive for service/account)
-        if ($arg1 && $arg2 && $arg3 && str_contains($arg3, '.')) {
-            return [
-                'domain' => $arg3,
-                'vnode' => $arg2,
-                'vsite' => $arg1,
-                'service_type' => $serviceType,
-                'account_name' => $arg4,
-            ];
-        }
-
-        // Fallback: try to detect domain
-        if ($arg1 && str_contains($arg1, '.')) {
-            return [
-                'domain' => $arg1,
-                'vnode' => null,
-                'vsite' => null,
-                'service_type' => $serviceType ?: $arg2,
-                'account_name' => $arg3,
-            ];
-        }
-
-        return [
-            'domain' => null,
-            'vnode' => null,
-            'vsite' => null,
-            'service_type' => $serviceType,
-            'account_name' => null,
-        ];
-    }
-
-    /**
-     * Interactive mode with Laravel Prompts
-     */
-    protected function handleInteractive(): int
-    {
-        info('🔑 NetServa Credential Management - Add New Credential');
-
-        // Select domain
-        $domains = FleetVHost::with('vnode.vsite')
-            ->get()
-            ->mapWithKeys(fn ($v) => [
-                $v->domain => "{$v->domain} ({$v->vnode->vsite->name}/{$v->vnode->name})",
-            ])
-            ->toArray();
-
-        if (empty($domains)) {
-            error('❌ No VHosts found in database');
-
-            return 1;
-        }
-
-        $selectedDomain = select(
-            label: 'Select domain',
-            options: $domains,
-            hint: 'Choose the domain to add credentials for'
-        );
-
-        $vhost = FleetVHost::where('domain', $selectedDomain)->first();
-
-        // Select service type
-        $serviceType = select(
-            label: 'Select service type',
-            options: FleetVHostCredential::SERVICE_TYPES,
-            hint: 'Choose the type of credential to add'
-        );
-
-        // Get account name
-        $accountName = text(
-            label: 'Account name',
-            placeholder: $serviceType === 'mail' ? 'user@'.$selectedDomain : 'admin',
-            hint: 'Username, email address, or account identifier'
-        );
-
-        $args = [
-            'domain' => $selectedDomain,
-            'service_type' => $serviceType,
-            'account_name' => $accountName,
-        ];
-
-        return $this->createCredential($vhost, $args);
-    }
-
-    /**
-     * Create the credential
-     */
-    protected function createCredential(FleetVHost $vhost, array $args): int
-    {
-        $serviceType = $args['service_type'];
-        $accountName = $args['account_name'];
-
-        if (! $serviceType) {
-            $this->error('❌ Service type required. Use --service or provide as argument');
-            $this->line('   Available: '.implode(', ', array_keys(FleetVHostCredential::SERVICE_TYPES)));
-
-            return 1;
-        }
-
-        if (! $accountName) {
-            $this->error('❌ Account name required');
-
-            return 1;
-        }
-
-        // Check if credential already exists
-        $existing = FleetVHostCredential::where('vhost_id', $vhost->id)
-            ->where('service_type', $serviceType)
-            ->where('account_name', $accountName)
-            ->first();
-
-        if ($existing) {
-            $this->error("❌ Credential already exists: {$serviceType}/{$accountName}");
-            $this->line("   Use 'chpw' to modify or 'delpw' to remove");
-
-            return 1;
-        }
-
-        // Gather credential data
-        $credentialData = [
-            'username' => $this->option('username') ?: $accountName,
-            'password' => $this->option('password') ?: $this->generateSecurePassword(),
-            'url' => $this->option('url'),
-            'port' => $this->option('port'),
-            'path' => $this->option('path'),
-            'notes' => $this->option('notes'),
-        ];
-
-        // Interactive prompts for missing data
-        if ($this->option('interactive')) {
-            $credentialData = $this->gatherInteractiveData($serviceType, $credentialData);
-        }
-
-        if ($this->option('dry-run')) {
-            $this->line('🔍 DRY RUN: Would create credential');
-            $this->displayCredentialPreview($vhost, $serviceType, $accountName, $credentialData);
-
-            return 0;
-        }
-
-        // Create the credential
         try {
-            $credential = FleetVHostCredential::createOrUpdateCredential(
-                $vhost->id,
-                $serviceType,
-                $accountName,
-                $credentialData
+            // Get or prompt for owner
+            $ownerType = $this->argument('owner_type') ?: select(
+                label: 'Owner type',
+                options: ['venue', 'vsite', 'vnode', 'vhost'],
+                default: 'vnode',
+                hint: 'Where to store this credential'
             );
 
-            $this->info("✅ Credential created: {$serviceType}/{$accountName} for {$vhost->domain}");
-            $this->displayCredential($credential);
+            $ownerName = $this->argument('owner_name') ?: text(
+                label: 'Owner name',
+                placeholder: match ($ownerType) {
+                    'venue' => 'venue-name',
+                    'vsite' => 'vsite-name',
+                    'vnode' => 'vnode-name (e.g., mgo, syd, cachyos)',
+                    'vhost' => 'domain.com',
+                },
+                required: true,
+                hint: 'The entity that owns this credential'
+            );
 
-            return 0;
+            // Find owner model
+            $owner = $this->findOwner($ownerType, $ownerName);
+            if (! $owner) {
+                error("{$ownerType} not found: {$ownerName}");
 
-        } catch (\Exception $e) {
-            $this->error("❌ Failed to create credential: {$e->getMessage()}");
+                return Command::FAILURE;
+            }
 
-            return 1;
+            // Get or prompt for service
+            $pserv = $this->argument('pserv') ?: select(
+                label: 'Service provider',
+                options: [
+                    'cloudflare' => 'Cloudflare (DNS, CDN)',
+                    'binarylane' => 'BinaryLane (Cloud)',
+                    'proxmox' => 'Proxmox (Virtualization)',
+                    'dovecot' => 'Dovecot (Mail)',
+                    'mysql' => 'MySQL/MariaDB (Database)',
+                    'postgresql' => 'PostgreSQL (Database)',
+                    'redis' => 'Redis (Cache)',
+                    'custom' => 'Custom service',
+                ],
+                hint: 'The service this credential is for'
+            );
+
+            if ($pserv === 'custom') {
+                $pserv = text(
+                    label: 'Custom service name',
+                    placeholder: 'service-name',
+                    required: true,
+                    hint: 'Lowercase, no spaces'
+                );
+            }
+
+            // Get or prompt for password type
+            $ptype = $this->option('ptype') ?: select(
+                label: 'Credential type',
+                options: [
+                    'APKEY' => 'API Key (default)',
+                    'VMAIL' => 'Email Password',
+                    'DBPWD' => 'Database Password',
+                    'SSLKY' => 'SSL Private Key',
+                    'OAUTH' => 'OAuth Token',
+                ],
+                default: 'APKEY',
+                hint: 'Type of credential'
+            );
+
+            // Get or prompt for identifier name
+            $pname = $this->option('pname') ?: text(
+                label: 'Identifier name',
+                placeholder: match ($ptype) {
+                    'VMAIL' => 'user@domain.com',
+                    'APKEY' => 'api-key-name or default',
+                    'DBPWD' => 'database-name or username',
+                    'SSLKY' => 'domain.com',
+                    'OAUTH' => 'oauth-provider',
+                    default => 'default',
+                },
+                default: 'default',
+                required: true,
+                hint: 'Unique identifier for this credential'
+            );
+
+            // Check if credential already exists
+            $existing = VPass::byOwner($owner)
+                ->where('pserv', $pserv)
+                ->where('pname', $pname)
+                ->first();
+
+            if ($existing) {
+                if (! confirm(
+                    label: 'Credential already exists. Overwrite?',
+                    default: false,
+                    hint: 'This will update the existing credential'
+                )) {
+                    warning('Operation cancelled');
+
+                    return Command::SUCCESS;
+                }
+            }
+
+            // Get or prompt for secret data
+            $pdata = $this->option('pdata') ?: password(
+                label: match ($ptype) {
+                    'VMAIL' => 'Email password',
+                    'APKEY' => 'API key',
+                    'DBPWD' => 'Database password',
+                    'SSLKY' => 'SSL private key',
+                    'OAUTH' => 'OAuth token',
+                    default => 'Secret',
+                },
+                required: true,
+                hint: 'Will be encrypted at rest with APP_KEY'
+            );
+
+            // Optional metadata
+            $pmeta = null;
+            if ($this->option('pmeta')) {
+                $pmeta = json_decode($this->option('pmeta'), true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    error('Invalid JSON in --pmeta option');
+
+                    return Command::FAILURE;
+                }
+            }
+
+            // Optional notes
+            $pnote = $this->option('pnote') ?: text(
+                label: 'Admin notes (optional)',
+                placeholder: 'Created for production access',
+                hint: 'Press Enter to skip'
+            );
+
+            // Optional expiration
+            $pexpd = null;
+            if ($this->option('pexpd')) {
+                $pexpd = $this->option('pexpd');
+            } elseif (confirm(
+                label: 'Set expiration date?',
+                default: false,
+                hint: 'Useful for rotating credentials'
+            )) {
+                $pexpd = text(
+                    label: 'Expiration date',
+                    placeholder: 'YYYY-MM-DD',
+                    validate: fn ($value) => strtotime($value) ? null : 'Invalid date format'
+                );
+            }
+
+            // Create or update credential
+            $credential = VPass::findOrCreate(
+                owner: $owner,
+                pserv: $pserv,
+                pname: $pname,
+                ptype: $ptype,
+                pdata: $pdata,
+                pmeta: $pmeta
+            );
+
+            // Update optional fields
+            if ($pnote) {
+                $credential->pnote = $pnote;
+            }
+            if ($pexpd) {
+                $credential->pexpd = $pexpd;
+            }
+            $credential->save();
+
+            // Success message
+            info('Credential saved successfully');
+
+            $this->table(
+                ['Field', 'Value'],
+                [
+                    ['Owner', "{$credential->owner_type_display}: {$ownerName}"],
+                    ['Service', $pserv],
+                    ['Type', $credential->type_display],
+                    ['Name', $pname],
+                    ['Status', $credential->pstat ? '✓ Active' : '✗ Disabled'],
+                    ['Created', $credential->created_at->format('Y-m-d H:i:s')],
+                    ['Rotated', $credential->pdate?->format('Y-m-d H:i:s') ?? 'Never'],
+                    ['Expires', $credential->pexpd?->format('Y-m-d H:i:s') ?? 'Never'],
+                ]
+            );
+
+            if ($existing) {
+                warning('Updated existing credential');
+            }
+
+            return Command::SUCCESS;
+
+        } catch (Exception $e) {
+            error('Failed to add credential: '.$e->getMessage());
+            $this->error($e->getTraceAsString());
+
+            return Command::FAILURE;
         }
     }
 
     /**
-     * Gather additional data interactively
+     * Find owner model by type and name
      */
-    protected function gatherInteractiveData(string $serviceType, array $data): array
+    private function findOwner(string $type, string $name): ?object
     {
-        // Service-specific interactive prompts
-        switch ($serviceType) {
-            case 'ssh':
-                $data['port'] = $data['port'] ?: text('SSH Port', default: '22');
-                $data['path'] = $data['path'] ?: text('SSH Path', default: '/var/www');
-                break;
-
-            case 'wordpress':
-                $data['url'] = $data['url'] ?: text('WordPress Admin URL', placeholder: 'https://domain.com/wp-admin/');
-                break;
-
-            case 'private':
-                $data['url'] = $data['url'] ?: text('Private Area URL', placeholder: 'https://domain.com/private/');
-                break;
-        }
-
-        // Ask for notes
-        $notes = text('Notes (optional)', hint: 'Additional information about this credential');
-        if ($notes) {
-            $data['notes'] = $notes;
-        }
-
-        return $data;
-    }
-
-    /**
-     * Generate secure password
-     */
-    protected function generateSecurePassword(int $length = 12): string
-    {
-        $charset = 'ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        $upperChars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ';
-        $lowerChars = 'abcdefghijklmnopqrstuvwxyz';
-        $digitChars = '0123456789';
-
-        // Guarantee one of each required type
-        $upperChar = $upperChars[random_int(0, strlen($upperChars) - 1)];
-        $lowerChar = $lowerChars[random_int(0, strlen($lowerChars) - 1)];
-        $digitChar = $digitChars[random_int(0, strlen($digitChars) - 1)];
-
-        // Fill the rest with random characters
-        $remainingLength = $length - 3;
-        $rest = '';
-
-        for ($i = 0; $i < $remainingLength; $i++) {
-            $rest .= $charset[random_int(0, strlen($charset) - 1)];
-        }
-
-        // Combine and shuffle
-        $combined = $upperChar.$lowerChar.$digitChar.$rest;
-
-        return str_shuffle($combined);
-    }
-
-    /**
-     * Display credential preview for dry run
-     */
-    protected function displayCredentialPreview(FleetVHost $vhost, string $serviceType, string $accountName, array $data): void
-    {
-        $this->line('');
-        $this->line('<fg=blue>📋 Credential Preview:</fg=blue>');
-        $this->line("   Domain: <fg=green>{$vhost->domain}</fg=green>");
-        $this->line("   Service: <fg=yellow>{$serviceType}</fg=yellow>");
-        $this->line("   Account: <fg=cyan>{$accountName}</fg=cyan>");
-        $this->line("   Username: {$data['username']}");
-        $this->line("   Password: {$data['password']}");
-
-        if ($data['url']) {
-            $this->line("   URL: {$data['url']}");
-        }
-        if ($data['port']) {
-            $this->line("   Port: {$data['port']}");
-        }
-        if ($data['path']) {
-            $this->line("   Path: {$data['path']}");
-        }
-        if ($data['notes']) {
-            $this->line("   Notes: {$data['notes']}");
-        }
-    }
-
-    /**
-     * Display created credential
-     */
-    protected function displayCredential(FleetVHostCredential $credential): void
-    {
-        $this->line('');
-        $this->line('<fg=blue>🔑 Credential Details:</fg=blue>');
-        $this->line("   Account: <fg=cyan>{$credential->account_name}</fg=cyan>");
-        $this->line("   Username: {$credential->username}");
-        $this->line("   Password: <fg=yellow>{$credential->password}</fg=yellow>");
-
-        if ($credential->url) {
-            $this->line("   URL: {$credential->url}");
-        }
-        if ($credential->port) {
-            $this->line("   Port: {$credential->port}");
-        }
-        if ($credential->path) {
-            $this->line("   Path: {$credential->path}");
-        }
-        if ($credential->display_url) {
-            $this->line("   Access: {$credential->display_url}");
-        }
-
-        $this->line('');
-        $this->line('<fg=red>⚠️  Security Warning:</fg=red> Store this password securely!');
+        return match ($type) {
+            'venue' => FleetVenue::where('name', $name)->first(),
+            'vsite' => FleetVSite::where('name', $name)->first(),
+            'vnode' => FleetVNode::where('name', $name)->first(),
+            'vhost' => FleetVHost::where('fqdn', $name)->first(),
+            default => null,
+        };
     }
 }

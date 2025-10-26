@@ -1,0 +1,28 @@
+# NetServa 3.0 - Nginx Common Configuration
+# Copyright (C) 2025 Mark Constable <markc@renta.net> (AGPL-3.0)
+#
+# Key changes from NS 1.0:
+# - Web root: /home/u/$host/var/www/html → /srv/$host/web/app/public
+# - Logs: /home/u/$host/var/log → /srv/$host/web/log
+
+# Access logs (uncomment if needed per-vhost logs)
+#access_log                      /srv/$host/web/log/access.log;
+#access_log                      /srv/$host/web/log/cache.log cache;
+
+root                            /srv/$host/web/app/public;
+index                           index.html index.php;
+error_page                      500 502 503 504 /50x.html;
+location                        = /50x.html { root /usr/share/nginx/html; }
+location                        = /robots.txt { access_log off; log_not_found off; }
+location                        = /favicon.ico { access_log off; log_not_found off; }
+location                        ~ /\.well-known/ { allow all; }
+location                        ~ /\. { deny all; access_log off; log_not_found off; }
+location                        ~* \.(?:ico|css|js|jpg|jpeg|png|gif|woff|woff2|eot|ttf|svg|txt|pdf|zip|tgz|bz2|mp3|mp4|md)$ {
+    access_log                  off;
+    expires                     30d;
+    add_header                  Pragma public;
+    add_header                  Cache-Control "public, must-revalidate, proxy-revalidate";
+    include                     /etc/nginx/headers.conf;
+}
+location                        / { try_files $uri $uri/ /index.php$is_args$args; }
+include                         /etc/nginx/php.conf;

@@ -53,7 +53,7 @@ return [
     */
     'remote' => [
         'sync_shell_env' => true,
-        'shell_env_path' => '~/.sh',
+        'shell_env_path' => '~/.rc',  // NS 3.0 uses ~/.rc (not legacy ~/.sh)
         'source_shrc' => true,
         'require_root' => true,
     ],

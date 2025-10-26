@@ -38,7 +38,7 @@ class ShvconfCommand extends BaseNetServaCommand
 
             if (! $vnode) {
                 $this->error("❌ VNode '{$VNODE}' not found in database");
-                $this->line("   💡 Run: php artisan fleet:discover --vnode={$VNODE}");
+                $this->line("   💡 Run: php artisan addfleet {$VNODE}");
                 return 1;
             }
 

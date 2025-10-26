@@ -20,11 +20,11 @@ return [
         // Commands to run for different node roles
         'discovery_commands' => [
             'compute' => [
-                'hostname -f',
+                'cat /etc/os-release 2>/dev/null | grep "^ID=" | head -1',
                 'uname -a',
                 'cat /proc/cpuinfo | grep "processor" | wc -l',
-                'free -m | grep "Mem:" | awk \'{print $2}\'',
-                'df -h / | tail -1 | awk \'{print $2}\'',
+                'free | grep Mem | sed "s/  */ /g" | cut -d" " -f2',
+                'if mount | grep -q " /srv "; then df -h /srv | tail -1 | grep -oE "[0-9.]+[KMGT]" | head -1; else df -h / | tail -1 | grep -oE "[0-9.]+[KMGT]" | head -1; fi',
                 'ps aux --no-headers | wc -l',
                 'ip addr show | grep "inet " | grep -v "127.0.0.1"',
             ],

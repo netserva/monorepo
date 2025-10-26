@@ -231,7 +231,7 @@ class FleetInfraDiscoveryCommand extends Command
             // Check for VHost directory structures in order of preference
             $vhostChecks = [
                 'v3.0' => '/srv/*',
-                'v2.0' => '/var/ns/*',
+                'v2.0' => '/srv/*',
                 'v1.0' => '/home/u/*',
             ];
 

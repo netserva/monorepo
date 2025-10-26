@@ -208,7 +208,11 @@ class DnsProvider extends Model
                 $config['host'] ?? 'localhost',
                 $config['port'] ?? '8081'
             ),
-            'cloudflare' => 'CloudFlare API',
+            'dnsmasq' => 'Manual config (SSH to router)',
+            'cloudflare' => sprintf(
+                'CloudFlare API (%s)',
+                $config['email'] ?? 'No email configured'
+            ),
             'route53' => 'AWS Route53',
             default => $this->name
         };

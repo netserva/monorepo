@@ -145,8 +145,8 @@ ln -s /usr/bin/spamprobe spamprobe
 ### Directory Structure
 Spamprobe databases are stored in user home directories:
 ```
-/var/ns/_DOMAIN_/mail/_USER_/spamprobe/    # New NetServa structure
-/var/ns/_DOMAIN_/home/_USER_/spamprobe/   # Legacy structure
+/srv/_DOMAIN_/msg/_USER_/spamprobe/    # New NetServa structure
+# Legacy: /home/u/{user}/.spamprobe/   # Legacy structure
 ```
 
 ## Compilation and Deployment
