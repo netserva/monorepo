@@ -132,9 +132,9 @@ class SyncHomelabToPdnsCommand extends Command
         $zoneExists = (int) trim($this->runRemoteCommand($zoneExistsCommand));
 
         if ($zoneExists === 0) {
-            // Add zone
+            // Add zone as MASTER so it replicates to secondary nameservers
             $this->runRemoteCommand(
-                "sudo sqlite3 /etc/powerdns/pdns.sqlite3 \"INSERT INTO domains (name, type) VALUES ('{$zone->name}', 'NATIVE');\""
+                "sudo sqlite3 /etc/powerdns/pdns.sqlite3 \"INSERT INTO domains (name, type) VALUES ('{$zone->name}', 'MASTER');\""
             );
             $stats['zone_added'] = true;
         }
