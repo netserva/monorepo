@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NetServa\Cms\Filament\Resources;
 
+use BackedEnum;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Cms\Filament\Resources\MenuResource\Pages;
 use NetServa\Cms\Models\Menu;
+use UnitEnum;
 
 /**
  * Filament Resource for CMS Menus
@@ -21,18 +23,18 @@ class MenuResource extends Resource
 {
     protected static ?string $model = Menu::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-bars-3';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bars-3';
 
     protected static ?string $navigationLabel = 'Menus';
 
-    protected static ?string $navigationGroup = 'Content';
+    protected static string|UnitEnum|null $navigationGroup = 'Content';
 
     protected static ?int $navigationSort = 5;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Menu Details')
                     ->schema([
                         Forms\Components\TextInput::make('name')

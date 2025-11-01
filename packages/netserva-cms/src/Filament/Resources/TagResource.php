@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NetServa\Cms\Filament\Resources;
 
+use BackedEnum;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Cms\Filament\Resources\TagResource\Pages;
 use NetServa\Cms\Models\Tag;
+use UnitEnum;
 
 /**
  * Filament Resource for CMS Tags
@@ -21,18 +23,18 @@ class TagResource extends Resource
 {
     protected static ?string $model = Tag::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-tag';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';
 
     protected static ?string $navigationLabel = 'Tags';
 
-    protected static ?string $navigationGroup = 'Blog';
+    protected static string|UnitEnum|null $navigationGroup = 'Blog';
 
     protected static ?int $navigationSort = 3;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)

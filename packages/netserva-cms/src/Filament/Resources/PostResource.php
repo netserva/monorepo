@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NetServa\Cms\Filament\Resources;
 
+use BackedEnum;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Cms\Filament\Resources\PostResource\Pages;
 use NetServa\Cms\Models\Post;
+use UnitEnum;
 
 /**
  * Filament Resource for CMS Posts
@@ -21,18 +23,18 @@ class PostResource extends Resource
 {
     protected static ?string $model = Post::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-newspaper';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-newspaper';
 
     protected static ?string $navigationLabel = 'Posts';
 
-    protected static ?string $navigationGroup = 'Blog';
+    protected static string|UnitEnum|null $navigationGroup = 'Blog';
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Post Content')
                     ->schema([
                         Forms\Components\TextInput::make('title')

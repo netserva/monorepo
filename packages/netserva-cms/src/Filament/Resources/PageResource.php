@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NetServa\Cms\Filament\Resources;
 
+use BackedEnum;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Cms\Filament\Resources\PageResource\Pages;
 use NetServa\Cms\Models\Page;
+use UnitEnum;
 
 /**
  * Filament Resource for CMS Pages
@@ -21,18 +23,18 @@ class PageResource extends Resource
 {
     protected static ?string $model = Page::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?string $navigationLabel = 'Pages';
 
-    protected static ?string $navigationGroup = 'Content';
+    protected static string|UnitEnum|null $navigationGroup = 'Content';
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Forms\Components\Section::make('Page Content')
                     ->schema([
                         Forms\Components\TextInput::make('title')
