@@ -266,11 +266,4 @@ class PostResource extends Resource
             'edit' => Pages\EditPost::route('/{record}/edit'),
         ];
     }
-
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes()
-            ->with(['categories', 'tags']);
-    }
 }
