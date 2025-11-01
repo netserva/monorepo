@@ -21,8 +21,6 @@ return new class extends Migration
     {
         // Skip this migration during testing (SQLite doesn't support CREATE DATABASE)
         if (app()->environment('testing')) {
-            $this->info('Skipping NS 1.0 → NS 3.0 migration in test environment');
-
             return;
         }
 
