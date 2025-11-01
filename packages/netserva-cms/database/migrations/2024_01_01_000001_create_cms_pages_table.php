@@ -21,8 +21,14 @@ return new class extends Migration
             $table->integer('order')->default(0);
             $table->boolean('is_published')->default(false);
             $table->timestamp('published_at')->nullable();
-            $table->json('meta')->nullable(); // SEO: title, description, keywords, og_image
-            $table->json('settings')->nullable(); // Page-specific settings
+
+            // SEO Meta fields
+            $table->string('meta_title')->nullable();
+            $table->text('meta_description')->nullable();
+            $table->string('meta_keywords')->nullable();
+            $table->string('og_image')->nullable();
+            $table->string('twitter_card')->default('summary_large_image');
+
             $table->timestamps();
             $table->softDeletes();
 

@@ -43,13 +43,16 @@ class Post extends Model implements HasMedia
         'is_published',
         'published_at',
         'word_count',
-        'meta',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'og_image',
+        'twitter_card',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
         'published_at' => 'datetime',
-        'meta' => 'array',
         'word_count' => 'integer',
     ];
 
@@ -116,12 +119,12 @@ class Post extends Model implements HasMedia
 
     public function getMetaTitle(): ?string
     {
-        return $this->meta['title'] ?? $this->title;
+        return $this->meta_title ?? $this->title;
     }
 
     public function getMetaDescription(): ?string
     {
-        return $this->meta['description'] ?? $this->excerpt;
+        return $this->meta_description ?? $this->excerpt;
     }
 
     public function getReadingTime(): int

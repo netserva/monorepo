@@ -19,6 +19,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip this migration during testing (SQLite doesn't support CREATE DATABASE)
+        if (app()->environment('testing')) {
+            $this->info('Skipping NS 1.0 → NS 3.0 migration in test environment');
+
+            return;
+        }
+
         $this->info('Starting NS 1.0 → NS 3.0 database migration...');
 
         // Step 1: Backup existing database
@@ -30,7 +37,7 @@ return new class extends Migration
         // Clone all tables to backup
         $tables = DB::select('SHOW TABLES FROM sysadm');
         foreach ($tables as $table) {
-            $tableName = array_values((array)$table)[0];
+            $tableName = array_values((array) $table)[0];
             DB::statement("CREATE TABLE sysadm_bkp.{$tableName} LIKE sysadm.{$tableName}");
             DB::statement("INSERT INTO sysadm_bkp.{$tableName} SELECT * FROM sysadm.{$tableName}");
         }
@@ -83,7 +90,7 @@ return new class extends Migration
 
         // Migrate vhosts
         $this->info('Migrating vhosts...');
-        DB::statement("
+        DB::statement('
             INSERT INTO sysadm.vhosts (id, domain, uid, gid, active, created_at, updated_at)
             SELECT
                 id,
@@ -94,7 +101,7 @@ return new class extends Migration
                 created as created_at,
                 updated as updated_at
             FROM sysadm_bkp.vhosts
-        ");
+        ');
 
         // Migrate vmails - NOTE: home paths will be updated by filesystem migration script
         $this->info('Migrating vmails (paths will be updated separately)...');
@@ -115,7 +122,7 @@ return new class extends Migration
 
         // Migrate valias
         $this->info('Migrating valias...');
-        DB::statement("
+        DB::statement('
             INSERT INTO sysadm.valias (id, source, target, active, created_at, updated_at)
             SELECT
                 id,
@@ -125,7 +132,7 @@ return new class extends Migration
                 created as created_at,
                 updated as updated_at
             FROM sysadm_bkp.valias
-        ");
+        ');
 
         // Update vmails home paths to new structure
         $this->info('Updating vmails home paths to NS 3.0 structure...');
@@ -140,9 +147,9 @@ return new class extends Migration
         ");
 
         $this->info('Migration statistics:');
-        $this->info('  Vhosts migrated: ' . DB::table('sysadm.vhosts')->count());
-        $this->info('  Vmails migrated: ' . DB::table('sysadm.vmails')->count());
-        $this->info('  Valias migrated: ' . DB::table('sysadm.valias')->count());
+        $this->info('  Vhosts migrated: '.DB::table('sysadm.vhosts')->count());
+        $this->info('  Vmails migrated: '.DB::table('sysadm.vmails')->count());
+        $this->info('  Valias migrated: '.DB::table('sysadm.valias')->count());
 
         $this->info('Database migration completed successfully!');
         $this->info('Backup database: sysadm_bkp (keep for 7 days)');
@@ -155,8 +162,9 @@ return new class extends Migration
     {
         $this->info('Rolling back: Restoring sysadm from sysadm_bkp...');
 
-        if (!DB::statement('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = "sysadm_bkp"')) {
+        if (! DB::statement('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = "sysadm_bkp"')) {
             $this->error('Backup database sysadm_bkp not found! Cannot rollback.');
+
             return;
         }
 
@@ -165,7 +173,7 @@ return new class extends Migration
 
         $tables = DB::select('SHOW TABLES FROM sysadm_bkp');
         foreach ($tables as $table) {
-            $tableName = array_values((array)$table)[0];
+            $tableName = array_values((array) $table)[0];
             DB::statement("CREATE TABLE sysadm.{$tableName} LIKE sysadm_bkp.{$tableName}");
             DB::statement("INSERT INTO sysadm.{$tableName} SELECT * FROM sysadm_bkp.{$tableName}");
         }
