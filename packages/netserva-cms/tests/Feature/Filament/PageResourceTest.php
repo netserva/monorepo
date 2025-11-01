@@ -1,0 +1,130 @@
+<?php
+
+declare(strict_types=1);
+
+use NetServa\Cms\Filament\Resources\PageResource;
+use NetServa\Cms\Models\Page;
+
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Livewire\livewire;
+
+it('can render page list', function () {
+    Page::factory()->count(10)->create();
+
+    livewire(PageResource\Pages\ListPages::class)
+        ->assertOk();
+});
+
+it('can list pages', function () {
+    $pages = Page::factory()->count(10)->create();
+
+    livewire(PageResource\Pages\ListPages::class)
+        ->assertCanSeeTableRecords($pages);
+});
+
+it('can render create page', function () {
+    livewire(PageResource\Pages\CreatePage::class)
+        ->assertOk();
+});
+
+it('can create a page', function () {
+    $newPage = Page::factory()->make();
+
+    livewire(PageResource\Pages\CreatePage::class)
+        ->fillForm([
+            'title' => $newPage->title,
+            'slug' => $newPage->slug,
+            'content' => $newPage->content,
+            'template' => $newPage->template,
+            'is_published' => true,
+        ])
+        ->call('create')
+        ->assertNotified();
+
+    assertDatabaseHas(Page::class, [
+        'title' => $newPage->title,
+        'slug' => $newPage->slug,
+    ]);
+});
+
+it('can validate create page input', function () {
+    livewire(PageResource\Pages\CreatePage::class)
+        ->fillForm([
+            'title' => null,
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['title' => 'required']);
+});
+
+it('can render edit page', function () {
+    $page = Page::factory()->create();
+
+    livewire(PageResource\Pages\EditPage::class, [
+        'record' => $page->id,
+    ])
+        ->assertOk();
+});
+
+it('can retrieve page data for editing', function () {
+    $page = Page::factory()->create();
+
+    livewire(PageResource\Pages\EditPage::class, [
+        'record' => $page->id,
+    ])
+        ->assertSchemaStateSet([
+            'title' => $page->title,
+            'slug' => $page->slug,
+            'content' => $page->content,
+        ]);
+});
+
+it('can update a page', function () {
+    $page = Page::factory()->create();
+    $newData = Page::factory()->make();
+
+    livewire(PageResource\Pages\EditPage::class, [
+        'record' => $page->id,
+    ])
+        ->fillForm([
+            'title' => $newData->title,
+            'content' => $newData->content,
+        ])
+        ->call('save')
+        ->assertNotified();
+
+    expect($page->refresh())
+        ->title->toBe($newData->title)
+        ->content->toBe($newData->content);
+});
+
+it('can delete a page', function () {
+    $page = Page::factory()->create();
+
+    livewire(PageResource\Pages\EditPage::class, [
+        'record' => $page->id,
+    ])
+        ->callAction('delete')
+        ->assertNotified();
+
+    expect(Page::withTrashed()->find($page->id)->trashed())->toBeTrue();
+});
+
+it('can filter published pages', function () {
+    Page::factory()->count(5)->published()->create();
+    Page::factory()->count(3)->unpublished()->create();
+
+    livewire(PageResource\Pages\ListPages::class)
+        ->filterTable('is_published', true)
+        ->assertCanSeeTableRecords(Page::where('is_published', true)->get())
+        ->assertCanNotSeeTableRecords(Page::where('is_published', false)->get());
+});
+
+it('can search pages by title', function () {
+    $pages = Page::factory()->count(5)->create();
+    $specificPage = $pages->first();
+
+    livewire(PageResource\Pages\ListPages::class)
+        ->searchTable($specificPage->title)
+        ->assertCanSeeTableRecords([$specificPage])
+        ->assertCanNotSeeTableRecords($pages->skip(1));
+});

@@ -1,0 +1,257 @@
+<?php
+
+declare(strict_types=1);
+
+namespace NetServa\Cms\Filament\Resources;
+
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use NetServa\Cms\Filament\Resources\PostResource\Pages;
+use NetServa\Cms\Models\Post;
+
+/**
+ * Filament Resource for CMS Posts
+ *
+ * CRITICAL: NO NetServa dependencies - completely standalone
+ */
+class PostResource extends Resource
+{
+    protected static ?string $model = Post::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-newspaper';
+
+    protected static ?string $navigationLabel = 'Posts';
+
+    protected static ?string $navigationGroup = 'Blog';
+
+    protected static ?int $navigationSort = 1;
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Section::make('Post Content')
+                    ->schema([
+                        Forms\Components\TextInput::make('title')
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
+
+                        Forms\Components\TextInput::make('slug')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(Post::class, 'slug', ignoreRecord: true)
+                            ->helperText('URL-friendly version of the title'),
+
+                        Forms\Components\RichEditor::make('content')
+                            ->required()
+                            ->columnSpanFull()
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('attachments'),
+
+                        Forms\Components\Textarea::make('excerpt')
+                            ->rows(3)
+                            ->maxLength(500)
+                            ->helperText('Short description for listings and SEO')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Categorization')
+                    ->schema([
+                        Forms\Components\Select::make('category_id')
+                            ->relationship('category', 'name', fn ($query) => $query->where('type', 'post'))
+                            ->searchable()
+                            ->preload()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('slug')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\Textarea::make('description')
+                                    ->rows(2),
+                                Forms\Components\Hidden::make('type')
+                                    ->default('post'),
+                            ])
+                            ->helperText('Select or create a category'),
+
+                        Forms\Components\Select::make('tags')
+                            ->relationship('tags', 'name')
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('slug')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
+                            ->helperText('Select or create tags'),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Publishing')
+                    ->schema([
+                        Forms\Components\Toggle::make('is_published')
+                            ->label('Published')
+                            ->default(false)
+                            ->helperText('Make this post visible on the website'),
+
+                        Forms\Components\DateTimePicker::make('published_at')
+                            ->label('Publish Date')
+                            ->default(now())
+                            ->helperText('Schedule publication for a future date'),
+
+                        Forms\Components\Placeholder::make('word_count')
+                            ->label('Word Count')
+                            ->content(fn (?Post $record): string => $record ? number_format($record->word_count) : '0'),
+
+                        Forms\Components\Placeholder::make('reading_time')
+                            ->label('Reading Time')
+                            ->content(fn (?Post $record): string => $record ? $record->getReadingTime().' min' : '0 min'),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('SEO & Metadata')
+                    ->schema([
+                        Forms\Components\TextInput::make('meta.title')
+                            ->label('Meta Title')
+                            ->maxLength(60)
+                            ->helperText('SEO title (leave empty to use post title)'),
+
+                        Forms\Components\Textarea::make('meta.description')
+                            ->label('Meta Description')
+                            ->rows(2)
+                            ->maxLength(160)
+                            ->helperText('SEO description (leave empty to use excerpt)'),
+
+                        Forms\Components\TextInput::make('meta.keywords')
+                            ->label('Meta Keywords')
+                            ->helperText('Comma-separated keywords'),
+
+                        Forms\Components\FileUpload::make('meta.og_image')
+                            ->label('Social Share Image')
+                            ->image()
+                            ->disk('public')
+                            ->directory('og-images')
+                            ->helperText('Image for social media sharing'),
+                    ])
+                    ->columns(2)
+                    ->collapsed(),
+
+                Forms\Components\Section::make('Media')
+                    ->schema([
+                        Forms\Components\SpatieMediaLibraryFileUpload::make('featured_image')
+                            ->collection('featured_image')
+                            ->image()
+                            ->helperText('Main image for this post'),
+
+                        Forms\Components\SpatieMediaLibraryFileUpload::make('gallery')
+                            ->collection('gallery')
+                            ->multiple()
+                            ->image()
+                            ->helperText('Additional images'),
+                    ])
+                    ->collapsed(),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\SpatieMediaLibraryImageColumn::make('featured_image')
+                    ->collection('featured_image')
+                    ->circular()
+                    ->defaultImageUrl(url('/images/placeholder.png'))
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('title')
+                    ->searchable()
+                    ->sortable()
+                    ->description(fn (Post $record): string => $record->slug)
+                    ->limit(50),
+
+                Tables\Columns\TextColumn::make('category.name')
+                    ->badge()
+                    ->color('info')
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('tags.name')
+                    ->badge()
+                    ->color('success')
+                    ->separator(',')
+                    ->toggleable(),
+
+                Tables\Columns\IconColumn::make('is_published')
+                    ->label('Published')
+                    ->boolean()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('published_at')
+                    ->label('Publish Date')
+                    ->dateTime('M d, Y')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('word_count')
+                    ->label('Words')
+                    ->numeric()
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime('M d, Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->defaultSort('published_at', 'desc')
+            ->filters([
+                Tables\Filters\TernaryFilter::make('is_published')
+                    ->label('Published')
+                    ->placeholder('All posts')
+                    ->trueLabel('Published only')
+                    ->falseLabel('Drafts only'),
+
+                Tables\Filters\SelectFilter::make('category')
+                    ->relationship('category', 'name'),
+
+                Tables\Filters\TrashedFilter::make(),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListPosts::route('/'),
+            'create' => Pages\CreatePost::route('/create'),
+            'edit' => Pages\EditPost::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes()
+            ->with(['category', 'tags']);
+    }
+}
