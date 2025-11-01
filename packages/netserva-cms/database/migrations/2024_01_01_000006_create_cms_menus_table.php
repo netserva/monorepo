@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('cms_menus', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('location')->unique(); // header, footer, sidebar
+            $table->string('location'); // header, footer, sidebar (allow multiple per location)
             $table->json('items')->nullable(); // Array of menu items with hierarchy
             $table->boolean('is_active')->default(true);
             $table->timestamps();

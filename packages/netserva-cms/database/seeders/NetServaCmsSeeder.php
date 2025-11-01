@@ -88,7 +88,6 @@ class NetServaCmsSeeder extends Seeder
             'slug' => 'news',
             'description' => 'Latest updates and announcements from NetServa',
             'type' => 'post',
-            'is_active' => true,
         ]);
 
         // Welcome blog post

@@ -18,7 +18,7 @@ class MenuFactory extends Factory
     {
         return [
             'name' => fake()->words(2, true),
-            'location' => fake()->unique()->randomElement(['header', 'footer', 'sidebar', 'mobile']),
+            'location' => fake()->randomElement(['header', 'footer', 'sidebar', 'mobile']),
             'items' => $this->generateMenuItems(),
             'is_active' => true,
         ];

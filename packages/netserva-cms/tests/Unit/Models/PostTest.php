@@ -28,9 +28,9 @@ it('can have categories', function () {
     $post = Post::factory()->create();
     $categories = Category::factory()->count(3)->create();
 
-    $post->categories()->attach($categories->pluck('id'));
+    $post->categories()->sync($categories->pluck('id'));
 
-    expect($post->categories)->toHaveCount(3);
+    expect($post->fresh()->categories)->toHaveCount(3);
 });
 
 it('can have tags', function () {

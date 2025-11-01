@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8e3d7e89a67091c711f37f6ea292544c",
+    "content-hash": "773d939aaab4a082466f64c95b04213c",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -3734,7 +3734,7 @@
             "dist": {
                 "type": "path",
                 "url": "./packages/netserva-cms",
-                "reference": "27a2d1f7ba2789baff0b0a8bc6561411fba4496a"
+                "reference": "e49068c389b9b38596ff02c9be0e3e511f8da573"
             },
             "require": {
                 "filament/filament": "^4.0",
@@ -3760,7 +3760,8 @@
             "autoload": {
                 "psr-4": {
                     "NetServa\\Cms\\": "src/",
-                    "NetServa\\Cms\\Database\\Factories\\": "database/factories/"
+                    "NetServa\\Cms\\Database\\Factories\\": "database/factories/",
+                    "NetServa\\Cms\\Database\\Seeders\\": "database/seeders/"
                 }
             },
             "autoload-dev": {
@@ -12516,6 +12517,80 @@
                 }
             ],
             "time": "2025-09-29T01:31:33+00:00"
+        },
+        {
+            "name": "pestphp/pest-plugin-laravel",
+            "version": "v4.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/pestphp/pest-plugin-laravel.git",
+                "reference": "e12a07046b826a40b1c8632fd7b80d6b8d7b628e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/pestphp/pest-plugin-laravel/zipball/e12a07046b826a40b1c8632fd7b80d6b8d7b628e",
+                "reference": "e12a07046b826a40b1c8632fd7b80d6b8d7b628e",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": "^11.45.2|^12.25.0",
+                "pestphp/pest": "^4.0.0",
+                "php": "^8.3.0"
+            },
+            "require-dev": {
+                "laravel/dusk": "^8.3.3",
+                "orchestra/testbench": "^9.13.0|^10.5.0",
+                "pestphp/pest-dev-tools": "^4.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "pest": {
+                    "plugins": [
+                        "Pest\\Laravel\\Plugin"
+                    ]
+                },
+                "laravel": {
+                    "providers": [
+                        "Pest\\Laravel\\PestServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/Autoload.php"
+                ],
+                "psr-4": {
+                    "Pest\\Laravel\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "The Pest Laravel Plugin",
+            "keywords": [
+                "framework",
+                "laravel",
+                "pest",
+                "php",
+                "test",
+                "testing",
+                "unit"
+            ],
+            "support": {
+                "source": "https://github.com/pestphp/pest-plugin-laravel/tree/v4.0.0"
+            },
+            "funding": [
+                {
+                    "url": "https://www.paypal.com/paypalme/enunomaduro",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/nunomaduro",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-08-20T12:46:37+00:00"
         },
         {
             "name": "pestphp/pest-plugin-mutate",

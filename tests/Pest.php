@@ -1,5 +1,10 @@
 <?php
 
+// Load CMS package testing helpers (Livewire helper function)
+if (file_exists(__DIR__.'/../packages/netserva-cms/tests/helpers.php')) {
+    require_once __DIR__.'/../packages/netserva-cms/tests/helpers.php';
+}
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
