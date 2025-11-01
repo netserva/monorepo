@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NetServa\Cms\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use NetServa\Cms\Models\Category;
 use NetServa\Cms\Models\Post;
 
 /**
@@ -31,6 +32,17 @@ class PostFactory extends Factory
             'meta_description' => fake()->sentence(15),
             'meta_keywords' => fake()->words(5, true),
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Post $post) {
+            // Automatically attach a category if none exist
+            if ($post->categories()->count() === 0) {
+                $category = Category::factory()->post()->create();
+                $post->categories()->attach($category);
+            }
+        });
     }
 
     public function unpublished(): static

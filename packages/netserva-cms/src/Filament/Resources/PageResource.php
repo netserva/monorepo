@@ -101,27 +101,35 @@ class PageResource extends Resource
 
                 Forms\Components\Section::make('SEO & Metadata')
                     ->schema([
-                        Forms\Components\TextInput::make('meta.title')
+                        Forms\Components\TextInput::make('meta_title')
                             ->label('Meta Title')
-                            ->maxLength(60)
+                            ->maxLength(255)
                             ->helperText('SEO title (leave empty to use page title)'),
 
-                        Forms\Components\Textarea::make('meta.description')
+                        Forms\Components\Textarea::make('meta_description')
                             ->label('Meta Description')
                             ->rows(2)
-                            ->maxLength(160)
+                            ->maxLength(500)
                             ->helperText('SEO description (leave empty to use excerpt)'),
 
-                        Forms\Components\TextInput::make('meta.keywords')
+                        Forms\Components\TextInput::make('meta_keywords')
                             ->label('Meta Keywords')
                             ->helperText('Comma-separated keywords'),
 
-                        Forms\Components\FileUpload::make('meta.og_image')
-                            ->label('Social Share Image')
-                            ->image()
-                            ->disk('public')
-                            ->directory('og-images')
-                            ->helperText('Image for social media sharing'),
+                        Forms\Components\TextInput::make('og_image')
+                            ->label('Open Graph Image URL')
+                            ->helperText('URL for social media sharing image'),
+
+                        Forms\Components\Select::make('twitter_card')
+                            ->label('Twitter Card Type')
+                            ->options([
+                                'summary' => 'Summary',
+                                'summary_large_image' => 'Summary Large Image',
+                                'app' => 'App',
+                                'player' => 'Player',
+                            ])
+                            ->default('summary_large_image')
+                            ->helperText('Twitter card display type'),
                     ])
                     ->columns(2)
                     ->collapsed(),

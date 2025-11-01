@@ -6,7 +6,6 @@ namespace NetServa\Cms\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
@@ -39,7 +38,6 @@ class Post extends Model implements HasMedia
         'content',
         'excerpt',
         'featured_image',
-        'category_id',
         'is_published',
         'published_at',
         'word_count',
@@ -73,9 +71,9 @@ class Post extends Model implements HasMedia
             ->doNotGenerateSlugsOnUpdate();
     }
 
-    public function category(): BelongsTo
+    public function categories(): BelongsToMany
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class, 'cms_category_post');
     }
 
     public function tags(): BelongsToMany
@@ -94,7 +92,9 @@ class Post extends Model implements HasMedia
 
     public function scopeByCategory($query, $categoryId)
     {
-        return $query->where('category_id', $categoryId);
+        return $query->whereHas('categories', function ($q) use ($categoryId) {
+            $q->where('cms_categories.id', $categoryId);
+        });
     }
 
     public function scopeWithTag($query, $tagId)

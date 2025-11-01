@@ -63,8 +63,9 @@ class PostResource extends Resource
 
                 Forms\Components\Section::make('Categorization')
                     ->schema([
-                        Forms\Components\Select::make('category_id')
-                            ->relationship('category', 'name', fn ($query) => $query->where('type', 'post'))
+                        Forms\Components\Select::make('categories')
+                            ->relationship('categories', 'name', fn ($query) => $query->where('type', 'post'))
+                            ->multiple()
                             ->searchable()
                             ->preload()
                             ->createOptionForm([
@@ -79,7 +80,7 @@ class PostResource extends Resource
                                 Forms\Components\Hidden::make('type')
                                     ->default('post'),
                             ])
-                            ->helperText('Select or create a category'),
+                            ->helperText('Select or create categories'),
 
                         Forms\Components\Select::make('tags')
                             ->relationship('tags', 'name')
@@ -122,27 +123,35 @@ class PostResource extends Resource
 
                 Forms\Components\Section::make('SEO & Metadata')
                     ->schema([
-                        Forms\Components\TextInput::make('meta.title')
+                        Forms\Components\TextInput::make('meta_title')
                             ->label('Meta Title')
-                            ->maxLength(60)
+                            ->maxLength(255)
                             ->helperText('SEO title (leave empty to use post title)'),
 
-                        Forms\Components\Textarea::make('meta.description')
+                        Forms\Components\Textarea::make('meta_description')
                             ->label('Meta Description')
                             ->rows(2)
-                            ->maxLength(160)
+                            ->maxLength(500)
                             ->helperText('SEO description (leave empty to use excerpt)'),
 
-                        Forms\Components\TextInput::make('meta.keywords')
+                        Forms\Components\TextInput::make('meta_keywords')
                             ->label('Meta Keywords')
                             ->helperText('Comma-separated keywords'),
 
-                        Forms\Components\FileUpload::make('meta.og_image')
-                            ->label('Social Share Image')
-                            ->image()
-                            ->disk('public')
-                            ->directory('og-images')
-                            ->helperText('Image for social media sharing'),
+                        Forms\Components\TextInput::make('og_image')
+                            ->label('Open Graph Image URL')
+                            ->helperText('URL for social media sharing image'),
+
+                        Forms\Components\Select::make('twitter_card')
+                            ->label('Twitter Card Type')
+                            ->options([
+                                'summary' => 'Summary',
+                                'summary_large_image' => 'Summary Large Image',
+                                'app' => 'App',
+                                'player' => 'Player',
+                            ])
+                            ->default('summary_large_image')
+                            ->helperText('Twitter card display type'),
                     ])
                     ->columns(2)
                     ->collapsed(),
@@ -180,10 +189,10 @@ class PostResource extends Resource
                     ->description(fn (Post $record): string => $record->slug)
                     ->limit(50),
 
-                Tables\Columns\TextColumn::make('category.name')
+                Tables\Columns\TextColumn::make('categories.name')
                     ->badge()
                     ->color('info')
-                    ->sortable()
+                    ->separator(',')
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('tags.name')

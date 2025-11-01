@@ -66,6 +66,63 @@ venue → vsite → vnode → vhost + vconf → vserv
 - **netserva-ops** - Operational tools, server administration
 - **netserva-web** - Web servers, virtual hosts (Nginx/PHP-FPM)
 - **netserva-wg** - WireGuard VPN management
+- **netserva-cms** - Content Management System (Pages, Blog, SEO)
+
+## 🌐 Routing Architecture
+
+**Namespace-Based Routing** - Each plugin owns its URI namespace with clean separation:
+
+### Route Structure
+
+```
+/                    → CMS homepage (when installed)
+/blog/*              → CMS blog posts
+/admin               → Filament admin panel (all plugins)
+/admin/debug/*       → Debug tools
+```
+
+### Key Design Principles
+
+1. **CMS Owns Root** - When installed, netserva-cms handles `/`, `/blog`, and page routes
+2. **Fallback to Welcome** - Without CMS, root shows Laravel welcome page
+3. **All Admin Under /admin** - Single admin panel for all plugins
+4. **Plugin Namespaces** - Future plugins can add public routes at their own prefix
+
+### Dual-Purpose CMS
+
+The **netserva-cms** package serves two critical purposes:
+
+1. **NetServa Frontend** - Provides professional landing pages for NetServa installations (default content)
+2. **Standalone Sites** - Can be extracted for standalone Laravel+CMS websites (client content)
+
+**Default content** (included in repository):
+- NetServa.org-style homepage explaining the platform
+- About and Features pages
+- Sample blog post
+
+**Client content** (NOT in repository):
+- SpiderWeb website → separate project/repo
+- Other client sites → separate deployments
+
+This dual-purpose design means:
+- ✅ CMS gets constant updates via NS 3.0 development
+- ✅ NetServa installations have professional frontend
+- ✅ CMS can power unlimited standalone sites
+- ✅ Clear separation: default vs client content
+
+### Environment Variables
+
+Configure routing behavior via `.env`:
+
+```env
+# Admin panel path (change for security)
+NS_ADMIN_PREFIX=admin
+
+# CMS routing
+CMS_FRONTEND_ENABLED=true
+CMS_BLOG_PREFIX=blog
+CMS_PORTFOLIO_PREFIX=portfolio
+```
 
 ## 🗄️ Database-First Architecture
 

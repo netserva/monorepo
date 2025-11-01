@@ -33,7 +33,8 @@
     "autoload": {
         "psr-4": {
             "NetServa\\Cms\\": "src/",
-            "NetServa\\Cms\\Database\\Factories\\": "database/factories/"
+            "NetServa\\Cms\\Database\\Factories\\": "database/factories/",
+            "NetServa\\Cms\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {

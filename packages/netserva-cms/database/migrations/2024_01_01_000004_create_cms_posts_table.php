@@ -17,7 +17,6 @@ return new class extends Migration
             $table->text('content')->nullable();
             $table->text('excerpt')->nullable();
             $table->string('featured_image')->nullable();
-            $table->foreignId('category_id')->nullable()->constrained('cms_categories')->onDelete('set null');
             $table->boolean('is_published')->default(false);
             $table->timestamp('published_at')->nullable();
             $table->integer('word_count')->default(0);
@@ -32,7 +31,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index('category_id');
             $table->index('is_published');
             $table->index('published_at');
             $table->index('slug');

@@ -19,5 +19,10 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Seed CMS default content if the package is installed
+        if (class_exists(\NetServa\Cms\Database\Seeders\NetServaCmsSeeder::class)) {
+            $this->call(\NetServa\Cms\Database\Seeders\NetServaCmsSeeder::class);
+        }
     }
 }

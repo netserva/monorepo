@@ -343,6 +343,158 @@ All admin routes are handled by Filament at `/admin`:
 
 ---
 
+## 🚀 Deployment Scenarios
+
+### Dual-Purpose Architecture
+
+The netserva-cms package is designed to work in **two distinct deployment modes**:
+
+#### 1. **Integrated Mode** (Within NetServa 3.0)
+
+When installed as part of the NetServa 3.0 platform:
+
+**Purpose:** Provides professional frontend pages for NetServa installations
+
+**Routes:**
+```
+/                    → CMS homepage (NetServa.org branding)
+/blog                → Blog posts about NetServa updates
+/about               → About NetServa platform
+/features            → NetServa features page
+/admin               → Filament admin (all NetServa plugins)
+/admin/pages         → CMS page management
+/admin/vnodes        → Server management (other plugins)
+```
+
+**Default Content:**
+- Homepage: NetServa platform introduction
+- About page: Platform explanation
+- Features page: Capability overview
+- Sample blog post: "Welcome to NetServa 3.0"
+
+**Benefits:**
+- ✅ Professional landing page for NetServa installations
+- ✅ Explains platform capabilities to visitors
+- ✅ Integrated with other NetServa admin panels
+- ✅ Gets constant updates via NS 3.0 development
+
+#### 2. **Standalone Mode** (Independent Laravel Project)
+
+When installed in a fresh Laravel 12 project:
+
+**Purpose:** Power standalone websites (client sites, marketing sites, etc.)
+
+**Routes:**
+```
+/                    → Client homepage
+/blog                → Client blog
+/{slug}              → Client pages
+/admin               → CMS admin panel only
+```
+
+**Client Content Examples:**
+- SpiderWeb website (spiderweb.com.au) → separate GitHub repo
+- Other client marketing sites
+- Personal blogs or portfolios
+
+**Installation:**
+```bash
+# Fresh Laravel 12 project
+composer create-project laravel/laravel my-client-site
+cd my-client-site
+
+# Install CMS
+composer require netserva/cms
+
+# Configure & migrate
+php artisan vendor:publish --provider="NetServa\Cms\NetServaCmsServiceProvider"
+php artisan migrate
+
+# Seed with default content OR import client content
+php artisan db:seed --class="NetServa\Cms\Database\Seeders\NetServaCmsSeeder"
+```
+
+**Benefits:**
+- ✅ Zero NetServa dependencies
+- ✅ Standalone CMS capabilities
+- ✅ Benefits from NS 3.0 CMS development
+- ✅ Can be customized per client
+
+### Content Separation Strategy
+
+**Default Content** (Included in Repository):
+- Professional NetServa.org branding
+- General server management messaging
+- Suitable for any NetServa installation
+
+**Client Content** (NOT in Repository):
+- SpiderWeb website content → `spiderweb-website` repo
+- Other client sites → separate repos/projects
+- Imported via seeders or manual entry
+
+**Why This Separation Matters:**
+
+1. **Repository Cleanliness** - No client-specific data in main repo
+2. **Privacy** - Client content stays private to client
+3. **Reusability** - Same CMS package powers unlimited sites
+4. **Updates** - CMS improvements benefit all deployments
+
+### Migration Example: SpiderWeb
+
+**Current State:** WordPress website at spiderweb.com.au
+
+**Future Workflow:**
+
+```bash
+# 1. Create separate project
+git clone <spiderweb-website-repo>
+cd spiderweb-website
+
+# 2. Fresh Laravel + CMS
+composer create-project laravel/laravel .
+composer require netserva/cms
+
+# 3. Import WordPress content
+php artisan cms:import:wordpress /path/to/wordpress-export.xml
+
+# 4. Deploy separately
+# (SpiderWeb runs independently of NetServa 3.0)
+```
+
+**Result:**
+- SpiderWeb gets modern Laravel/Filament CMS
+- Benefits from NetServa CMS improvements
+- Completely separate GitHub repo
+- No NetServa platform dependency
+
+### Routing Behavior
+
+**With CMS Installed:**
+- CMS owns root `/` route
+- Provides homepage, pages, blog routes
+- Fallback to Laravel welcome disabled
+
+**Without CMS:**
+- Root `/` shows Laravel welcome page
+- Only `/admin` panel available
+- Clean backend-only installation
+
+**Environment Configuration:**
+
+```env
+# Enable/disable CMS frontend
+CMS_FRONTEND_ENABLED=true
+
+# Customize route prefixes
+CMS_BLOG_PREFIX=blog
+CMS_PORTFOLIO_PREFIX=portfolio
+
+# Admin panel path (security)
+NS_ADMIN_PREFIX=admin
+```
+
+---
+
 ## 🔒 Design Constraints
 
 ### ✅ ALWAYS DO
