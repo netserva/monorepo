@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace NetServa\Cms\Filament\Resources;
 
 use BackedEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -35,7 +40,7 @@ class MenuResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Menu Details')
+                Section::make('Menu Details')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -55,7 +60,7 @@ class MenuResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Menu Items')
+                Section::make('Menu Items')
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->schema([
@@ -159,13 +164,13 @@ class MenuResource extends Resource
                     ->trueLabel('Active only')
                     ->falseLabel('Inactive only'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

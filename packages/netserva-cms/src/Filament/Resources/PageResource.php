@@ -5,8 +5,17 @@ declare(strict_types=1);
 namespace NetServa\Cms\Filament\Resources;
 
 use BackedEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -35,13 +44,13 @@ class PageResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Page Content')
+                Section::make('Page Content')
                     ->schema([
                         Forms\Components\TextInput::make('title')
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
+                            ->afterStateUpdated(fn ($state, $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
 
                         Forms\Components\TextInput::make('slug')
                             ->required()
@@ -72,7 +81,7 @@ class PageResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Hierarchy')
+                Section::make('Hierarchy')
                     ->schema([
                         Forms\Components\Select::make('parent_id')
                             ->label('Parent Page')
@@ -88,7 +97,7 @@ class PageResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Publishing')
+                Section::make('Publishing')
                     ->schema([
                         Forms\Components\Toggle::make('is_published')
                             ->label('Published')
@@ -101,7 +110,7 @@ class PageResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('SEO & Metadata')
+                Section::make('SEO & Metadata')
                     ->schema([
                         Forms\Components\TextInput::make('meta_title')
                             ->label('Meta Title')
@@ -136,7 +145,7 @@ class PageResource extends Resource
                     ->columns(2)
                     ->collapsed(),
 
-                Forms\Components\Section::make('Media')
+                Section::make('Media')
                     ->schema([
                         Forms\Components\SpatieMediaLibraryFileUpload::make('featured_image')
                             ->collection('featured_image')
@@ -209,17 +218,17 @@ class PageResource extends Resource
 
                 Tables\Filters\TrashedFilter::make(),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+                ForceDeleteAction::make(),
+                RestoreAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }

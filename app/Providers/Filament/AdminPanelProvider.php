@@ -133,6 +133,7 @@ class AdminPanelProvider extends PanelProvider
             \Ns\Database\DatabasePlugin::class,
             \Ns\Migration\MigrationPlugin::class,
             \Ns\Monitor\MonitorPlugin::class,
+            \NetServa\Cms\NetServaCmsPlugin::class,
         ];
 
         foreach ($criticalPlugins as $pluginClass) {

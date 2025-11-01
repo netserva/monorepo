@@ -5,8 +5,15 @@ declare(strict_types=1);
 namespace NetServa\Cms\Filament\Resources;
 
 use BackedEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -35,13 +42,13 @@ class PostResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Post Content')
+                Section::make('Post Content')
                     ->schema([
                         Forms\Components\TextInput::make('title')
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
+                            ->afterStateUpdated(fn ($state, $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
 
                         Forms\Components\TextInput::make('slug')
                             ->required()
@@ -63,7 +70,7 @@ class PostResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Categorization')
+                Section::make('Categorization')
                     ->schema([
                         Forms\Components\Select::make('categories')
                             ->relationship('categories', 'name', fn ($query) => $query->where('type', 'post'))
@@ -101,7 +108,7 @@ class PostResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Publishing')
+                Section::make('Publishing')
                     ->schema([
                         Forms\Components\Toggle::make('is_published')
                             ->label('Published')
@@ -123,7 +130,7 @@ class PostResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('SEO & Metadata')
+                Section::make('SEO & Metadata')
                     ->schema([
                         Forms\Components\TextInput::make('meta_title')
                             ->label('Meta Title')
@@ -158,7 +165,7 @@ class PostResource extends Resource
                     ->columns(2)
                     ->collapsed(),
 
-                Forms\Components\Section::make('Media')
+                Section::make('Media')
                     ->schema([
                         Forms\Components\SpatieMediaLibraryFileUpload::make('featured_image')
                             ->collection('featured_image')
@@ -232,20 +239,21 @@ class PostResource extends Resource
                     ->trueLabel('Published only')
                     ->falseLabel('Drafts only'),
 
-                Tables\Filters\SelectFilter::make('category')
-                    ->relationship('category', 'name'),
+                Tables\Filters\SelectFilter::make('categories')
+                    ->relationship('categories', 'name')
+                    ->multiple(),
 
                 Tables\Filters\TrashedFilter::make(),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }
@@ -263,6 +271,6 @@ class PostResource extends Resource
     {
         return parent::getEloquentQuery()
             ->withoutGlobalScopes()
-            ->with(['category', 'tags']);
+            ->with(['categories', 'tags']);
     }
 }
