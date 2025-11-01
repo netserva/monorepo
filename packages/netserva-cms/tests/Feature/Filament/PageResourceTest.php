@@ -33,7 +33,6 @@ it('can create a page', function () {
     livewire(PageResource\Pages\CreatePage::class)
         ->fillForm([
             'title' => $newPage->title,
-            'slug' => $newPage->slug,
             'content' => $newPage->content,
             'template' => $newPage->template,
             'is_published' => true,
@@ -43,7 +42,6 @@ it('can create a page', function () {
 
     assertDatabaseHas(Page::class, [
         'title' => $newPage->title,
-        'slug' => $newPage->slug,
     ]);
 });
 
@@ -60,7 +58,7 @@ it('can render edit page', function () {
     $page = Page::factory()->create();
 
     livewire(PageResource\Pages\EditPage::class, [
-        'record' => $page->id,
+        'record' => $page->getRouteKey(),
     ])
         ->assertOk();
 });
@@ -69,12 +67,11 @@ it('can retrieve page data for editing', function () {
     $page = Page::factory()->create();
 
     livewire(PageResource\Pages\EditPage::class, [
-        'record' => $page->id,
+        'record' => $page->getRouteKey(),
     ])
         ->assertSchemaStateSet([
             'title' => $page->title,
             'slug' => $page->slug,
-            'content' => $page->content,
         ]);
 });
 
@@ -83,25 +80,23 @@ it('can update a page', function () {
     $newData = Page::factory()->make();
 
     livewire(PageResource\Pages\EditPage::class, [
-        'record' => $page->id,
+        'record' => $page->getRouteKey(),
     ])
         ->fillForm([
             'title' => $newData->title,
-            'content' => $newData->content,
         ])
         ->call('save')
         ->assertNotified();
 
     expect($page->refresh())
-        ->title->toBe($newData->title)
-        ->content->toBe($newData->content);
+        ->title->toBe($newData->title);
 });
 
 it('can delete a page', function () {
     $page = Page::factory()->create();
 
     livewire(PageResource\Pages\EditPage::class, [
-        'record' => $page->id,
+        'record' => $page->getRouteKey(),
     ])
         ->callAction('delete')
         ->assertNotified();

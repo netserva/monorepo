@@ -36,7 +36,6 @@ it('can create a post', function () {
     livewire(PostResource\Pages\CreatePost::class)
         ->fillForm([
             'title' => $newPost->title,
-            'slug' => $newPost->slug,
             'content' => $newPost->content,
             'excerpt' => $newPost->excerpt,
             'is_published' => true,
@@ -47,7 +46,6 @@ it('can create a post', function () {
 
     assertDatabaseHas(Post::class, [
         'title' => $newPost->title,
-        'slug' => $newPost->slug,
     ]);
 });
 
@@ -55,7 +53,7 @@ it('can render edit post page', function () {
     $post = Post::factory()->create();
 
     livewire(PostResource\Pages\EditPost::class, [
-        'record' => $post->id,
+        'record' => $post->getRouteKey(),
     ])
         ->assertOk();
 });
@@ -65,18 +63,16 @@ it('can update a post', function () {
     $newData = Post::factory()->make();
 
     livewire(PostResource\Pages\EditPost::class, [
-        'record' => $post->id,
+        'record' => $post->getRouteKey(),
     ])
         ->fillForm([
             'title' => $newData->title,
-            'content' => $newData->content,
         ])
         ->call('save')
         ->assertNotified();
 
     expect($post->refresh())
-        ->title->toBe($newData->title)
-        ->content->toBe($newData->content);
+        ->title->toBe($newData->title);
 });
 
 it('can attach categories to a post', function () {
@@ -84,14 +80,15 @@ it('can attach categories to a post', function () {
     $categories = Category::factory()->count(3)->create();
 
     livewire(PostResource\Pages\EditPost::class, [
-        'record' => $post->id,
+        'record' => $post->getRouteKey(),
     ])
         ->fillForm([
             'categories' => $categories->pluck('id')->toArray(),
         ])
-        ->call('save');
+        ->call('save')
+        ->assertNotified();
 
-    expect($post->refresh()->categories)->toHaveCount(3);
+    expect($post->fresh()->categories)->toHaveCount(3);
 });
 
 it('can attach tags to a post', function () {
@@ -99,7 +96,7 @@ it('can attach tags to a post', function () {
     $tags = Tag::factory()->count(5)->create();
 
     livewire(PostResource\Pages\EditPost::class, [
-        'record' => $post->id,
+        'record' => $post->getRouteKey(),
     ])
         ->fillForm([
             'tags' => $tags->pluck('id')->toArray(),

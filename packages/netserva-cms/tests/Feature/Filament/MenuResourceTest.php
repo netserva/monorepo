@@ -38,6 +38,7 @@ it('can create a menu', function () {
                     'label' => 'Home',
                     'url' => '/',
                     'order' => 0,
+                    'new_window' => false,
                 ],
             ],
         ])
@@ -54,7 +55,7 @@ it('can render edit menu page', function () {
     $menu = Menu::factory()->create();
 
     livewire(MenuResource\Pages\EditMenu::class, [
-        'record' => $menu->id,
+        'record' => $menu->getRouteKey(),
     ])
         ->assertOk();
 });
@@ -63,7 +64,7 @@ it('can update a menu', function () {
     $menu = Menu::factory()->create();
 
     livewire(MenuResource\Pages\EditMenu::class, [
-        'record' => $menu->id,
+        'record' => $menu->getRouteKey(),
     ])
         ->fillForm([
             'name' => 'Updated Menu Name',
