@@ -48,8 +48,7 @@ class TagResource extends Resource
                 Forms\Components\TextInput::make('slug')
                     ->required()
                     ->maxLength(255)
-                    ->unique(Tag::class, 'slug', ignoreRecord: true)
-                    ->helperText('URL-friendly version of the name'),
+                    ->unique(Tag::class, 'slug', ignoreRecord: true),
             ]);
     }
 
