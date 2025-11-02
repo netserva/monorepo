@@ -50,7 +50,7 @@ class PostResource extends Resource
                     ->fileAttachmentsDirectory('attachments')
                     ->columnSpanFull(),
 
-                // Basic Information
+                // 1. Basic Information
                 Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('title')
@@ -71,9 +71,46 @@ class PostResource extends Resource
                             ->helperText('Short description for listings and SEO')
                             ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
-                // Categorization
+                // 2. SEO & Metadata
+                Section::make('SEO & Metadata')
+                    ->schema([
+                        Forms\Components\TextInput::make('meta_title')
+                            ->label('Meta Title')
+                            ->maxLength(255)
+                            ->helperText('SEO title (leave empty to use post title)'),
+
+                        Forms\Components\Textarea::make('meta_description')
+                            ->label('Meta Description')
+                            ->rows(2)
+                            ->maxLength(500)
+                            ->helperText('SEO description (leave empty to use excerpt)'),
+
+                        Forms\Components\TextInput::make('meta_keywords')
+                            ->label('Meta Keywords')
+                            ->helperText('Comma-separated keywords'),
+
+                        Forms\Components\TextInput::make('og_image')
+                            ->label('Open Graph Image URL')
+                            ->helperText('URL for social media sharing image'),
+
+                        Forms\Components\Select::make('twitter_card')
+                            ->label('Twitter Card Type')
+                            ->options([
+                                'summary' => 'Summary',
+                                'summary_large_image' => 'Summary Large Image',
+                                'app' => 'App',
+                                'player' => 'Player',
+                            ])
+                            ->default('summary_large_image')
+                            ->helperText('Twitter card display type'),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+                // 3. Categorization
                 Section::make('Categorization')
                     ->schema([
                         Forms\Components\Select::make('categories')
@@ -110,8 +147,10 @@ class PostResource extends Resource
                             ])
                             ->helperText('Select or create tags'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
+                // 4. Publishing
                 Section::make('Publishing')
                     ->schema([
                         Forms\Components\Toggle::make('is_published')
@@ -132,43 +171,10 @@ class PostResource extends Resource
                             ->label('Reading Time')
                             ->content(fn (?Post $record): string => $record ? $record->getReadingTime().' min' : '0 min'),
                     ])
-                    ->columns(2),
-
-                Section::make('SEO & Metadata')
-                    ->schema([
-                        Forms\Components\TextInput::make('meta_title')
-                            ->label('Meta Title')
-                            ->maxLength(255)
-                            ->helperText('SEO title (leave empty to use post title)'),
-
-                        Forms\Components\Textarea::make('meta_description')
-                            ->label('Meta Description')
-                            ->rows(2)
-                            ->maxLength(500)
-                            ->helperText('SEO description (leave empty to use excerpt)'),
-
-                        Forms\Components\TextInput::make('meta_keywords')
-                            ->label('Meta Keywords')
-                            ->helperText('Comma-separated keywords'),
-
-                        Forms\Components\TextInput::make('og_image')
-                            ->label('Open Graph Image URL')
-                            ->helperText('URL for social media sharing image'),
-
-                        Forms\Components\Select::make('twitter_card')
-                            ->label('Twitter Card Type')
-                            ->options([
-                                'summary' => 'Summary',
-                                'summary_large_image' => 'Summary Large Image',
-                                'app' => 'App',
-                                'player' => 'Player',
-                            ])
-                            ->default('summary_large_image')
-                            ->helperText('Twitter card display type'),
-                    ])
                     ->columns(2)
-                    ->collapsed(),
+                    ->columnSpanFull(),
 
+                // 5. Media
                 Section::make('Media')
                     ->schema([
                         Forms\Components\SpatieMediaLibraryFileUpload::make('featured_image')
@@ -182,7 +188,8 @@ class PostResource extends Resource
                             ->image()
                             ->helperText('Additional images'),
                     ])
-                    ->collapsed(),
+                    ->columns(2)
+                    ->columnSpanFull(),
             ]);
     }
 
