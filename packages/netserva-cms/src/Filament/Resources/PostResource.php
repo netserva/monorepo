@@ -172,7 +172,7 @@ class PostResource extends Resource
                             ->label('Reading Time')
                             ->content(fn (?Post $record): string => $record ? $record->getReadingTime().' min' : '0 min'),
                     ])
-                    ->columns(2)
+                    ->columns(4)
                     ->columnSpanFull(),
 
                 // 5. Media
