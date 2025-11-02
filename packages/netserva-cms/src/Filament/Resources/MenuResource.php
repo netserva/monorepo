@@ -62,7 +62,7 @@ class MenuResource extends Resource
                             ->placeholder('heroicon-o-home')
                             ->columnSpan(4),
 
-                        // Row 2: Children (50%), Order (25%), Open in new window (25%)
+                        // Row 2: Children (66.67%), Order (16.67%), Open in new window (16.67%)
                         Forms\Components\Repeater::make('children')
                             ->schema([
                                 Forms\Components\TextInput::make('label')
@@ -86,7 +86,7 @@ class MenuResource extends Resource
                                     ->default(0),
                             ])
                             ->columns(3)
-                            ->columnSpan(6)
+                            ->columnSpan(8)
                             ->defaultItems(0)
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Submenu Item')
@@ -96,12 +96,12 @@ class MenuResource extends Resource
                         Forms\Components\TextInput::make('order')
                             ->numeric()
                             ->default(0)
-                            ->columnSpan(3),
+                            ->columnSpan(2),
 
                         Forms\Components\Toggle::make('new_window')
                             ->hiddenLabel()
                             ->default(false)
-                            ->columnSpan(3),
+                            ->columnSpan(2),
                     ])
                     ->columns(12)
                     ->defaultItems(1)
