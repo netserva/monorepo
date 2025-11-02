@@ -51,7 +51,6 @@ class CategoryResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->unique(Category::class, 'slug', ignoreRecord: true)
-                    ->helperText('URL-friendly version of the name')
                     ->columnSpan(1),
 
                 Forms\Components\Select::make('type')
@@ -63,20 +62,17 @@ class CategoryResource extends Resource
                         'docs' => 'Documentation',
                     ])
                     ->default('post')
-                    ->helperText('Type of content this category is for')
                     ->columnSpan(1),
 
                 Forms\Components\TextInput::make('order')
                     ->numeric()
                     ->default(0)
-                    ->helperText('Order in category lists (lower numbers first)')
                     ->columnSpan(1),
 
                 // Row 2: Description (full width)
                 Forms\Components\Textarea::make('description')
                     ->rows(3)
-                    ->columnSpanFull()
-                    ->helperText('Brief description of this category'),
+                    ->columnSpanFull(),
             ])
             ->columns(4);
     }
