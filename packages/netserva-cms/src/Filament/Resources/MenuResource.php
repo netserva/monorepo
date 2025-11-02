@@ -43,21 +43,24 @@ class MenuResource extends Resource
                 // Menu Items - Full width at top, no section wrapper
                 Forms\Components\Repeater::make('items')
                     ->schema([
-                        // Row 1: Label, URL, Icon (3 columns)
+                        // Row 1: Label, URL, Icon (3 fields spanning 4 columns)
                         Forms\Components\TextInput::make('label')
                             ->required()
                             ->maxLength(255)
-                            ->helperText('Link text displayed to users'),
+                            ->helperText('Link text displayed to users')
+                            ->columnSpan(1),
 
                         Forms\Components\TextInput::make('url')
                             ->required()
                             ->maxLength(255)
-                            ->helperText('Relative URL (e.g., /about) or full URL'),
+                            ->helperText('Relative URL (e.g., /about) or full URL')
+                            ->columnSpan(2),
 
                         Forms\Components\TextInput::make('icon')
                             ->maxLength(255)
                             ->helperText('Optional Heroicon name')
-                            ->placeholder('heroicon-o-home'),
+                            ->placeholder('heroicon-o-home')
+                            ->columnSpan(1),
 
                         // Row 2: Children (50%), Order (25%), Open in new window (25%)
                         Forms\Components\Repeater::make('children')
