@@ -11,6 +11,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -55,7 +56,7 @@ class MenuResource extends Resource
                             ->columnSpan(2)
                             ->helperText('Relative URL (e.g., /about) or full URL'),
 
-                        Forms\Components\Fieldset::make('Open in new window')
+                        Fieldset::make('Open in new window')
                             ->schema([
                                 Forms\Components\Toggle::make('new_window')
                                     ->hiddenLabel()
