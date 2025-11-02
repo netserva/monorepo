@@ -40,6 +40,72 @@ class MenuResource extends Resource
     {
         return $schema
             ->components([
+                // Menu Items - Full width at top, no section wrapper
+                Forms\Components\Repeater::make('items')
+                    ->schema([
+                        Forms\Components\TextInput::make('label')
+                            ->required()
+                            ->maxLength(255)
+                            ->helperText('Link text displayed to users'),
+
+                        Forms\Components\TextInput::make('url')
+                            ->required()
+                            ->maxLength(255)
+                            ->helperText('Relative URL (e.g., /about) or full URL'),
+
+                        Forms\Components\TextInput::make('icon')
+                            ->maxLength(255)
+                            ->helperText('Optional Heroicon name (e.g., heroicon-o-home)')
+                            ->placeholder('heroicon-o-home'),
+
+                        Forms\Components\Toggle::make('new_window')
+                            ->label('Open in new window')
+                            ->default(false),
+
+                        Forms\Components\TextInput::make('order')
+                            ->numeric()
+                            ->default(0)
+                            ->helperText('Sort order (lower numbers appear first)'),
+
+                        Forms\Components\Repeater::make('children')
+                            ->schema([
+                                Forms\Components\TextInput::make('label')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('url')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('icon')
+                                    ->maxLength(255)
+                                    ->placeholder('heroicon-o-document'),
+
+                                Forms\Components\Toggle::make('new_window')
+                                    ->label('Open in new window')
+                                    ->default(false),
+
+                                Forms\Components\TextInput::make('order')
+                                    ->numeric()
+                                    ->default(0),
+                            ])
+                            ->columns(2)
+                            ->defaultItems(0)
+                            ->collapsible()
+                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Submenu Item')
+                            ->reorderableWithButtons()
+                            ->addActionLabel('Add Submenu Item'),
+                    ])
+                    ->columns(2)
+                    ->defaultItems(1)
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Menu Item')
+                    ->reorderableWithButtons()
+                    ->cloneable()
+                    ->addActionLabel('Add Menu Item')
+                    ->columnSpanFull(),
+
+                // Menu Details - At bottom with 3 columns
                 Section::make('Menu Details')
                     ->schema([
                         Forms\Components\TextInput::make('name')
@@ -58,73 +124,8 @@ class MenuResource extends Resource
                             ->default(true)
                             ->helperText('Only active menus are displayed on the frontend'),
                     ])
-                    ->columns(2),
-
-                Section::make('Menu Items')
-                    ->schema([
-                        Forms\Components\Repeater::make('items')
-                            ->schema([
-                                Forms\Components\TextInput::make('label')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->helperText('Link text displayed to users'),
-
-                                Forms\Components\TextInput::make('url')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->helperText('Relative URL (e.g., /about) or full URL'),
-
-                                Forms\Components\TextInput::make('icon')
-                                    ->maxLength(255)
-                                    ->helperText('Optional Heroicon name (e.g., heroicon-o-home)')
-                                    ->placeholder('heroicon-o-home'),
-
-                                Forms\Components\Toggle::make('new_window')
-                                    ->label('Open in new window')
-                                    ->default(false),
-
-                                Forms\Components\TextInput::make('order')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->helperText('Sort order (lower numbers appear first)'),
-
-                                Forms\Components\Repeater::make('children')
-                                    ->schema([
-                                        Forms\Components\TextInput::make('label')
-                                            ->required()
-                                            ->maxLength(255),
-
-                                        Forms\Components\TextInput::make('url')
-                                            ->required()
-                                            ->maxLength(255),
-
-                                        Forms\Components\TextInput::make('icon')
-                                            ->maxLength(255)
-                                            ->placeholder('heroicon-o-document'),
-
-                                        Forms\Components\Toggle::make('new_window')
-                                            ->label('Open in new window')
-                                            ->default(false),
-
-                                        Forms\Components\TextInput::make('order')
-                                            ->numeric()
-                                            ->default(0),
-                                    ])
-                                    ->columns(2)
-                                    ->defaultItems(0)
-                                    ->collapsible()
-                                    ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Submenu Item')
-                                    ->reorderableWithButtons()
-                                    ->addActionLabel('Add Submenu Item'),
-                            ])
-                            ->columns(2)
-                            ->defaultItems(1)
-                            ->collapsible()
-                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Menu Item')
-                            ->reorderableWithButtons()
-                            ->cloneable()
-                            ->addActionLabel('Add Menu Item'),
-                    ]),
+                    ->columns(3)
+                    ->columnSpanFull(),
             ]);
     }
 
