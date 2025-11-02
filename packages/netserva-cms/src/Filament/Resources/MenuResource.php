@@ -11,7 +11,6 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -44,7 +43,7 @@ class MenuResource extends Resource
                 // Menu Items - Full width at top, no section wrapper
                 Forms\Components\Repeater::make('items')
                     ->schema([
-                        // Row 1: Label, URL, Open in new window (3 columns)
+                        // Row 1: Label, URL, Icon (3 columns)
                         Forms\Components\TextInput::make('label')
                             ->required()
                             ->maxLength(255)
@@ -53,24 +52,14 @@ class MenuResource extends Resource
                         Forms\Components\TextInput::make('url')
                             ->required()
                             ->maxLength(255)
-                            ->columnSpan(2)
                             ->helperText('Relative URL (e.g., /about) or full URL'),
 
-                        Fieldset::make('Open in new window')
-                            ->schema([
-                                Forms\Components\Toggle::make('new_window')
-                                    ->hiddenLabel()
-                                    ->default(false),
-                            ])
-                            ->columnSpan(1),
-
-                        // Row 2: Icon (25%), Children (50%), Order (25%)
                         Forms\Components\TextInput::make('icon')
                             ->maxLength(255)
                             ->helperText('Optional Heroicon name')
-                            ->placeholder('heroicon-o-home')
-                            ->columnSpan(1),
+                            ->placeholder('heroicon-o-home'),
 
+                        // Row 2: Children (50%), Order (25%), Open in new window (25%)
                         Forms\Components\Repeater::make('children')
                             ->schema([
                                 Forms\Components\TextInput::make('label')
@@ -104,6 +93,14 @@ class MenuResource extends Resource
                         Forms\Components\TextInput::make('order')
                             ->numeric()
                             ->default(0)
+                            ->columnSpan(1),
+
+                        Section::make('Open in new window')
+                            ->schema([
+                                Forms\Components\Toggle::make('new_window')
+                                    ->hiddenLabel()
+                                    ->default(false),
+                            ])
                             ->columnSpan(1),
                     ])
                     ->columns(4)
