@@ -56,7 +56,7 @@ class MenuResource extends Resource
 
                         Forms\Components\TextInput::make('icon')
                             ->maxLength(255)
-                            ->helperText('Optional Heroicon name (e.g., heroicon-o-home)')
+                            ->helperText('Optional Heroicon name')
                             ->placeholder('heroicon-o-home'),
 
                         // Row 2: Children (50%), Order (25%), New Window (25%)
@@ -93,8 +93,7 @@ class MenuResource extends Resource
                         Forms\Components\TextInput::make('order')
                             ->numeric()
                             ->default(0)
-                            ->columnSpan(1)
-                            ->helperText('Sort order (lower numbers appear first)'),
+                            ->columnSpan(1),
 
                         Forms\Components\Toggle::make('new_window')
                             ->label('Open in new window')
