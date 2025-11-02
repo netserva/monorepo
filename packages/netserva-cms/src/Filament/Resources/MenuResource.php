@@ -43,6 +43,7 @@ class MenuResource extends Resource
                 // Menu Items - Full width at top, no section wrapper
                 Forms\Components\Repeater::make('items')
                     ->schema([
+                        // Row 1: Label, URL, Icon (3 columns)
                         Forms\Components\TextInput::make('label')
                             ->required()
                             ->maxLength(255)
@@ -58,15 +59,7 @@ class MenuResource extends Resource
                             ->helperText('Optional Heroicon name (e.g., heroicon-o-home)')
                             ->placeholder('heroicon-o-home'),
 
-                        Forms\Components\Toggle::make('new_window')
-                            ->label('Open in new window')
-                            ->default(false),
-
-                        Forms\Components\TextInput::make('order')
-                            ->numeric()
-                            ->default(0)
-                            ->helperText('Sort order (lower numbers appear first)'),
-
+                        // Row 2: Children (50%), Order (25%), New Window (25%)
                         Forms\Components\Repeater::make('children')
                             ->schema([
                                 Forms\Components\TextInput::make('label')
@@ -89,14 +82,26 @@ class MenuResource extends Resource
                                     ->numeric()
                                     ->default(0),
                             ])
-                            ->columns(2)
+                            ->columns(3)
+                            ->columnSpan(2)
                             ->defaultItems(0)
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Submenu Item')
                             ->reorderableWithButtons()
                             ->addActionLabel('Add Submenu Item'),
+
+                        Forms\Components\TextInput::make('order')
+                            ->numeric()
+                            ->default(0)
+                            ->columnSpan(1)
+                            ->helperText('Sort order (lower numbers appear first)'),
+
+                        Forms\Components\Toggle::make('new_window')
+                            ->label('Open in new window')
+                            ->columnSpan(1)
+                            ->default(false),
                     ])
-                    ->columns(2)
+                    ->columns(4)
                     ->defaultItems(1)
                     ->collapsible()
                     ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Menu Item')
