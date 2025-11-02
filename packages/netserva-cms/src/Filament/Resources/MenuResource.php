@@ -98,12 +98,9 @@ class MenuResource extends Resource
                             ->default(0)
                             ->columnSpan(3),
 
-                        Section::make('Open in new window')
-                            ->schema([
-                                Forms\Components\Toggle::make('new_window')
-                                    ->hiddenLabel()
-                                    ->default(false),
-                            ])
+                        Forms\Components\Toggle::make('new_window')
+                            ->hiddenLabel()
+                            ->default(false)
                             ->columnSpan(3),
                     ])
                     ->columns(12)
