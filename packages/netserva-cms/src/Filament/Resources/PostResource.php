@@ -42,7 +42,16 @@ class PostResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Post Content')
+                // Content Editor - Full width at top, no wrapper, no label
+                Forms\Components\RichEditor::make('content')
+                    ->required()
+                    ->hiddenLabel()
+                    ->fileAttachmentsDisk('public')
+                    ->fileAttachmentsDirectory('attachments')
+                    ->columnSpanFull(),
+
+                // Basic Information
+                Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('title')
                             ->required()
@@ -56,12 +65,6 @@ class PostResource extends Resource
                             ->unique(Post::class, 'slug', ignoreRecord: true)
                             ->helperText('URL-friendly version of the title'),
 
-                        Forms\Components\RichEditor::make('content')
-                            ->required()
-                            ->columnSpanFull()
-                            ->fileAttachmentsDisk('public')
-                            ->fileAttachmentsDirectory('attachments'),
-
                         Forms\Components\Textarea::make('excerpt')
                             ->rows(3)
                             ->maxLength(500)
@@ -70,6 +73,7 @@ class PostResource extends Resource
                     ])
                     ->columns(2),
 
+                // Categorization
                 Section::make('Categorization')
                     ->schema([
                         Forms\Components\Select::make('categories')
