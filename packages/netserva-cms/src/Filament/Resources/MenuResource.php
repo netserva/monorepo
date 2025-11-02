@@ -77,25 +77,30 @@ class MenuResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('label')
                                     ->required()
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->columnSpan(3),
 
                                 Forms\Components\TextInput::make('url')
                                     ->required()
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->columnSpan(3),
 
                                 Forms\Components\TextInput::make('icon')
                                     ->maxLength(255)
-                                    ->placeholder('heroicon-o-document'),
-
-                                Forms\Components\Toggle::make('new_window')
-                                    ->label('Open in new window')
-                                    ->default(false),
+                                    ->placeholder('heroicon-o-document')
+                                    ->columnSpan(3),
 
                                 Forms\Components\TextInput::make('order')
                                     ->numeric()
-                                    ->default(0),
+                                    ->default(0)
+                                    ->columnSpan(2),
+
+                                Forms\Components\Toggle::make('new_window')
+                                    ->hiddenLabel()
+                                    ->default(false)
+                                    ->columnSpan(1),
                             ])
-                            ->columns(3)
+                            ->columns(12)
                             ->columnSpanFull()
                             ->defaultItems(0)
                             ->collapsible()
