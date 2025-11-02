@@ -154,15 +154,9 @@ class PostResource extends Resource
                 // 4. Publishing
                 Section::make('Publishing')
                     ->schema([
-                        Forms\Components\Toggle::make('is_published')
-                            ->label('Published')
-                            ->default(false)
-                            ->helperText('Make this post visible on the website'),
-
                         Forms\Components\DateTimePicker::make('published_at')
                             ->label('Publish Date')
-                            ->default(now())
-                            ->helperText('Schedule publication for a future date'),
+                            ->default(now()),
 
                         Forms\Components\Placeholder::make('word_count')
                             ->label('Word Count')
@@ -171,6 +165,11 @@ class PostResource extends Resource
                         Forms\Components\Placeholder::make('reading_time')
                             ->label('Reading Time')
                             ->content(fn (?Post $record): string => $record ? $record->getReadingTime().' min' : '0 min'),
+
+                        Forms\Components\Toggle::make('is_published')
+                            ->label('Published')
+                            ->default(false)
+                            ->helperText('Make this post visible on the website'),
                     ])
                     ->columns(4)
                     ->columnSpanFull(),
