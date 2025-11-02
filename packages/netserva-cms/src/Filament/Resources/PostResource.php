@@ -34,9 +34,9 @@ class PostResource extends Resource
 
     protected static ?string $navigationLabel = 'Posts';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Blog';
+    protected static string|UnitEnum|null $navigationGroup = 'CMS';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
@@ -189,7 +189,7 @@ class PostResource extends Resource
                 Tables\Columns\SpatieMediaLibraryImageColumn::make('featured_image')
                     ->collection('featured_image')
                     ->circular()
-                    ->defaultImageUrl(url('/images/placeholder.png'))
+                    ->defaultImageUrl(url('/images/placeholders/post-placeholder.webp'))
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('title')

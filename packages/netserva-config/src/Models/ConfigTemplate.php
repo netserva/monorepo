@@ -4,11 +4,10 @@ namespace NetServa\Config\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use NetServa\Ops\Traits\Auditable;
 
 class ConfigTemplate extends Model
 {
-    use Auditable, HasFactory;
+    use HasFactory;
 
     protected $fillable = [
         // Basic identification

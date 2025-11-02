@@ -115,12 +115,8 @@ class FleetHierarchy extends BaseWidget
                     ->trueLabel('Active only')
                     ->falseLabel('Inactive only'),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->url(fn (FleetVSite $record) => route('filament.admin.resources.fleet-v-sites.view', $record)),
-            ])
-            ->bulkActions([
-                // No bulk actions for dashboard widget
+            ->toolbarActions([
+                // No toolbar actions for dashboard widget
             ])
             ->defaultSort('name')
             ->poll('30s');

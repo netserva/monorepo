@@ -5,11 +5,10 @@ namespace NetServa\Config\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use NetServa\Ops\Traits\Auditable;
 
 class DatabaseConnection extends Model
 {
-    use Auditable, HasFactory;
+    use HasFactory;
 
     protected static function newFactory()
     {

@@ -19,8 +19,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Skip this migration during testing (SQLite doesn't support CREATE DATABASE)
-        if (app()->environment('testing')) {
+        // Skip this migration in non-MySQL environments (SQLite doesn't support CREATE DATABASE)
+        if (DB::connection()->getDriverName() !== 'mysql') {
             return;
         }
 

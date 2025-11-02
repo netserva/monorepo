@@ -4,11 +4,10 @@ namespace NetServa\Ops\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use NetServa\Ops\Traits\Auditable;
 
 class StatusPage extends Model
 {
-    use Auditable, HasFactory;
+    use HasFactory;
 
     protected $fillable = [
         'name',

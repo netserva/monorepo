@@ -36,7 +36,7 @@ class PageResource extends Resource
 
     protected static ?string $navigationLabel = 'Pages';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Content';
+    protected static string|UnitEnum|null $navigationGroup = 'CMS';
 
     protected static ?int $navigationSort = 1;
 

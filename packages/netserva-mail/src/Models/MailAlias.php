@@ -5,11 +5,10 @@ namespace NetServa\Mail\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use NetServa\Ops\Traits\Auditable;
 
 class MailAlias extends Model
 {
-    use Auditable, HasFactory;
+    use HasFactory;
 
     protected $table = 'mail_aliases';
 

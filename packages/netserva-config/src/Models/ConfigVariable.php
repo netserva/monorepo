@@ -5,11 +5,10 @@ namespace NetServa\Config\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use NetServa\Ops\Traits\Auditable;
 
 class ConfigVariable extends Model
 {
-    use Auditable, HasFactory;
+    use HasFactory;
 
     protected $fillable = [
         'name', 'key', 'description', 'scope', 'environment',

@@ -64,7 +64,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Already running NS 3.0')
                 ->descriptionIcon('heroicon-o-check-badge')
                 ->color('success')
-                ->url(route('filament.admin.resources.fleet-vhosts.index', [
+                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'native']],
                 ])),
 
@@ -73,7 +73,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Legacy vhosts found')
                 ->descriptionIcon('heroicon-o-magnifying-glass')
                 ->color('info')
-                ->url(route('filament.admin.resources.fleet-vhosts.index', [
+                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'discovered']],
                 ])),
 
@@ -82,7 +82,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Ready for migration')
                 ->descriptionIcon('heroicon-o-clipboard-document-check')
                 ->color('warning')
-                ->url(route('filament.admin.resources.fleet-vhosts.index', [
+                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'validated']],
                 ])),
 
@@ -91,7 +91,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Successfully migrated')
                 ->descriptionIcon('heroicon-o-arrow-path')
                 ->color('success')
-                ->url(route('filament.admin.resources.fleet-vhosts.index', [
+                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'migrated']],
                 ])),
 
@@ -100,7 +100,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Migration errors')
                 ->descriptionIcon('heroicon-o-x-circle')
                 ->color('danger')
-                ->url(route('filament.admin.resources.fleet-vhosts.index', [
+                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'failed']],
                 ])),
 
@@ -115,7 +115,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Most recent migration')
                 ->descriptionIcon('heroicon-o-clock')
                 ->color('gray')
-                ->url($recentMigration ? route('filament.admin.resources.fleet-vhosts.view', $recentMigration) : null),
+                ->url($recentMigration ? route('filament.admin.resources.fleet-v-hosts.view', $recentMigration) : null),
         ];
     }
 

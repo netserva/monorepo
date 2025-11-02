@@ -5,7 +5,6 @@ namespace NetServa\Web\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use NetServa\Ops\Traits\Auditable;
 
 class WebApplication extends Model
 {

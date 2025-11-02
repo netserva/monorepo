@@ -7,11 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use NetServa\Core\Models\InfrastructureNode;
-use NetServa\Ops\Traits\Auditable;
 
 class MailDomain extends Model
 {
-    use Auditable, HasFactory;
+    use HasFactory;
 
     protected static function newFactory()
     {

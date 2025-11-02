@@ -40,9 +40,10 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->widgets([
-                \App\Filament\Widgets\InfrastructureOverview::class,
-                \App\Filament\Widgets\ServiceHealthStatus::class,
-                \App\Filament\Widgets\FleetHierarchy::class,
+                // Temporarily disabled all widgets until we fix route issues
+                // \App\Filament\Widgets\InfrastructureOverview::class,
+                // \App\Filament\Widgets\ServiceHealthStatus::class,
+                // \App\Filament\Widgets\FleetHierarchy::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -83,8 +84,12 @@ class AdminPanelProvider extends PanelProvider
             // Get plugin registry
             $registry = app(PluginRegistry::class);
 
+            Log::info('Attempting to load enabled plugins from registry...');
+
             // Load plugins in dependency order (returns plugin classes)
             $enabledPluginClasses = $registry->getEnabledPluginsInOrder();
+
+            Log::info('Found '.count($enabledPluginClasses).' enabled plugin classes');
 
             $plugins = [];
             foreach ($enabledPluginClasses as $pluginClass) {
@@ -108,13 +113,16 @@ class AdminPanelProvider extends PanelProvider
             if (! empty($plugins)) {
                 $panel->plugins($plugins);
                 Log::info('Registered '.count($plugins).' plugins successfully');
+            } else {
+                Log::warning('No plugins to register, falling back to critical plugins');
+                $this->registerCriticalPlugins($panel);
             }
 
         } catch (\Exception $e) {
-            Log::error('Failed to register plugins: '.$e->getMessage());
+            Log::error('Failed to register plugins: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
 
-            // TODO: Re-enable when plugin system is working
-            // $this->registerCriticalPlugins($panel);
+            // Fallback to manual registration of critical plugins
+            $this->registerCriticalPlugins($panel);
         }
     }
 
@@ -124,16 +132,22 @@ class AdminPanelProvider extends PanelProvider
     protected function registerCriticalPlugins(Panel $panel): void
     {
         $criticalPlugins = [
-            \Ns\System\SystemPlugin::class,
-            \Ns\Plugins\PluginsPlugin::class,
-            \Ns\Ssh\SshPlugin::class,
-            \Ns\Dns\DnsPlugin::class,
-            \Ns\Example\ExamplePlugin::class,
-            \Ns\Config\ConfigPlugin::class,
-            \Ns\Database\DatabasePlugin::class,
-            \Ns\Migration\MigrationPlugin::class,
-            \Ns\Monitor\MonitorPlugin::class,
+            // \NetServa\Core\CorePlugin::class,
+            // Temporarily disabled Fleet plugin until routes are fixed
+            // \NetServa\Fleet\Filament\FleetPlugin::class,
+            // \NetServa\Dns\Filament\NetServaDnsPlugin::class,
+            // \NetServa\Config\Filament\NetServaConfigPlugin::class,
+            // \NetServa\Mail\Filament\NetServaMailPlugin::class,
+            // \NetServa\Web\Filament\NetServaWebPlugin::class,
+            // \NetServa\Ops\Filament\NetServaOpsPlugin::class,
+
+            // CMS plugin only for now
             \NetServa\Cms\NetServaCmsPlugin::class,
+
+            // \NetServa\Cli\Filament\NetServaCliPlugin::class,
+            // \NetServa\Cron\Filament\NetServaCronPlugin::class,
+            // \NetServa\Ipam\Filament\NetServaIpamPlugin::class,
+            // \NetServa\Wg\Filament\NetServaWgPlugin::class,
         ];
 
         foreach ($criticalPlugins as $pluginClass) {

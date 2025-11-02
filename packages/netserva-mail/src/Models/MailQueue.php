@@ -5,11 +5,10 @@ namespace NetServa\Mail\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use NetServa\Ops\Traits\Auditable;
 
 class MailQueue extends Model
 {
-    use Auditable, HasFactory;
+    use HasFactory;
 
     protected static function newFactory()
     {

@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use NetServa\Core\Models\InfrastructureNode;
-use NetServa\Ops\Traits\Auditable;
 
 class WebServer extends Model
 {
