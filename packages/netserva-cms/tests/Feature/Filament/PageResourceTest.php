@@ -77,19 +77,25 @@ it('can retrieve page data for editing', function () {
 
 it('can update a page', function () {
     $page = Page::factory()->create();
-    $newData = Page::factory()->make();
+    $newTitle = 'Updated Page Title';
+    $newSlug = 'updated-page-title';
+    $newExcerpt = 'This is an updated excerpt for testing purposes.';
 
     livewire(PageResource\Pages\EditPage::class, [
         'record' => $page->getRouteKey(),
     ])
         ->fillForm([
-            'title' => $newData->title,
+            'title' => $newTitle,
+            'slug' => $newSlug,
+            'excerpt' => $newExcerpt,
         ])
         ->call('save')
         ->assertNotified();
 
     expect($page->refresh())
-        ->title->toBe($newData->title);
+        ->title->toBe($newTitle)
+        ->slug->toBe($newSlug)
+        ->excerpt->toBe($newExcerpt);
 });
 
 it('can delete a page', function () {

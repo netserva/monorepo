@@ -79,9 +79,23 @@ class PostController
             ->latest('published_at')
             ->get();
 
+        // Get previous post (older)
+        $previousPost = Post::published()
+            ->where('published_at', '<', $post->published_at)
+            ->orderBy('published_at', 'desc')
+            ->first();
+
+        // Get next post (newer)
+        $nextPost = Post::published()
+            ->where('published_at', '>', $post->published_at)
+            ->orderBy('published_at', 'asc')
+            ->first();
+
         return view('netserva-cms::posts.show', [
             'post' => $post,
             'relatedPosts' => $relatedPosts,
+            'previousPost' => $previousPost,
+            'nextPost' => $nextPost,
         ]);
     }
 

@@ -1,11 +1,27 @@
 @import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/* Configure dark mode to use class-based switching */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Fix double backgrounds in code blocks */
+.prose pre code {
+    background-color: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .prose pre code {
+    color: rgb(243 244 246) !important;
 }
