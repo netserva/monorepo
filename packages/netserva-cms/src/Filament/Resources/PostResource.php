@@ -82,12 +82,6 @@ class PostResource extends Resource
                             ->maxLength(255)
                             ->helperText('SEO title (leave empty to use post title)'),
 
-                        Forms\Components\Textarea::make('meta_description')
-                            ->label('Meta Description')
-                            ->rows(2)
-                            ->maxLength(500)
-                            ->helperText('SEO description (leave empty to use excerpt)'),
-
                         Forms\Components\TextInput::make('meta_keywords')
                             ->label('Meta Keywords')
                             ->helperText('Comma-separated keywords'),
@@ -106,6 +100,13 @@ class PostResource extends Resource
                             ])
                             ->default('summary_large_image')
                             ->helperText('Twitter card display type'),
+
+                        Forms\Components\Textarea::make('meta_description')
+                            ->label('Meta Description')
+                            ->rows(2)
+                            ->maxLength(500)
+                            ->helperText('SEO description (leave empty to use excerpt)')
+                            ->columnSpanFull(),
                     ])
                     ->columns(2)
                     ->columnSpanFull(),
