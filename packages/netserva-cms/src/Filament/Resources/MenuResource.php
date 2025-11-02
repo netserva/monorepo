@@ -43,24 +43,24 @@ class MenuResource extends Resource
                 // Menu Items - Full width at top, no section wrapper
                 Forms\Components\Repeater::make('items')
                     ->schema([
-                        // Row 1: Label, URL, Icon (3 fields spanning 4 columns)
+                        // Row 1: Label, URL, Icon (3 equal columns at 33% each)
                         Forms\Components\TextInput::make('label')
                             ->required()
                             ->maxLength(255)
                             ->helperText('Link text displayed to users')
-                            ->columnSpan(1),
+                            ->columnSpan(4),
 
                         Forms\Components\TextInput::make('url')
                             ->required()
                             ->maxLength(255)
                             ->helperText('Relative URL (e.g., /about) or full URL')
-                            ->columnSpan(2),
+                            ->columnSpan(4),
 
                         Forms\Components\TextInput::make('icon')
                             ->maxLength(255)
                             ->helperText('Optional Heroicon name')
                             ->placeholder('heroicon-o-home')
-                            ->columnSpan(1),
+                            ->columnSpan(4),
 
                         // Row 2: Children (50%), Order (25%), Open in new window (25%)
                         Forms\Components\Repeater::make('children')
@@ -86,7 +86,7 @@ class MenuResource extends Resource
                                     ->default(0),
                             ])
                             ->columns(3)
-                            ->columnSpan(2)
+                            ->columnSpan(6)
                             ->defaultItems(0)
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Submenu Item')
@@ -96,7 +96,7 @@ class MenuResource extends Resource
                         Forms\Components\TextInput::make('order')
                             ->numeric()
                             ->default(0)
-                            ->columnSpan(1),
+                            ->columnSpan(3),
 
                         Section::make('Open in new window')
                             ->schema([
@@ -104,9 +104,9 @@ class MenuResource extends Resource
                                     ->hiddenLabel()
                                     ->default(false),
                             ])
-                            ->columnSpan(1),
+                            ->columnSpan(3),
                     ])
-                    ->columns(4)
+                    ->columns(12)
                     ->defaultItems(1)
                     ->collapsible()
                     ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Menu Item')
