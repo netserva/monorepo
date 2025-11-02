@@ -44,7 +44,15 @@ class PageResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Page Content')
+                // Content Editor - Full width at top, no wrapper
+                Forms\Components\RichEditor::make('content')
+                    ->label('Content')
+                    ->fileAttachmentsDisk('public')
+                    ->fileAttachmentsDirectory('attachments')
+                    ->columnSpanFull(),
+
+                // Basic Information
+                Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('title')
                             ->required()
@@ -69,18 +77,15 @@ class PageResource extends Resource
                             ]))
                             ->default('default'),
 
-                        Forms\Components\RichEditor::make('content')
-                            ->columnSpanFull()
-                            ->fileAttachmentsDisk('public')
-                            ->fileAttachmentsDirectory('attachments'),
-
                         Forms\Components\Textarea::make('excerpt')
                             ->rows(3)
                             ->maxLength(500)
+                            ->columnSpanFull()
                             ->helperText('Short description for listings and SEO'),
                     ])
                     ->columns(2),
 
+                // Hierarchy
                 Section::make('Hierarchy')
                     ->schema([
                         Forms\Components\Select::make('parent_id')
