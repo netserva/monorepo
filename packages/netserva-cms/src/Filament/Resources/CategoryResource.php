@@ -39,17 +39,20 @@ class CategoryResource extends Resource
     {
         return $schema
             ->components([
+                // Row 1: Name, Slug, Type, Order (25% each)
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn ($state, $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
+                    ->afterStateUpdated(fn ($state, $set) => $set('slug', \Illuminate\Support\Str::slug($state)))
+                    ->columnSpan(1),
 
                 Forms\Components\TextInput::make('slug')
                     ->required()
                     ->maxLength(255)
                     ->unique(Category::class, 'slug', ignoreRecord: true)
-                    ->helperText('URL-friendly version of the name'),
+                    ->helperText('URL-friendly version of the name')
+                    ->columnSpan(1),
 
                 Forms\Components\Select::make('type')
                     ->required()
@@ -60,18 +63,22 @@ class CategoryResource extends Resource
                         'docs' => 'Documentation',
                     ])
                     ->default('post')
-                    ->helperText('Type of content this category is for'),
-
-                Forms\Components\Textarea::make('description')
-                    ->rows(3)
-                    ->columnSpanFull()
-                    ->helperText('Brief description of this category'),
+                    ->helperText('Type of content this category is for')
+                    ->columnSpan(1),
 
                 Forms\Components\TextInput::make('order')
                     ->numeric()
                     ->default(0)
-                    ->helperText('Order in category lists (lower numbers first)'),
-            ]);
+                    ->helperText('Order in category lists (lower numbers first)')
+                    ->columnSpan(1),
+
+                // Row 2: Description (full width)
+                Forms\Components\Textarea::make('description')
+                    ->rows(3)
+                    ->columnSpanFull()
+                    ->helperText('Brief description of this category'),
+            ])
+            ->columns(4);
     }
 
     public static function table(Table $table): Table
