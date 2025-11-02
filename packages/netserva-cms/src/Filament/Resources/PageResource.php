@@ -51,7 +51,7 @@ class PageResource extends Resource
                     ->fileAttachmentsDirectory('attachments')
                     ->columnSpanFull(),
 
-                // Basic Information
+                // 1. Basic Information
                 Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('title')
@@ -83,50 +83,16 @@ class PageResource extends Resource
                             ->columnSpanFull()
                             ->helperText('Short description for listings and SEO'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
-                // Hierarchy
-                Section::make('Hierarchy')
-                    ->schema([
-                        Forms\Components\Select::make('parent_id')
-                            ->label('Parent Page')
-                            ->relationship('parent', 'title')
-                            ->searchable()
-                            ->preload()
-                            ->helperText('Leave empty for top-level pages'),
-
-                        Forms\Components\TextInput::make('order')
-                            ->numeric()
-                            ->default(0)
-                            ->helperText('Order in navigation (lower numbers first)'),
-                    ])
-                    ->columns(2),
-
-                Section::make('Publishing')
-                    ->schema([
-                        Forms\Components\Toggle::make('is_published')
-                            ->label('Published')
-                            ->default(false)
-                            ->helperText('Make this page visible on the website'),
-
-                        Forms\Components\DateTimePicker::make('published_at')
-                            ->label('Publish Date')
-                            ->helperText('Schedule publication for a future date'),
-                    ])
-                    ->columns(2),
-
+                // 2. SEO & Metadata
                 Section::make('SEO & Metadata')
                     ->schema([
                         Forms\Components\TextInput::make('meta_title')
                             ->label('Meta Title')
                             ->maxLength(255)
                             ->helperText('SEO title (leave empty to use page title)'),
-
-                        Forms\Components\Textarea::make('meta_description')
-                            ->label('Meta Description')
-                            ->rows(2)
-                            ->maxLength(500)
-                            ->helperText('SEO description (leave empty to use excerpt)'),
 
                         Forms\Components\TextInput::make('meta_keywords')
                             ->label('Meta Keywords')
@@ -146,10 +112,50 @@ class PageResource extends Resource
                             ])
                             ->default('summary_large_image')
                             ->helperText('Twitter card display type'),
+
+                        Forms\Components\Textarea::make('meta_description')
+                            ->label('Meta Description')
+                            ->rows(2)
+                            ->maxLength(500)
+                            ->helperText('SEO description (leave empty to use excerpt)')
+                            ->columnSpanFull(),
                     ])
                     ->columns(2)
-                    ->collapsed(),
+                    ->columnSpanFull(),
 
+                // 3. Hierarchy
+                Section::make('Hierarchy')
+                    ->schema([
+                        Forms\Components\Select::make('parent_id')
+                            ->label('Parent Page')
+                            ->relationship('parent', 'title')
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Leave empty for top-level pages'),
+
+                        Forms\Components\TextInput::make('order')
+                            ->numeric()
+                            ->default(0)
+                            ->helperText('Order in navigation (lower numbers first)'),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+                // 4. Publishing
+                Section::make('Publishing')
+                    ->schema([
+                        Forms\Components\DateTimePicker::make('published_at')
+                            ->label('Publish Date'),
+
+                        Forms\Components\Toggle::make('is_published')
+                            ->label('Published')
+                            ->default(false)
+                            ->helperText('Make this page visible on the website'),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+                // 5. Media
                 Section::make('Media')
                     ->schema([
                         Forms\Components\SpatieMediaLibraryFileUpload::make('featured_image')
@@ -163,7 +169,8 @@ class PageResource extends Resource
                             ->image()
                             ->helperText('Additional images'),
                     ])
-                    ->collapsed(),
+                    ->columns(2)
+                    ->columnSpanFull(),
             ]);
     }
 
