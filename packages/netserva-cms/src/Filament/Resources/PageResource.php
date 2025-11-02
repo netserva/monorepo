@@ -44,9 +44,9 @@ class PageResource extends Resource
     {
         return $schema
             ->components([
-                // Content Editor - Full width at top, no wrapper
+                // Content Editor - Full width at top, no wrapper, no label
                 Forms\Components\RichEditor::make('content')
-                    ->label('Content')
+                    ->hiddenLabel()
                     ->fileAttachmentsDisk('public')
                     ->fileAttachmentsDirectory('attachments')
                     ->columnSpanFull(),
