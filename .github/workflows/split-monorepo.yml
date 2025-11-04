@@ -52,17 +52,29 @@ jobs:
             echo "No match, skipping this package"
           fi
 
-      - name: Split package to separate repository
+      - name: Install splitsh-lite
         if: steps.check_tag.outputs.match == 'true'
-        uses: symplify/monorepo-split-github-action@2.3
-        with:
-          package_directory: ${{ matrix.package.path }}
-          split_repository_organization: netserva
-          split_repository_name: ${{ matrix.package.name }}
-          user_name: "markc"
-          user_email: "markc@renta.net"
-          branch: main
-          tag: ${{ steps.check_tag.outputs.version }}
+        run: |
+          wget https://github.com/splitsh/lite/releases/download/v1.0.1/lite_linux_amd64.tar.gz
+          tar -zxf lite_linux_amd64.tar.gz
+          chmod +x splitsh-lite
+          sudo mv splitsh-lite /usr/local/bin/
+
+      - name: Split and push package
+        if: steps.check_tag.outputs.match == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # Configure git
+          git config --global user.name "markc"
+          git config --global user.email "markc@renta.net"
+
+          # Split the package
+          SHA=$(splitsh-lite --prefix=${{ matrix.package.path }}/)
+
+          # Push to split repository
+          git push https://${GH_TOKEN}@github.com/${{ matrix.package.repo }}.git $SHA:refs/heads/main --force
+          git push https://${GH_TOKEN}@github.com/${{ matrix.package.repo }}.git $SHA:refs/tags/${{ steps.check_tag.outputs.version }} --force
 
       - name: Split complete
         if: steps.check_tag.outputs.match == 'true'
