@@ -4,6 +4,34 @@
 
 NetServa 3.0 Platform (NS) is a comprehensive, plugin-based Laravel application for managing multi-server infrastructure through a unified web interface and command-line tools. Built with database-first architecture and real-time monitoring.
 
+## 📦 Published Packages (Alpha)
+
+NetServa packages are now available on Packagist for easy installation:
+
+[![Platform](https://img.shields.io/packagist/v/netserva/platform?label=platform)](https://packagist.org/packages/netserva/platform)
+[![Core](https://img.shields.io/packagist/v/netserva/core?label=core)](https://packagist.org/packages/netserva/core)
+[![CLI](https://img.shields.io/packagist/v/netserva/cli?label=cli)](https://packagist.org/packages/netserva/cli)
+[![CMS](https://img.shields.io/packagist/v/netserva/cms?label=cms)](https://packagist.org/packages/netserva/cms)
+[![DNS](https://img.shields.io/packagist/v/netserva/dns?label=dns)](https://packagist.org/packages/netserva/dns)
+[![Mail](https://img.shields.io/packagist/v/netserva/mail?label=mail)](https://packagist.org/packages/netserva/mail)
+[![Web](https://img.shields.io/packagist/v/netserva/web?label=web)](https://packagist.org/packages/netserva/web)
+[![WireGuard](https://img.shields.io/packagist/v/netserva/wg?label=wg)](https://packagist.org/packages/netserva/wg)
+
+### Installation from Packagist
+
+```bash
+# Install complete platform (all packages)
+composer require netserva/platform:^0.0.1
+
+# Or install specific packages
+composer require netserva/core:^0.0.1
+composer require netserva/dns:^0.0.1 netserva/mail:^0.0.1
+```
+
+⚠️ **Alpha Release (v0.0.x)** - APIs may change. Not recommended for production use.
+
+**📖 Complete Installation Guide:** [docs/INSTALLATION.md](docs/INSTALLATION.md)
+
 ## 🎯 Platform Hierarchy
 
 **6-Layer Infrastructure Model:**
@@ -154,12 +182,38 @@ CREATE TABLE vconfs (
 
 ## 🖥️ Quick Start
 
-### Installation
+### For Users: Install from Packagist
+
+```bash
+# Create new Laravel project
+composer create-project laravel/laravel my-netserva
+cd my-netserva
+
+# Install NetServa platform
+composer require netserva/platform:^0.0.1
+
+# Configure and migrate
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+
+# Create admin user and serve
+php artisan make:filament-user
+php artisan serve
+```
+
+Visit `http://localhost:8000/admin` to access the Filament admin panel.
+
+**📖 Full Guide:** [docs/INSTALLATION.md](docs/INSTALLATION.md)
+
+---
+
+### For Developers: Monorepo Development
 
 1. **Clone and Setup**
    ```bash
-   git clone <repository-url>
-   cd ns
+   git clone https://github.com/netserva/monorepo
+   cd monorepo
    composer install
    npm install
    ```
@@ -182,6 +236,8 @@ CREATE TABLE vconfs (
    - Navigate to `http://localhost:8000`
    - Redirects to `/admin` (Filament dashboard)
    - Guest mode enabled for development
+
+**📖 Publishing Guide:** [docs/PUBLISHING.md](docs/PUBLISHING.md)
 
 ### Command Line Usage
 

@@ -1,0 +1,70 @@
+name: Split Monorepo
+
+on:
+  push:
+    tags:
+      - '*-v*.*.*'
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - { name: 'core', path: 'packages/netserva-core', repo: 'netserva/core' }
+          - { name: 'cli', path: 'packages/netserva-cli', repo: 'netserva/cli' }
+          - { name: 'cms', path: 'packages/netserva-cms', repo: 'netserva/cms' }
+          - { name: 'config', path: 'packages/netserva-config', repo: 'netserva/config' }
+          - { name: 'cron', path: 'packages/netserva-cron', repo: 'netserva/cron' }
+          - { name: 'dns', path: 'packages/netserva-dns', repo: 'netserva/dns' }
+          - { name: 'fleet', path: 'packages/netserva-fleet', repo: 'netserva/fleet' }
+          - { name: 'ipam', path: 'packages/netserva-ipam', repo: 'netserva/ipam' }
+          - { name: 'mail', path: 'packages/netserva-mail', repo: 'netserva/mail' }
+          - { name: 'ops', path: 'packages/netserva-ops', repo: 'netserva/ops' }
+          - { name: 'web', path: 'packages/netserva-web', repo: 'netserva/web' }
+          - { name: 'wg', path: 'packages/netserva-wg', repo: 'netserva/wg' }
+          - { name: 'platform', path: 'packages/netserva-platform', repo: 'netserva/platform' }
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if tag matches this package
+        id: check_tag
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          PACKAGE_PREFIX="${{ matrix.package.name }}-v"
+
+          echo "Tag: $TAG_NAME"
+          echo "Looking for prefix: $PACKAGE_PREFIX"
+
+          if [[ $TAG_NAME == $PACKAGE_PREFIX* ]]; then
+            echo "match=true" >> $GITHUB_OUTPUT
+            # Strip package prefix to get clean version tag
+            VERSION_TAG="${TAG_NAME#$PACKAGE_PREFIX}"
+            echo "version=v$VERSION_TAG" >> $GITHUB_OUTPUT
+            echo "Match found! Clean version: v$VERSION_TAG"
+          else
+            echo "match=false" >> $GITHUB_OUTPUT
+            echo "No match, skipping this package"
+          fi
+
+      - name: Split package to separate repository
+        if: steps.check_tag.outputs.match == 'true'
+        uses: splitsh/lite-action@v1
+        with:
+          prefix: ${{ matrix.package.path }}
+          origin: main
+          target-branch: main
+          target-repository: ${{ matrix.package.repo }}
+          github-token: ${{ secrets.GH_TOKEN }}
+          tag: ${{ steps.check_tag.outputs.version }}
+
+      - name: Split complete
+        if: steps.check_tag.outputs.match == 'true'
+        run: |
+          echo "✅ Package ${{ matrix.package.name }} successfully split to ${{ matrix.package.repo }}"
+          echo "✅ Tagged as ${{ steps.check_tag.outputs.version }}"

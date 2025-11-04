@@ -177,15 +177,19 @@ class PostResource extends Resource
                 // 5. Media
                 Section::make('Media')
                     ->schema([
-                        Forms\Components\SpatieMediaLibraryFileUpload::make('featured_image')
-                            ->collection('featured_image')
+                        Forms\Components\FileUpload::make('featured_image')
                             ->image()
+                            ->disk('public')
+                            ->directory('posts/featured')
+                            ->visibility('public')
                             ->helperText('Main image for this post'),
 
-                        Forms\Components\SpatieMediaLibraryFileUpload::make('gallery')
-                            ->collection('gallery')
+                        Forms\Components\FileUpload::make('gallery')
                             ->multiple()
                             ->image()
+                            ->disk('public')
+                            ->directory('posts/gallery')
+                            ->visibility('public')
                             ->helperText('Additional images'),
                     ])
                     ->columns(2)
@@ -197,11 +201,13 @@ class PostResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\SpatieMediaLibraryImageColumn::make('featured_image')
-                    ->collection('featured_image')
+                Tables\Columns\ImageColumn::make('featured_image')
                     ->circular()
                     ->defaultImageUrl(url('/images/placeholders/post-placeholder.webp'))
-                    ->toggleable(),
+                    ->toggleable()
+                    ->getStateUsing(function (Post $record) {
+                        return $record->getFirstMediaUrl('featured_image') ?: null;
+                    }),
 
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()

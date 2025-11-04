@@ -45,7 +45,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "support": {
-        "issues": "https://github.com/netserva/core/issues",
-        "source": "https://github.com/netserva/core"
+        "issues": "https://github.com/netserva/monorepo/issues",
+        "source": "https://github.com/netserva/monorepo"
     }
 }

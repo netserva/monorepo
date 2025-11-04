@@ -1,0 +1,34 @@
+{
+    "name": "netserva/platform",
+    "type": "metapackage",
+    "description": "NetServa Full Platform - Complete infrastructure management suite",
+    "keywords": ["netserva", "platform", "infrastructure", "server-management", "laravel", "filament"],
+    "homepage": "https://netserva.org",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mark Constable",
+            "email": "markc@netserva.org",
+            "homepage": "https://netserva.org"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/netserva/monorepo/issues",
+        "source": "https://github.com/netserva/monorepo"
+    },
+    "require": {
+        "php": "^8.2",
+        "netserva/core": "^0.0.1",
+        "netserva/cli": "^0.0.1",
+        "netserva/cms": "^0.0.1",
+        "netserva/config": "^0.0.1",
+        "netserva/cron": "^0.0.1",
+        "netserva/dns": "^0.0.1",
+        "netserva/fleet": "^0.0.1",
+        "netserva/ipam": "^0.0.1",
+        "netserva/mail": "^0.0.1",
+        "netserva/ops": "^0.0.1",
+        "netserva/web": "^0.0.1",
+        "netserva/wg": "^0.0.1"
+    }
+}

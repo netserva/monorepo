@@ -10,11 +10,16 @@
             "email": "dev@netserva.org"
         }
     ],
+    "homepage": "https://netserva.org",
+    "support": {
+        "issues": "https://github.com/netserva/monorepo/issues",
+        "source": "https://github.com/netserva/monorepo"
+    },
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "filament/filament": "^4.0",
-        "netserva/core": "*"
+        "netserva/core": "^0.0.1"
     },
     "require-dev": {
         "pestphp/pest": "^3.0",

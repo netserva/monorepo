@@ -158,15 +158,19 @@ class PageResource extends Resource
                 // 5. Media
                 Section::make('Media')
                     ->schema([
-                        Forms\Components\SpatieMediaLibraryFileUpload::make('featured_image')
-                            ->collection('featured_image')
+                        Forms\Components\FileUpload::make('featured_image')
                             ->image()
+                            ->disk('public')
+                            ->directory('pages/featured')
+                            ->visibility('public')
                             ->helperText('Main image for this page'),
 
-                        Forms\Components\SpatieMediaLibraryFileUpload::make('gallery')
-                            ->collection('gallery')
+                        Forms\Components\FileUpload::make('gallery')
                             ->multiple()
                             ->image()
+                            ->disk('public')
+                            ->directory('pages/gallery')
+                            ->visibility('public')
                             ->helperText('Additional images'),
                     ])
                     ->columns(2)

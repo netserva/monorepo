@@ -27,6 +27,7 @@
         "netserva/ops": "*",
         "netserva/web": "*",
         "netserva/wg": "*",
+        "netserva/platform": "*",
         "phpseclib/phpseclib": "^3.0.47"
     },
     "require-dev": {
@@ -160,6 +161,10 @@
         "netserva/fleet": {
             "type": "path",
             "url": "./packages/netserva-fleet"
+        },
+        "netserva/platform": {
+            "type": "path",
+            "url": "./packages/netserva-platform"
         }
     }
 }

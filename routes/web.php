@@ -8,12 +8,8 @@ use Illuminate\Support\Facades\Route;
  * This file provides fallback routes when the CMS package is not installed.
  * When netserva-cms is installed, it will handle the root route and pages.
  *
- * The root route is only registered if CMS frontend is disabled to avoid conflicts.
+ * The netserva-cms package handles the root route via PageController@home,
+ * so no fallback route is needed here.
  */
 
-// Only register fallback homepage if CMS frontend is disabled
-if (! config('netserva-cms.frontend.enabled', true)) {
-    Route::get('/', function () {
-        return view('welcome');
-    })->name('home');
-}
+// NetServa CMS handles the root route - no fallback needed
