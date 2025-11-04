@@ -64,17 +64,23 @@ jobs:
 
       - name: Split and push package
         if: steps.check_tag.outputs.match == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           # Configure git
           git config --global user.name "markc"
           git config --global user.email "markc@renta.net"
 
+          # Clear default GitHub auth and configure our token
+          git config --global --unset-all http.https://github.com/.extraheader || true
+          git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+
           # Split the package
           SHA=$(splitsh-lite --prefix=${{ matrix.package.path }}/)
 
           # Push to split repository using token
-          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ matrix.package.repo }}.git $SHA:refs/heads/main --force
-          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ matrix.package.repo }}.git $SHA:refs/tags/${{ steps.check_tag.outputs.version }} --force
+          git push https://github.com/${{ matrix.package.repo }}.git $SHA:refs/heads/main --force
+          git push https://github.com/${{ matrix.package.repo }}.git $SHA:refs/tags/${{ steps.check_tag.outputs.version }} --force
 
       - name: Split complete
         if: steps.check_tag.outputs.match == 'true'
