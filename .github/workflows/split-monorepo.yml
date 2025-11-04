@@ -54,13 +54,14 @@ jobs:
 
       - name: Split package to separate repository
         if: steps.check_tag.outputs.match == 'true'
-        uses: splitsh/lite-action@v1
+        uses: symplify/monorepo-split-github-action@2.3
         with:
-          prefix: ${{ matrix.package.path }}
-          origin: main
-          target-branch: main
-          target-repository: ${{ matrix.package.repo }}
-          github-token: ${{ secrets.GH_TOKEN }}
+          package_directory: ${{ matrix.package.path }}
+          split_repository_organization: netserva
+          split_repository_name: ${{ matrix.package.name }}
+          user_name: "markc"
+          user_email: "markc@renta.net"
+          branch: main
           tag: ${{ steps.check_tag.outputs.version }}
 
       - name: Split complete
