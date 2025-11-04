@@ -62,8 +62,6 @@ jobs:
 
       - name: Split and push package
         if: steps.check_tag.outputs.match == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           # Configure git
           git config --global user.name "markc"
@@ -72,9 +70,9 @@ jobs:
           # Split the package
           SHA=$(splitsh-lite --prefix=${{ matrix.package.path }}/)
 
-          # Push to split repository
-          git push https://${GH_TOKEN}@github.com/${{ matrix.package.repo }}.git $SHA:refs/heads/main --force
-          git push https://${GH_TOKEN}@github.com/${{ matrix.package.repo }}.git $SHA:refs/tags/${{ steps.check_tag.outputs.version }} --force
+          # Push to split repository using token
+          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ matrix.package.repo }}.git $SHA:refs/heads/main --force
+          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ matrix.package.repo }}.git $SHA:refs/tags/${{ steps.check_tag.outputs.version }} --force
 
       - name: Split complete
         if: steps.check_tag.outputs.match == 'true'
