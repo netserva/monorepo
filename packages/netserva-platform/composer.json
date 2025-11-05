@@ -18,17 +18,17 @@
     },
     "require": {
         "php": "^8.2",
-        "netserva/core": "@dev",
-        "netserva/cli": "@dev",
-        "netserva/cms": "@dev",
-        "netserva/config": "@dev",
-        "netserva/cron": "@dev",
-        "netserva/dns": "@dev",
-        "netserva/fleet": "@dev",
-        "netserva/ipam": "@dev",
-        "netserva/mail": "@dev",
-        "netserva/ops": "@dev",
-        "netserva/web": "@dev",
-        "netserva/wg": "@dev"
+        "netserva/core": "^0.0.3",
+        "netserva/cli": "^0.0.3",
+        "netserva/cms": "^0.0.3",
+        "netserva/config": "^0.0.3",
+        "netserva/cron": "^0.0.3",
+        "netserva/dns": "^0.0.3",
+        "netserva/fleet": "^0.0.3",
+        "netserva/ipam": "^0.0.3",
+        "netserva/mail": "^0.0.3",
+        "netserva/ops": "^0.0.3",
+        "netserva/web": "^0.0.3",
+        "netserva/wg": "^0.0.3"
     }
 }

@@ -20,8 +20,8 @@
         "php": "^8.4",
         "laravel/framework": "^12.0",
         "filament/filament": "^4.0",
-        "netserva/core": "@dev",
-        "netserva/dns": "@dev",
+        "netserva/core": "^0.0.3",
+        "netserva/dns": "^0.0.3",
         "symfony/process": "^7.0",
         "guzzlehttp/guzzle": "^7.0"
     },
