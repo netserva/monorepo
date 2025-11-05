@@ -11,6 +11,29 @@
 
 ---
 
+## 🔥 CRITICAL: Filament v4 & Laravel Ecosystem Patterns (MANDATORY)
+
+**⚠️ ALWAYS FOLLOW THESE RULES - NO EXCEPTIONS:**
+
+1. **Filament v4 Patterns**: When working with Filament admin panels, ALWAYS use the latest Filament v4 patterns and syntax
+   - ❌ **NEVER** use Filament v3 syntax or deprecated patterns
+   - ✅ **ALWAYS** check existing Filament files in the codebase for current patterns
+   - ✅ **CRITICAL**: Multiple form fields mapping to one database column requires:
+     - Different field names (e.g., `value_string`, `value_integer`, `value_boolean`)
+     - **DO NOT** use `statePath()` - causes hydration conflicts
+     - **ALWAYS** use `mutateFormDataBeforeFill()` / `mutateFormDataBeforeSave()` in pages
+     - **ALWAYS** use `->mutateRecordDataUsing()` / `->using()` in table actions
+
+2. **Laravel Boost MCP Tool**: ALWAYS use `search-docs` MCP tool FIRST before implementing ANY Laravel or Filament code
+   - ✅ **MANDATORY**: Search official docs BEFORE writing code
+   - ✅ **MANDATORY**: Search for exact version-specific patterns (Laravel 12, Filament v4, Livewire v3, Pest v4)
+   - ❌ **NEVER** guess at syntax or patterns - always verify with `search-docs` first
+   - ❌ **NEVER** use web search or memory for Laravel/Filament patterns when MCP tool is available
+
+**Why This Matters**: These tools prevent hours of troubleshooting from using outdated patterns. The `search-docs` MCP tool provides version-specific documentation tailored to this project's exact package versions.
+
+---
+
 ## 🚨 Mandatory Architecture Rules
 
 1. **Database-First**: ALL vhost config/credentials stored in `vconfs` table - NEVER in files

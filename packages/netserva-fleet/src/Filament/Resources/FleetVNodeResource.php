@@ -2,10 +2,18 @@
 
 namespace NetServa\Fleet\Filament\Resources;
 
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Infolists;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -38,7 +46,7 @@ class FleetVNodeResource extends Resource
     {
         return $schema
             ->schema([
-                Forms\Components\Section::make('Basic Information')
+                Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -66,7 +74,7 @@ class FleetVNodeResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Classification')
+                Section::make('Classification')
                     ->schema([
                         Forms\Components\Select::make('role')
                             ->required()
@@ -101,7 +109,7 @@ class FleetVNodeResource extends Resource
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('System Information')
+                Section::make('System Information')
                     ->schema([
                         Forms\Components\TextInput::make('ip_address')
                             ->helperText('Primary IP address'),
@@ -126,7 +134,7 @@ class FleetVNodeResource extends Resource
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('Discovery Configuration')
+                Section::make('Discovery Configuration')
                     ->schema([
                         Forms\Components\TextInput::make('scan_frequency_hours')
                             ->numeric()
@@ -152,7 +160,7 @@ class FleetVNodeResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Discovery Status')
+                Section::make('Discovery Status')
                     ->schema([
                         Forms\Components\DateTimePicker::make('last_discovered_at')
                             ->disabled()
@@ -293,7 +301,7 @@ class FleetVNodeResource extends Resource
                     ->label('Needs Scanning'),
             ])
             ->actions([
-                Tables\Actions\Action::make('discover')
+                Action::make('discover')
                     ->icon('heroicon-o-magnifying-glass')
                     ->color('info')
                     ->action(function (FleetVNode $record) {
@@ -317,7 +325,7 @@ class FleetVNodeResource extends Resource
                     ->requiresConfirmation()
                     ->modalDescription('This will run SSH discovery on the selected VNode.'),
 
-                Tables\Actions\Action::make('test_ssh')
+                Action::make('test_ssh')
                     ->icon('heroicon-o-signal')
                     ->color('warning')
                     ->action(function (FleetVNode $record) {
@@ -339,13 +347,13 @@ class FleetVNodeResource extends Resource
                         }
                     }),
 
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('discover_selected')
+                BulkActionGroup::make([
+                    BulkAction::make('discover_selected')
                         ->label('Discover Selected')
                         ->icon('heroicon-o-magnifying-glass')
                         ->color('info')
@@ -370,7 +378,7 @@ class FleetVNodeResource extends Resource
                         })
                         ->requiresConfirmation(),
 
-                    Tables\Actions\DeleteBulkAction::make(),
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('name');

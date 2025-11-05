@@ -2,9 +2,9 @@
 
 namespace NetServa\Cli\Filament\Resources\SetupTemplateResource\Schemas;
 
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use NetServa\Cli\Filament\Components\SetupFormComponents;
 

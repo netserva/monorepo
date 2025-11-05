@@ -38,6 +38,9 @@ class NetServaCoreServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Override app.name from CMS settings if available (progressive enhancement)
+        $this->overrideAppNameFromSettings();
+
         // Load migrations
         $this->loadMigrations();
 
@@ -49,6 +52,50 @@ class NetServaCoreServiceProvider extends ServiceProvider
 
         // Publish assets
         $this->publishAssets();
+    }
+
+    /**
+     * Override config('app.name') from cms.name setting if it exists
+     *
+     * Progressive enhancement: Uses database setting if CMS is installed,
+     * otherwise falls back to .env APP_NAME
+     */
+    protected function overrideAppNameFromSettings(): void
+    {
+        try {
+            // Skip if running migrations or database not ready
+            if ($this->app->runningInConsole() &&
+                (in_array('migrate', $_SERVER['argv'] ?? []) ||
+                 in_array('migrate:fresh', $_SERVER['argv'] ?? []))) {
+                return;
+            }
+
+            // Check if Setting model exists (CMS might not be installed)
+            if (! class_exists(\NetServa\Core\Models\Setting::class)) {
+                return;
+            }
+
+            // Check if settings table exists
+            if (! \Illuminate\Support\Facades\Schema::hasTable('netserva_settings')) {
+                return;
+            }
+
+            // Get cms.name setting
+            $cmsName = \NetServa\Core\Models\Setting::getValue('cms.name');
+
+            // Override config if setting exists and is not empty
+            if (! empty($cmsName) && is_string($cmsName)) {
+                config(['app.name' => $cmsName]);
+            }
+        } catch (\Exception $e) {
+            // Silently fail - setting override is optional
+            // Log only in debug mode
+            if (config('app.debug')) {
+                \Illuminate\Support\Facades\Log::debug(
+                    'Could not override app.name from settings: '.$e->getMessage()
+                );
+            }
+        }
     }
 
     /**

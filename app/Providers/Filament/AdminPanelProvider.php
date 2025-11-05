@@ -29,6 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName(fn () => config('app.name'))  // Dynamic brand from config (overridden by CMS if available)
             ->topbar(false)  // Filament 4.1 feature: enables sticky navigation
             ->colors([
                 'primary' => Color::Amber,

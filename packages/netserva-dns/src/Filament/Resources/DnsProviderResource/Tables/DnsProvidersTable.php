@@ -2,6 +2,9 @@
 
 namespace NetServa\Dns\Filament\Resources\DnsProviderResource\Tables;
 
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -22,8 +25,9 @@ class DnsProvidersTable
                     ->description(fn ($record) => $record->description)
                     ->weight('medium'),
 
-                Tables\Columns\BadgeColumn::make('type')
+                Tables\Columns\TextColumn::make('type')
                     ->label('Provider Type')
+                    ->badge()
                     ->sortable()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'powerdns' => 'PowerDNS',
@@ -35,13 +39,14 @@ class DnsProvidersTable
                         'custom' => 'Custom',
                         default => ucfirst($state),
                     })
-                    ->colors([
-                        'primary' => 'powerdns',
-                        'warning' => 'cloudflare',
-                        'success' => 'route53',
-                        'info' => fn ($state): bool => in_array($state, ['digitalocean', 'linode', 'hetzner']),
-                        'gray' => 'custom',
-                    ])
+                    ->color(fn (string $state): string => match ($state) {
+                        'powerdns' => 'primary',
+                        'cloudflare' => 'warning',
+                        'route53' => 'success',
+                        'digitalocean', 'linode', 'hetzner' => 'info',
+                        'custom' => 'gray',
+                        default => 'gray',
+                    })
                     ->icon(fn (string $state): string => match ($state) {
                         'powerdns' => 'heroicon-o-server',
                         'cloudflare' => 'heroicon-o-cloud',
@@ -57,18 +62,23 @@ class DnsProvidersTable
                     ->label('Connection')
                     ->getStateUsing(function ($record) {
                         $config = $record->connection_config ?? [];
+                        $sshHost = $config['ssh_host'] ?? null;
+                        $apiEndpoint = $config['api_endpoint'] ?? 'localhost';
+                        $apiPort = $config['api_port'] ?? 8081;
+                        $email = $config['email'] ?? null;
+                        $region = $config['region'] ?? null;
 
                         return match ($record->type) {
-                            'powerdns' => ($config['ssh_host'] ?? null)
-                                ? "SSH: {$config['ssh_host']} → {$config['api_endpoint'] ?? 'localhost'}:{$config['api_port'] ?? 8081}"
-                                : ($config['api_endpoint'] ?? 'Not configured'),
-                            'cloudflare' => ($config['email'] ?? null)
-                                ? "Email: {$config['email']}"
+                            'powerdns' => $sshHost
+                                ? "SSH: {$sshHost} → {$apiEndpoint}:{$apiPort}"
+                                : $apiEndpoint,
+                            'cloudflare' => $email
+                                ? "Email: {$email}"
                                 : 'API configured',
-                            'route53' => ($config['region'] ?? null)
-                                ? "Region: {$config['region']}"
+                            'route53' => $region
+                                ? "Region: {$region}"
                                 : 'AWS configured',
-                            default => ($config['api_endpoint'] ?? 'Not configured'),
+                            default => $apiEndpoint,
                         };
                     })
                     ->limit(50)
@@ -193,10 +203,10 @@ class DnsProvidersTable
                     }),
             ])
             ->recordActions([
-                Tables\Actions\ActionGroup::make([
+                ActionGroup::make([
                     EditAction::make(),
 
-                    Tables\Actions\Action::make('test_connection')
+                    Action::make('test_connection')
                         ->label('Test Connection')
                         ->icon('heroicon-o-signal')
                         ->color('info')
@@ -209,7 +219,7 @@ class DnsProvidersTable
                                 ->send();
                         }),
 
-                    Tables\Actions\Action::make('sync_zones')
+                    Action::make('sync_zones')
                         ->label('Sync Zones')
                         ->icon('heroicon-o-arrow-path')
                         ->color('success')
@@ -223,7 +233,7 @@ class DnsProvidersTable
                                 ->send();
                         }),
 
-                    Tables\Actions\Action::make('view_usage')
+                    Action::make('view_usage')
                         ->label('View Usage')
                         ->icon('heroicon-o-chart-bar')
                         ->url(fn ($record) => route('filament.admin.resources.dns-providers.usage', $record))
@@ -234,14 +244,14 @@ class DnsProvidersTable
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('activate')
+                    BulkAction::make('activate')
                         ->label('Activate')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->action(fn ($records) => $records->each->update(['active' => true]))
                         ->deselectRecordsAfterCompletion(),
 
-                    Tables\Actions\BulkAction::make('deactivate')
+                    BulkAction::make('deactivate')
                         ->label('Deactivate')
                         ->icon('heroicon-o-x-circle')
                         ->color('warning')

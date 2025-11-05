@@ -3,6 +3,8 @@
 namespace NetServa\Dns\Filament\Resources\DnsProviderResource\Schemas;
 
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class DnsProviderForm
@@ -11,7 +13,7 @@ class DnsProviderForm
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Provider Information')
+                Section::make('Provider Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -46,13 +48,13 @@ class DnsProviderForm
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Connection Configuration')
+                Section::make('Connection Configuration')
                     ->schema([
                         Forms\Components\TextInput::make('connection_config.api_endpoint')
                             ->label('API Endpoint')
                             ->placeholder('http://192.168.1.1:8081')
                             ->helperText('PowerDNS API endpoint or provider API URL')
-                            ->visible(fn (Forms\Get $get) => in_array($get('type'), ['powerdns', 'custom']))
+                            ->visible(fn (Get $get) => in_array($get('type'), ['powerdns', 'custom']))
                             ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('connection_config.api_key')
@@ -69,14 +71,14 @@ class DnsProviderForm
                             ->revealable()
                             ->placeholder('your-api-secret-here')
                             ->helperText('API secret (for providers that require both key and secret)')
-                            ->visible(fn (Forms\Get $get) => in_array($get('type'), ['cloudflare', 'route53']))
+                            ->visible(fn (Get $get) => in_array($get('type'), ['cloudflare', 'route53']))
                             ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('connection_config.ssh_host')
                             ->label('SSH Host')
                             ->placeholder('ns1.example.com')
                             ->helperText('SSH host for tunnel access (optional - for remote PowerDNS)')
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'powerdns')
+                            ->visible(fn (Get $get) => $get('type') === 'powerdns')
                             ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('connection_config.api_port')
@@ -85,7 +87,7 @@ class DnsProviderForm
                             ->default(8081)
                             ->placeholder('8081')
                             ->helperText('PowerDNS API port (default: 8081)')
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'powerdns'),
+                            ->visible(fn (Get $get) => $get('type') === 'powerdns'),
 
                         Forms\Components\TextInput::make('timeout')
                             ->label('Timeout (seconds)')
@@ -105,7 +107,7 @@ class DnsProviderForm
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Advanced Settings')
+                Section::make('Advanced Settings')
                     ->schema([
                         Forms\Components\TextInput::make('version')
                             ->label('Provider Version')
@@ -129,28 +131,28 @@ class DnsProviderForm
                     ->collapsible()
                     ->collapsed(),
 
-                Forms\Components\Section::make('Provider-Specific Configuration')
+                Section::make('Provider-Specific Configuration')
                     ->schema([
                         // Cloudflare specific
                         Forms\Components\TextInput::make('connection_config.zone_id')
                             ->label('Zone ID')
                             ->placeholder('abc123def456...')
                             ->helperText('Cloudflare Zone ID (optional - for specific zone operations)')
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'cloudflare'),
+                            ->visible(fn (Get $get) => $get('type') === 'cloudflare'),
 
                         Forms\Components\TextInput::make('connection_config.email')
                             ->label('Account Email')
                             ->email()
                             ->placeholder('admin@example.com')
                             ->helperText('Cloudflare account email')
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'cloudflare'),
+                            ->visible(fn (Get $get) => $get('type') === 'cloudflare'),
 
                         // AWS Route53 specific
                         Forms\Components\TextInput::make('connection_config.access_key_id')
                             ->label('Access Key ID')
                             ->placeholder('AKIAIOSFODNN7EXAMPLE')
                             ->helperText('AWS Access Key ID')
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'route53'),
+                            ->visible(fn (Get $get) => $get('type') === 'route53'),
 
                         Forms\Components\TextInput::make('connection_config.secret_access_key')
                             ->label('Secret Access Key')
@@ -158,16 +160,16 @@ class DnsProviderForm
                             ->revealable()
                             ->placeholder('wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY')
                             ->helperText('AWS Secret Access Key')
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'route53'),
+                            ->visible(fn (Get $get) => $get('type') === 'route53'),
 
                         Forms\Components\TextInput::make('connection_config.region')
                             ->label('AWS Region')
                             ->default('us-east-1')
                             ->placeholder('us-east-1')
                             ->helperText('AWS Region for Route53')
-                            ->visible(fn (Forms\Get $get) => $get('type') === 'route53'),
+                            ->visible(fn (Get $get) => $get('type') === 'route53'),
                     ])
-                    ->visible(fn (Forms\Get $get) => in_array($get('type'), ['cloudflare', 'route53']))
+                    ->visible(fn (Get $get) => in_array($get('type'), ['cloudflare', 'route53']))
                     ->collapsible()
                     ->collapsed(),
             ]);

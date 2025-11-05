@@ -58,6 +58,13 @@
         }
     },
     "scripts": {
+        "post-install-cmd": [
+            "@php -r \"echo '\\n\\033[32mNetServa CMS installed successfully!\\033[0m\\n';\"",
+            "@php -r \"echo '\\033[33mRun: php artisan netserva-cms:install\\033[0m to complete setup.\\n\\n';\""
+        ],
+        "post-update-cmd": [
+            "@php artisan filament:upgrade --no-interaction 2>/dev/null || true"
+        ],
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint"

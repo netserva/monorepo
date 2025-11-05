@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NetServa\Admin\Filament\Resources\PluginResource\Schemas;
 
 use Filament\Forms;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class PluginForm
@@ -12,7 +13,7 @@ class PluginForm
     public static function make(Schema $schema): Schema
     {
         return $schema->components([
-            Forms\Components\Section::make('Plugin Information')
+            Section::make('Plugin Information')
                 ->schema([
                     Forms\Components\TextInput::make('name')
                         ->disabled()
@@ -38,7 +39,7 @@ class PluginForm
                         ->rows(2),
                 ]),
 
-            Forms\Components\Section::make('Dependencies')
+            Section::make('Dependencies')
                 ->schema([
                     Forms\Components\TagsInput::make('dependencies')
                         ->disabled()
@@ -46,7 +47,7 @@ class PluginForm
                 ])
                 ->visible(fn ($record) => ! empty($record?->dependencies)),
 
-            Forms\Components\Section::make('Metadata')
+            Section::make('Metadata')
                 ->schema([
                     Forms\Components\TextInput::make('source')
                         ->disabled(),

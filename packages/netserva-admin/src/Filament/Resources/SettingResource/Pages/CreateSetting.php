@@ -13,13 +13,17 @@ class CreateSetting extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Cast value based on type
-        $data['value'] = match ($data['type']) {
-            'integer' => (int) $data['value'],
-            'boolean' => (bool) $data['value'],
-            'json' => is_string($data['value']) ? json_decode($data['value'], true) : $data['value'],
-            default => (string) $data['value'],
+        // Map type-specific form field to database 'value' column
+        $data['value'] = match ($data['type'] ?? 'string') {
+            'string' => $data['value_string'] ?? '',
+            'integer' => $data['value_integer'] ?? 0,
+            'boolean' => ($data['value_boolean'] ?? false) ? '1' : '0',
+            'json' => $data['value_json'] ?? '{}',
+            default => $data['value_string'] ?? '',
         };
+
+        // Clean up temporary typed fields
+        unset($data['value_string'], $data['value_integer'], $data['value_boolean'], $data['value_json']);
 
         return $data;
     }

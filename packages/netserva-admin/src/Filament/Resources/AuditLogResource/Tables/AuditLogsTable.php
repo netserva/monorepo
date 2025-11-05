@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NetServa\Admin\Filament\Resources\AuditLogResource\Tables;
 
+use Filament\Actions\Action;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -187,7 +188,7 @@ class AuditLogsTable
                     ),
             ])
             ->actions([
-                Tables\Actions\Action::make('view_details')
+                Action::make('view_details')
                     ->label('Details')
                     ->icon('heroicon-o-eye')
                     ->modalHeading(fn ($record) => "Audit Log Details: {$record->event_type_display}")

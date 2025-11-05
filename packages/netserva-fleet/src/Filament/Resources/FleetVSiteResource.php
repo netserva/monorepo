@@ -2,9 +2,15 @@
 
 namespace NetServa\Fleet\Filament\Resources;
 
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Infolists;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -36,7 +42,7 @@ class FleetVSiteResource extends Resource
     {
         return $schema
             ->schema([
-                Forms\Components\Section::make('Basic Information')
+                Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -51,7 +57,7 @@ class FleetVSiteResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Provider Configuration')
+                Section::make('Provider Configuration')
                     ->schema([
                         Forms\Components\Select::make('provider')
                             ->required()
@@ -79,7 +85,7 @@ class FleetVSiteResource extends Resource
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('API Configuration')
+                Section::make('API Configuration')
                     ->schema([
                         Forms\Components\TextInput::make('api_endpoint')
                             ->url()
@@ -91,7 +97,7 @@ class FleetVSiteResource extends Resource
                     ])
                     ->columns(1),
 
-                Forms\Components\Section::make('Capabilities & Status')
+                Section::make('Capabilities & Status')
                     ->schema([
                         Forms\Components\TagsInput::make('capabilities')
                             ->helperText('Features available on this VSite'),
@@ -192,13 +198,13 @@ class FleetVSiteResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_active'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('name');

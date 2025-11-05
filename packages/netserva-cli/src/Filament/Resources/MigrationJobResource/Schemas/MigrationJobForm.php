@@ -3,8 +3,8 @@
 namespace NetServa\Cli\Filament\Resources\MigrationJobResource\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use NetServa\Cli\Filament\Components\MigrationFormComponents;
 

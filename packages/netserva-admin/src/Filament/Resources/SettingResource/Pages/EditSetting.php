@@ -21,23 +21,38 @@ class EditSetting extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        // Convert value to string for form display
-        if ($data['type'] === 'json' && is_array($data['value'])) {
-            $data['value'] = json_encode($data['value'], JSON_PRETTY_PRINT);
-        }
+        // Map database 'value' column to type-specific form field
+        $value = $data['value'] ?? null;
+        $type = $data['type'] ?? 'string';
+
+        // Set the appropriate typed field based on type
+        match ($type) {
+            'string' => $data['value_string'] = $value,
+            'integer' => $data['value_integer'] = $value,
+            'boolean' => $data['value_boolean'] = $value,
+            'json' => $data['value_json'] = is_array($value) ? json_encode($value, JSON_PRETTY_PRINT) : $value,
+            default => $data['value_string'] = $value,
+        };
+
+        // Don't pass 'value' to avoid hydration conflicts
+        unset($data['value']);
 
         return $data;
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Cast value based on type
-        $data['value'] = match ($data['type']) {
-            'integer' => (int) $data['value'],
-            'boolean' => (bool) $data['value'],
-            'json' => is_string($data['value']) ? json_decode($data['value'], true) : $data['value'],
-            default => (string) $data['value'],
+        // Map type-specific form field back to database 'value' column
+        $data['value'] = match ($data['type'] ?? 'string') {
+            'string' => $data['value_string'] ?? '',
+            'integer' => $data['value_integer'] ?? 0,
+            'boolean' => ($data['value_boolean'] ?? false) ? '1' : '0',
+            'json' => $data['value_json'] ?? '{}',
+            default => $data['value_string'] ?? '',
         };
+
+        // Clean up temporary typed fields
+        unset($data['value_string'], $data['value_integer'], $data['value_boolean'], $data['value_json']);
 
         return $data;
     }

@@ -25,6 +25,13 @@ class NetServaCmsServiceProvider extends ServiceProvider
         // Load helper functions
         require_once __DIR__.'/helpers.php';
 
+        // Register console commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                Console\Commands\InstallCommand::class,
+            ]);
+        }
+
         // Register as NetServa plugin if core is available
         $this->registerAsPluginIfCoreAvailable();
     }
@@ -59,18 +66,57 @@ class NetServaCmsServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * Remove the default Laravel welcome route to allow CMS to handle root route
+     *
+     * This automatically removes Laravel's default welcome route if it exists,
+     * allowing the CMS to seamlessly take over the root route without requiring
+     * manual edits to routes/web.php.
+     */
+    protected function removeDefaultWelcomeRoute(): void
+    {
+        $router = $this->app->make('router');
+        $routes = $router->getRoutes();
+
+        // Find and remove any GET route to '/' (typically the Laravel welcome route)
+        foreach ($routes->get('GET') as $route) {
+            if ($route->uri() === '/') {
+                // Check if it's likely the default Laravel welcome route
+                // by checking the action (usually a view closure or named 'welcome')
+                $action = $route->getAction();
+
+                // Remove if it's a closure (default Laravel welcome) or named 'welcome'
+                if (isset($action['uses']) && $action['uses'] instanceof \Closure) {
+                    $routes->remove($route);
+
+                    break;
+                }
+
+                // Also remove if explicitly named 'welcome'
+                if (($route->getName() === 'welcome') || ($route->getName() === null && $route->uri() === '/')) {
+                    $routes->remove($route);
+
+                    break;
+                }
+            }
+        }
+    }
+
     public function boot(): void
     {
         // Load migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
-        // Load settings migrations (only if Spatie Settings is available)
-        if (class_exists(\Spatie\LaravelSettings\Settings::class)) {
-            $this->loadMigrationsFrom(__DIR__.'/../database/settings');
-        }
+        // Load settings migrations (populates CMS settings if Core is installed)
+        $this->loadMigrationsFrom(__DIR__.'/../database/settings');
 
         // Load views
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'netserva-cms');
+
+        // Automatically remove Laravel welcome route if CMS frontend is enabled
+        if (config('netserva-cms.frontend.enabled', true)) {
+            $this->removeDefaultWelcomeRoute();
+        }
 
         // Load routes
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');

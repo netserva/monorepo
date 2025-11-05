@@ -2,11 +2,11 @@
 
 namespace NetServa\Cli\Filament\Components;
 
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use NetServa\Cli\Validation\Rules\DomainRules;
 use NetServa\Cli\Validation\Rules\VhostRules;
 use NetServa\Core\Models\SshHost;
@@ -83,7 +83,7 @@ class MigrationFormComponents
             ->placeholder('Migration: example.com')
             ->helperText('Descriptive name for this migration job')
             ->maxLength(255)
-            ->default(fn ($get) => "Migration: " . ($get('domain') ?? 'New Job'));
+            ->default(fn ($get) => 'Migration: '.($get('domain') ?? 'New Job'));
     }
 
     /**

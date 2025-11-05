@@ -2,9 +2,17 @@
 
 namespace NetServa\Fleet\Filament\Resources;
 
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Infolists;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -36,7 +44,7 @@ class FleetVHostResource extends Resource
     {
         return $schema
             ->schema([
-                Forms\Components\Section::make('Basic Information')
+                Section::make('Basic Information')
                     ->schema([
                         Forms\Components\TextInput::make('domain')
                             ->required()
@@ -57,7 +65,7 @@ class FleetVHostResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Instance Details')
+                Section::make('Instance Details')
                     ->schema([
                         Forms\Components\Select::make('instance_type')
                             ->options([
@@ -85,7 +93,7 @@ class FleetVHostResource extends Resource
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('Network Configuration')
+                Section::make('Network Configuration')
                     ->schema([
                         Forms\Components\TagsInput::make('ip_addresses')
                             ->helperText('IP addresses assigned to this instance'),
@@ -95,7 +103,7 @@ class FleetVHostResource extends Resource
                     ])
                     ->columns(1),
 
-                Forms\Components\Section::make('File System Integration')
+                Section::make('File System Integration')
                     ->schema([
                         Forms\Components\TextInput::make('var_file_path')
                             ->helperText('Path to NetServa var file')
@@ -107,7 +115,7 @@ class FleetVHostResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Status')
+                Section::make('Status')
                     ->schema([
                         Forms\Components\Select::make('status')
                             ->required()
@@ -270,21 +278,21 @@ class FleetVHostResource extends Resource
                     ->label('Has Var File'),
             ])
             ->actions([
-                Tables\Actions\Action::make('view_validation')
+                Action::make('view_validation')
                     ->label('Validation')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('warning')
                     ->url(fn (FleetVHost $record): string => static::getUrl('view-validation', ['record' => $record]))
                     ->visible(fn (FleetVHost $record) => in_array($record->migration_status, ['discovered', 'validated', 'failed'])),
 
-                Tables\Actions\Action::make('view_migration_log')
+                Action::make('view_migration_log')
                     ->label('Migration Log')
                     ->icon('heroicon-o-document-text')
                     ->color('info')
                     ->url(fn (FleetVHost $record): string => static::getUrl('view-migration-log', ['record' => $record]))
                     ->visible(fn (FleetVHost $record) => in_array($record->migration_status, ['migrated', 'failed'])),
 
-                Tables\Actions\Action::make('rollback')
+                Action::make('rollback')
                     ->label('Rollback')
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->color('warning')
@@ -331,7 +339,7 @@ class FleetVHostResource extends Resource
                     })
                     ->visible(fn (FleetVHost $record) => $record->migration_status === 'migrated' && $record->rollback_available),
 
-                Tables\Actions\Action::make('sync_var_file')
+                Action::make('sync_var_file')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
                     ->action(function (FleetVHost $record) {
@@ -353,13 +361,13 @@ class FleetVHostResource extends Resource
                     })
                     ->visible(fn (FleetVHost $record) => ! empty($record->var_file_path)),
 
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('migrate_selected')
+                BulkActionGroup::make([
+                    BulkAction::make('migrate_selected')
                         ->label('Migrate Selected to NS 3.0')
                         ->icon('heroicon-o-arrow-path')
                         ->color('success')
@@ -416,7 +424,7 @@ class FleetVHostResource extends Resource
                         ->deselectRecordsAfterCompletion()
                         ->visible(fn ($records) => $records->contains(fn ($record) => $record->migration_status === 'validated')),
 
-                    Tables\Actions\DeleteBulkAction::make(),
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('domain');

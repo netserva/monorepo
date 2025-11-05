@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace NetServa\Admin\Filament\Resources\PluginResource\Tables;
 
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\ViewAction;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -74,7 +78,7 @@ class PluginsTable
                     ]),
             ])
             ->actions([
-                Tables\Actions\Action::make('toggle')
+                Action::make('toggle')
                     ->label(fn ($record) => $record->is_enabled ? 'Disable' : 'Enable')
                     ->icon(fn ($record) => $record->is_enabled ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn ($record) => $record->is_enabled ? 'danger' : 'success')
@@ -83,17 +87,17 @@ class PluginsTable
                         $record->update(['is_enabled' => ! $record->is_enabled]);
                     }),
 
-                Tables\Actions\ViewAction::make(),
+                ViewAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('enable')
+                BulkActionGroup::make([
+                    BulkAction::make('enable')
                         ->label('Enable Selected')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->action(fn ($records) => $records->each->update(['is_enabled' => true])),
 
-                    Tables\Actions\BulkAction::make('disable')
+                    BulkAction::make('disable')
                         ->label('Disable Selected')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
