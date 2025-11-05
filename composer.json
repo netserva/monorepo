@@ -25,10 +25,11 @@
         "netserva/ipam": "*",
         "netserva/mail": "*",
         "netserva/ops": "*",
+        "netserva/platform": "*",
         "netserva/web": "*",
         "netserva/wg": "*",
-        "netserva/platform": "*",
-        "phpseclib/phpseclib": "^3.0.47"
+        "phpseclib/phpseclib": "^3.0.47",
+        "spatie/laravel-settings": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
@@ -91,6 +92,15 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "backup": [
+            "./scripts/backup-db.sh"
+        ],
+        "restore": [
+            "./scripts/restore-db.sh"
+        ],
+        "safe-fresh": [
+            "./scripts/safe-migrate-fresh.sh"
         ]
     },
     "extra": {

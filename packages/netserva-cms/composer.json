@@ -35,6 +35,9 @@
         "pestphp/pest-plugin-laravel": "^3.0",
         "laravel/pint": "^1.13"
     },
+    "suggest": {
+        "netserva/core": "Enables enhanced settings management with database-backed configuration and CRUD UI"
+    },
     "autoload": {
         "psr-4": {
             "NetServa\\Cms\\": "src/",

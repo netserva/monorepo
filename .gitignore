@@ -93,3 +93,4 @@ resources/docs-archive-*/
 *.mkv
 *.webm
 resources/media/obs-ctl/node_modules/
+/backups/

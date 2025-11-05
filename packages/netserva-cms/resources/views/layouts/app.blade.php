@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- SEO Meta Tags --}}
-    <title>{{ $page->meta_title ?? $page->title ?? config('app.name') }}</title>
+    <title>{{ $page->meta_title ?? $page->title ?? config('netserva-cms.seo.default_meta_title') }}</title>
 
     @if(isset($page) && $page->meta_description)
         <meta name="description" content="{{ $page->meta_description }}">
@@ -18,7 +18,7 @@
 
     {{-- Open Graph / Facebook --}}
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ $page->meta_title ?? $page->title ?? config('app.name') }}">
+    <meta property="og:title" content="{{ $page->meta_title ?? $page->title ?? cms_setting('name') }}">
     @if(isset($page) && $page->meta_description)
         <meta property="og:description" content="{{ $page->meta_description }}">
     @endif
@@ -26,7 +26,7 @@
 
     {{-- Twitter --}}
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $page->meta_title ?? $page->title ?? config('app.name') }}">
+    <meta name="twitter:title" content="{{ $page->meta_title ?? $page->title ?? cms_setting('name') }}">
     @if(isset($page) && $page->meta_description)
         <meta name="twitter:description" content="{{ $page->meta_description }}">
     @endif
@@ -63,7 +63,7 @@
                 {{-- Logo --}}
                 <div class="flex-shrink-0 flex items-center">
                     <a href="{{ route('cms.home') }}" class="text-xl font-bold text-gray-900 dark:text-white">
-                        {{ config('app.name') }}
+                        {{ cms_setting('name') }}
                     </a>
                 </div>
 
@@ -172,10 +172,10 @@
                 {{-- Column 1 --}}
                 <div>
                     <h3 class="text-sm font-semibold text-gray-900 dark:text-white tracking-wider uppercase">
-                        {{ config('app.name') }}
+                        {{ cms_setting('name') }}
                     </h3>
                     <p class="mt-4 text-base text-gray-500 dark:text-gray-400">
-                        {{ config('netserva-cms.seo.site_description', 'Professional web services and solutions') }}
+                        {{ cms_setting('description') ?: config('netserva-cms.seo.site_description', 'Professional web services and solutions') }}
                     </p>
                 </div>
 
@@ -216,7 +216,7 @@
 
             <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-8">
                 <p class="text-base text-gray-400 dark:text-gray-500 text-center">
-                    &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
+                    &copy; {{ date('Y') }} {{ cms_setting('name') }}. All rights reserved.
                 </p>
             </div>
         </div>

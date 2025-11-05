@@ -9,8 +9,9 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'name' => env('CMS_NAME', 'NetServa CMS'),
-    'description' => env('CMS_DESCRIPTION', 'Professional Laravel CMS'),
+    'name' => env('CMS_NAME', 'NetServa'),
+    'tagline' => env('CMS_TAGLINE', 'Server Management Platform'),
+    'description' => env('CMS_DESCRIPTION', 'Modern server management platform built on Laravel 12 and Filament 4'),
 
     /*
     |--------------------------------------------------------------------------
@@ -33,10 +34,10 @@ return [
     */
 
     'seo' => [
-        'default_meta_title' => env('CMS_DEFAULT_META_TITLE', 'NetServa CMS'),
-        'default_meta_description' => env('CMS_DEFAULT_META_DESCRIPTION', ''),
-        'site_name' => env('CMS_SITE_NAME', 'NetServa CMS'),
-        'twitter_handle' => env('CMS_TWITTER_HANDLE', ''),
+        'default_meta_title' => env('CMS_DEFAULT_META_TITLE', 'NetServa - Server Management Platform'),
+        'default_meta_description' => env('CMS_DEFAULT_META_DESCRIPTION', 'Modern, efficient server management for professionals. Built on Laravel 12 and Filament 4.'),
+        'site_name' => env('CMS_SITE_NAME', 'NetServa'),
+        'twitter_handle' => env('CMS_TWITTER_HANDLE', '@netserva'),
         'og_image' => env('CMS_OG_IMAGE', ''),
     ],
 

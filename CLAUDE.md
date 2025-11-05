@@ -30,6 +30,25 @@ Laravel 12 + Filament 4.0 + Pest 4.0 + Laravel Prompts + phpseclib 3.x | SQLite 
 
 ---
 
+## 📄 Documentation Standards
+
+**Filename Convention**: ALL documentation files MUST use normalized naming:
+- **Format**: `YYYY-MM-DD_lowercase-with-hyphens.md`
+- **Date**: Use file creation/modification date (derived from filesystem)
+- **Examples**:
+  - ✅ `2025-11-05_database-backup-guide.md`
+  - ✅ `2025-10-08_netserva-3.0-setup.md`
+  - ❌ `DATABASE_BACKUP_GUIDE.md`
+  - ❌ `NetServa-3.0-Setup.md`
+  - ❌ `ssh_execution_architecture.md`
+
+**Applies to**:
+- `resources/docs/**/*.md` - All documentation
+- `.claude/journal/*.md` - Session journals (already normalized)
+- Any new markdown files created in the project
+
+---
+
 ## 📝 Essential Commands
 
 ```bash

@@ -21,12 +21,20 @@ class NetServaCmsServiceProvider extends ServiceProvider
             __DIR__.'/../config/netserva-cms.php',
             'netserva-cms'
         );
+
+        // Load helper functions
+        require_once __DIR__.'/helpers.php';
     }
 
     public function boot(): void
     {
         // Load migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        // Load settings migrations (only if Spatie Settings is available)
+        if (class_exists(\Spatie\LaravelSettings\Settings::class)) {
+            $this->loadMigrationsFrom(__DIR__.'/../database/settings');
+        }
 
         // Load views
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'netserva-cms');
