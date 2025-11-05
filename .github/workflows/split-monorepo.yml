@@ -14,6 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         package:
+          - { name: 'admin', path: 'packages/netserva-admin', repo: 'netserva/admin' }
           - { name: 'core', path: 'packages/netserva-core', repo: 'netserva/core' }
           - { name: 'cli', path: 'packages/netserva-cli', repo: 'netserva/cli' }
           - { name: 'cms', path: 'packages/netserva-cms', repo: 'netserva/cms' }
