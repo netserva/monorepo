@@ -132,7 +132,12 @@ class AdminPanelProvider extends PanelProvider
     protected function registerCriticalPlugins(Panel $panel): void
     {
         $criticalPlugins = [
-            // \NetServa\Core\CorePlugin::class,
+            // Admin plugin provides Settings, Plugins, and Audit Log resources
+            \NetServa\Admin\AdminPlugin::class,
+
+            // CMS plugin
+            \NetServa\Cms\NetServaCmsPlugin::class,
+
             // Temporarily disabled Fleet plugin until routes are fixed
             // \NetServa\Fleet\Filament\FleetPlugin::class,
             // \NetServa\Dns\Filament\NetServaDnsPlugin::class,
@@ -140,10 +145,6 @@ class AdminPanelProvider extends PanelProvider
             // \NetServa\Mail\Filament\NetServaMailPlugin::class,
             // \NetServa\Web\Filament\NetServaWebPlugin::class,
             // \NetServa\Ops\Filament\NetServaOpsPlugin::class,
-
-            // CMS plugin only for now
-            \NetServa\Cms\NetServaCmsPlugin::class,
-
             // \NetServa\Cli\Filament\NetServaCliPlugin::class,
             // \NetServa\Cron\Filament\NetServaCronPlugin::class,
             // \NetServa\Ipam\Filament\NetServaIpamPlugin::class,

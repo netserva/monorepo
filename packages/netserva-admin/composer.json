@@ -1,0 +1,49 @@
+{
+    "name": "netserva/admin",
+    "description": "NetServa Admin - Filament admin panel for settings and plugin management",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["netserva", "admin", "filament", "settings", "plugins"],
+    "homepage": "https://netserva.org",
+    "authors": [
+        {
+            "name": "Mark Constable",
+            "email": "markc@netserva.org",
+            "homepage": "https://netserva.org"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^12.0",
+        "filament/filament": "^4.0",
+        "netserva/core": "@dev"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "orchestra/testbench": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "NetServa\\Admin\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NetServa\\Admin\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NetServa\\Admin\\AdminServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "support": {
+        "issues": "https://github.com/netserva/monorepo/issues",
+        "source": "https://github.com/netserva/monorepo"
+    }
+}

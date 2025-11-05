@@ -20,8 +20,8 @@
         "php": "^8.4",
         "laravel/framework": "^12.0",
         "filament/filament": "^4.0",
-        "netserva/core": "^0.0.1",
-        "netserva/ipam": "^0.0.1",
+        "netserva/core": "@dev",
+        "netserva/ipam": "@dev",
         "symfony/process": "^7.0"
     },
     "require-dev": {

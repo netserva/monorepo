@@ -20,7 +20,7 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/prompts": "^0.3",
-        "netserva/core": "^0.0.1"
+        "netserva/core": "@dev"
     },
     "require-dev": {
         "pestphp/pest": "^4.0",

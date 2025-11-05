@@ -24,6 +24,39 @@ class NetServaCmsServiceProvider extends ServiceProvider
 
         // Load helper functions
         require_once __DIR__.'/helpers.php';
+
+        // Register as NetServa plugin if core is available
+        $this->registerAsPluginIfCoreAvailable();
+    }
+
+    /**
+     * Register CMS as a NetServa plugin if core package is available
+     */
+    protected function registerAsPluginIfCoreAvailable(): void
+    {
+        // Check if NetServa Core is installed
+        if (! class_exists(\NetServa\Core\Services\PluginManager::class)) {
+            return;
+        }
+
+        // Register CMS as a plugin for discovery
+        try {
+            $pluginManager = $this->app->make(\NetServa\Core\Services\PluginManager::class);
+
+            // CMS metadata for plugin system
+            $pluginManager->registerPlugin([
+                'name' => 'NetServa CMS',
+                'package_name' => 'netserva/cms',
+                'plugin_class' => static::class,
+                'version' => '3.0.0',
+                'description' => 'Professional Laravel CMS with Filament 4 admin panel',
+                'category' => 'content',
+                'dependencies' => [],
+            ]);
+        } catch (\Exception $e) {
+            // Silently fail - CMS works standalone
+            // Core integration is optional enhancement only
+        }
     }
 
     public function boot(): void

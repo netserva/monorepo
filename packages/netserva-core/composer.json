@@ -3,7 +3,7 @@
     "description": "NetServa Core - Foundation package for NetServa infrastructure management ecosystem",
     "type": "library",
     "license": "MIT",
-    "keywords": ["netserva", "infrastructure", "server-management", "laravel", "filament"],
+    "keywords": ["netserva", "infrastructure", "server-management", "laravel", "foundation"],
     "homepage": "https://netserva.org",
     "authors": [
         {
@@ -15,7 +15,6 @@
     "require": {
         "php": "^8.4",
         "laravel/framework": "^12.0",
-        "filament/filament": "^4.0",
         "laravel/prompts": "^0.3",
         "phpseclib/phpseclib": "^3.0",
         "spatie/laravel-settings": "^3.0"
