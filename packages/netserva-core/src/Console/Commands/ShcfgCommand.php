@@ -61,9 +61,16 @@ class ShcfgCommand extends Command
         }
 
         $tableData = $settings->map(function ($setting) {
+            $value = $setting->getTypedValue();
+
+            // Convert arrays/objects to JSON for display
+            if (is_array($value) || is_object($value)) {
+                $value = json_encode($value, JSON_UNESCAPED_SLASHES);
+            }
+
             return [
                 'key' => $setting->key,
-                'value' => $setting->getTypedValue(),
+                'value' => $value ?? '',
             ];
         })->toArray();
 
