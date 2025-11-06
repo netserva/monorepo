@@ -81,8 +81,14 @@ class SettingsManager
     protected static function getCoreValue(string $key, mixed $default): mixed
     {
         try {
+            // Try cms.* key first
             $fullKey = "cms.{$key}";
-            $value = \NetServa\Core\Models\Setting::getValue($fullKey, $default);
+            $value = \NetServa\Core\Models\Setting::getValue($fullKey, null);
+
+            // If not found, fallback to app.* for global settings (name, tagline only)
+            if ($value === null && in_array($key, ['name', 'tagline'])) {
+                $value = \NetServa\Core\Models\Setting::getValue("app.{$key}", null);
+            }
 
             return $value ?? $default;
         } catch (\Exception $e) {
