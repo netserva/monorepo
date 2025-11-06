@@ -80,12 +80,12 @@ class NetServaCoreServiceProvider extends ServiceProvider
                 return;
             }
 
-            // Get cms.name setting
-            $cmsName = \NetServa\Core\Models\Setting::getValue('cms.name');
+            // Get app.name setting
+            $appName = \NetServa\Core\Models\Setting::getValue('app.name');
 
             // Override config if setting exists and is not empty
-            if (! empty($cmsName) && is_string($cmsName)) {
-                config(['app.name' => $cmsName]);
+            if (! empty($appName) && is_string($appName)) {
+                config(['app.name' => $appName]);
             }
         } catch (\Exception $e) {
             // Silently fail - setting override is optional
