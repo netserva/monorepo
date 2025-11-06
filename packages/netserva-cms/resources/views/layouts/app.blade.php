@@ -6,29 +6,41 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- SEO Meta Tags --}}
-    <title>{{ $page->meta_title ?? $page->title ?? config('netserva-cms.seo.default_meta_title') }}</title>
-
-    @if(isset($page) && $page->meta_description)
-        <meta name="description" content="{{ $page->meta_description }}">
-    @endif
-
-    @if(isset($page) && $page->meta_keywords)
-        <meta name="keywords" content="{{ $page->meta_keywords }}">
+    @php
+        $pageTitle = $page->meta_title ?? $page->title ?? cms_setting('name');
+        $siteTitle = str_replace(
+            ['{page_title}', '{site_name}'],
+            [$pageTitle, cms_setting('name')],
+            cms_setting('seo_title_template', '{page_title} | {site_name}')
+        );
+        $description = $page->meta_description ?? cms_setting('seo_description');
+        $keywords = $page->meta_keywords ?? cms_setting('seo_keywords');
+    @endphp
+    <title>{{ $siteTitle }}</title>
+    <meta name="description" content="{{ $description }}">
+    <meta name="keywords" content="{{ $keywords }}">
+    @if(cms_setting('seo_author'))
+        <meta name="author" content="{{ cms_setting('seo_author') }}">
     @endif
 
     {{-- Open Graph / Facebook --}}
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ $page->meta_title ?? $page->title ?? cms_setting('name') }}">
-    @if(isset($page) && $page->meta_description)
-        <meta property="og:description" content="{{ $page->meta_description }}">
-    @endif
+    <meta property="og:type" content="{{ cms_setting('og_type', 'website') }}">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $description }}">
     <meta property="og:url" content="{{ url()->current() }}">
+    @if(cms_setting('og_image'))
+        <meta property="og:image" content="{{ cms_setting('og_image') }}">
+    @endif
 
     {{-- Twitter --}}
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $page->meta_title ?? $page->title ?? cms_setting('name') }}">
-    @if(isset($page) && $page->meta_description)
-        <meta name="twitter:description" content="{{ $page->meta_description }}">
+    <meta name="twitter:card" content="{{ cms_setting('twitter_card', 'summary_large_image') }}">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $description }}">
+    @if(cms_setting('twitter_handle'))
+        <meta name="twitter:site" content="@{{ cms_setting('twitter_handle') }}">
+    @endif
+    @if(cms_setting('og_image'))
+        <meta name="twitter:image" content="{{ cms_setting('og_image') }}">
     @endif
 
     {{-- Fonts --}}

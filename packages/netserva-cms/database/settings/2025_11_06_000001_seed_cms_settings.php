@@ -21,9 +21,7 @@ return new class extends Migration
 
         // Get defaults from config
         $defaults = [
-            // Site Identity
-            'name' => config('netserva-cms.name', 'NetServa'),
-            'tagline' => config('netserva-cms.tagline', 'Server Management Platform'),
+            // Site Identity (will fallback to app.name/app.tagline if not set)
             'description' => config('netserva-cms.description', 'Modern server management platform built on Laravel 12 and Filament 4'),
             'logo_url' => null,
             'favicon_url' => null,
@@ -32,6 +30,26 @@ return new class extends Migration
             'contact_email' => null,
             'contact_phone' => null,
             'contact_address' => null,
+
+            // SEO Meta Tags
+            'seo_title_template' => '{page_title} | {site_name}',
+            'seo_description' => config('netserva-cms.description', 'Modern server management platform built on Laravel 12 and Filament 4'),
+            'seo_keywords' => 'server management, hosting, web hosting, infrastructure',
+            'seo_author' => null,
+
+            // Open Graph / Social Media
+            'og_image' => null,
+            'og_type' => 'website',
+            'twitter_handle' => null,
+            'twitter_card' => 'summary_large_image',
+
+            // Content Settings
+            'posts_per_page' => 10,
+            'enable_comments' => true,
+            'theme_config' => json_encode([
+                'primary_color' => '#dc2626',
+                'font_family' => 'Inter',
+            ]),
         ];
 
         // Create each setting in the database
