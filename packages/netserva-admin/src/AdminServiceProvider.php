@@ -31,6 +31,11 @@ class AdminServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/netserva-admin'),
             ], 'netserva-admin-views');
+
+            // Register commands
+            $this->commands([
+                \NetServa\Admin\Console\Commands\InstallCommand::class,
+            ]);
         }
     }
 }

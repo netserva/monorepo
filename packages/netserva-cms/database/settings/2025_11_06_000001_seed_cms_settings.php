@@ -32,10 +32,6 @@ return new class extends Migration
             'contact_email' => null,
             'contact_phone' => null,
             'contact_address' => null,
-
-            // Localization
-            'timezone' => config('app.timezone', 'UTC'),
-            'locale' => config('app.locale', 'en'),
         ];
 
         // Create each setting in the database

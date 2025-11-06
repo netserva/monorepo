@@ -13,7 +13,7 @@ use NetServa\Core\Services\LoggingService;
  */
 class InstallCommand extends Command
 {
-    protected $signature = 'netserva:install {--force : Force installation even if already installed}';
+    protected $signature = 'netserva-core:install {--force : Force installation even if already installed}';
 
     protected $description = 'Install and setup NetServa Core';
 
@@ -45,6 +45,9 @@ class InstallCommand extends Command
             // Run migrations
             $this->call('migrate', ['--force' => true]);
 
+            // Seed default core settings
+            $this->seedDefaultSettings();
+
             // Mark as installed
             $this->markAsInstalled();
 
@@ -69,5 +72,51 @@ class InstallCommand extends Command
     {
         // Create a marker file or update config to indicate installation
         $this->config->set('installed', true);
+    }
+
+    protected function seedDefaultSettings(): void
+    {
+        $this->info('Seeding default core settings from .env...');
+
+        $defaults = [
+            'app.name' => [
+                'value' => config('app.name'),
+                'type' => 'string',
+                'description' => 'Application name',
+            ],
+            'app.url' => [
+                'value' => config('app.url'),
+                'type' => 'string',
+                'description' => 'Application URL',
+            ],
+            'app.timezone' => [
+                'value' => config('app.timezone'),
+                'type' => 'string',
+                'description' => 'Application timezone',
+            ],
+            'app.locale' => [
+                'value' => config('app.locale'),
+                'type' => 'string',
+                'description' => 'Application locale',
+            ],
+        ];
+
+        foreach ($defaults as $key => $config) {
+            // Only create if doesn't exist (idempotent)
+            if (! \NetServa\Core\Models\Setting::where('key', $key)->exists()) {
+                \NetServa\Core\Models\Setting::create([
+                    'key' => $key,
+                    'value' => $config['value'],
+                    'type' => $config['type'],
+                    'description' => $config['description'],
+                ]);
+
+                $this->line("  ✓ Created setting: {$key} = {$config['value']}");
+            } else {
+                $this->line("  • Setting already exists: {$key}");
+            }
+        }
+
+        $this->info('✓ Default settings seeded successfully');
     }
 }

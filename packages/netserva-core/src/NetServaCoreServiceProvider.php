@@ -135,9 +135,19 @@ class NetServaCoreServiceProvider extends ServiceProvider
                 \NetServa\Core\Console\Commands\ChsshCommand::class,    // UPDATE
                 \NetServa\Core\Console\Commands\DelsshCommand::class,   // DELETE
 
-                // TODO: Re-enable when commands are implemented
-                // \NetServa\Core\Console\Commands\InstallCommand::class,
-                // \NetServa\Core\Console\Commands\PluginCommand::class,
+                // Settings CRUD Commands
+                \NetServa\Core\Console\Commands\AddcfgCommand::class,   // CREATE
+                \NetServa\Core\Console\Commands\ShcfgCommand::class,    // READ
+                \NetServa\Core\Console\Commands\ChcfgCommand::class,    // UPDATE
+                \NetServa\Core\Console\Commands\DelcfgCommand::class,   // DELETE
+
+                // Install & Plugin Management
+                \NetServa\Core\Console\Commands\InstallCommand::class,
+                \NetServa\Core\Console\Commands\PluginCommand::class,
+                \NetServa\Core\Console\Commands\PluginEnableCommand::class,
+                \NetServa\Core\Console\Commands\PluginDisableCommand::class,
+                \NetServa\Core\Console\Commands\PluginInfoCommand::class,
+                \NetServa\Core\Console\Commands\PluginListCommand::class,
             ]);
         }
     }
