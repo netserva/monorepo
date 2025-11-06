@@ -16,7 +16,7 @@
         "php": "^8.4",
         "laravel/framework": "^12.0",
         "filament/filament": "^4.0",
-        "netserva/core": "^0.0.7"
+        "netserva/core": "^0.0.8"
     },
     "require-dev": {
         "pestphp/pest": "^4.0",
