@@ -94,6 +94,124 @@ Visit `/admin` and start creating content!
 
 ---
 
+## 📦 Export & Import
+
+The CMS includes powerful export and import functionality for migrating content between environments.
+
+### Export CMS Content
+
+Export all CMS content and media files to a portable ZIP archive:
+
+```bash
+# Export to default location (storage/app/cms-export-TIMESTAMP.zip)
+php artisan cms:export
+
+# Export to specific file
+php artisan cms:export --output=/path/to/backup.zip
+
+# Include unpublished drafts
+php artisan cms:export --include-drafts
+
+# Include soft-deleted content
+php artisan cms:export --include-deleted
+```
+
+**Export includes:**
+- All published pages and posts (or drafts with `--include-drafts`)
+- Categories, tags, and menus
+- Media files and metadata
+- Relationships between content
+- Manifest file with export metadata
+
+### Import CMS Content
+
+Import content from an exported ZIP file:
+
+```bash
+# Import from ZIP file
+php artisan cms:import backup.zip
+
+# Preview import without making changes (dry-run)
+php artisan cms:import backup.zip --dry-run
+
+# Skip importing media files
+php artisan cms:import backup.zip --skip-media
+
+# Handle slug conflicts
+php artisan cms:import backup.zip --conflict-strategy=rename  # Default: rename with -imported suffix
+php artisan cms:import backup.zip --conflict-strategy=skip    # Skip conflicting content
+php artisan cms:import backup.zip --conflict-strategy=overwrite  # Overwrite existing content
+
+# Skip confirmation prompts (useful for scripts)
+php artisan cms:import backup.zip --force
+```
+
+**Import features:**
+- Automatic ID remapping for foreign keys
+- Slug conflict resolution (rename/skip/overwrite)
+- Hierarchical page structure preservation
+- Category and tag relationship restoration
+- Media file restoration
+- Transaction-based (rolls back on error)
+- Dry-run mode for previewing changes
+
+### Reset CMS
+
+Clear all CMS content to prepare for fresh import:
+
+```bash
+# Clear all CMS data (requires confirmation)
+php artisan cms:reset
+
+# Skip confirmation prompts
+php artisan cms:reset --force
+```
+
+**Warning:** This permanently deletes:
+- All blog posts and pages
+- All categories and tags
+- All menus
+- All media files (images, documents)
+
+### Use Cases
+
+**Content Migration:**
+```bash
+# Export from development
+php artisan cms:export --output=production-content.zip
+
+# Import to production
+php artisan cms:reset --force
+php artisan cms:import production-content.zip --force
+```
+
+**Site Templates:**
+```bash
+# Create reusable content template
+php artisan cms:export --output=starter-template.zip
+
+# Deploy to new site
+php artisan cms:import starter-template.zip
+```
+
+**Backup & Restore:**
+```bash
+# Daily backup
+php artisan cms:export --output=backups/cms-$(date +%Y-%m-%d).zip
+
+# Restore from backup
+php artisan cms:reset --force
+php artisan cms:import backups/cms-2025-11-10.zip --force
+```
+
+### Known Limitations
+
+- Posts with complex code examples containing `)` character combinations may not parse correctly during import
+- The majority of content (pages, simple posts, categories, tags, menus) imports successfully
+- For posts with code examples, verify content after import and manually re-import if needed
+
+---
+
 ## 📊 Database Schema
 
 All tables use the `cms_` prefix to prevent conflicts:

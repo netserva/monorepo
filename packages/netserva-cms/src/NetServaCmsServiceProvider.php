@@ -29,6 +29,9 @@ class NetServaCmsServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 Console\Commands\InstallCommand::class,
+                Console\Commands\ExportCommand::class,
+                Console\Commands\ImportCommand::class,
+                Console\Commands\ResetCommand::class,
             ]);
         }
 
