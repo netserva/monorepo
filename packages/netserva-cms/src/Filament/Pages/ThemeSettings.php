@@ -7,12 +7,12 @@ namespace NetServa\Cms\Filament\Pages;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use NetServa\Cms\Models\Theme;
 use NetServa\Cms\Services\ThemeService;
 use UnitEnum;
@@ -74,8 +74,13 @@ class ThemeSettings extends Page implements HasForms
         return $data;
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
+        // Ensure theme is loaded before building form
+        if (! $this->activeTheme) {
+            $this->activeTheme = app(ThemeService::class)->getActive();
+        }
+
         $colorInputs = [];
         foreach ($this->activeTheme->colors() as $color) {
             $slug = $color['slug'];
@@ -87,7 +92,7 @@ class ThemeSettings extends Page implements HasForms
 
         $typography = $this->activeTheme->typography();
 
-        return $form
+        return $schema
             ->schema([
                 Section::make('Colors')
                     ->description('Customize your theme color palette')
