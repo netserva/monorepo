@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NetServa\Cms\Filament\Resources;
 
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -172,7 +173,7 @@ class ThemeResource extends Resource
                     }),
             ])
             ->recordActions([
-                Tables\Actions\Action::make('activate')
+                Action::make('activate')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
@@ -192,7 +193,7 @@ class ThemeResource extends Resource
 
                 EditAction::make(),
 
-                Tables\Actions\Action::make('view_manifest')
+                Action::make('view_manifest')
                     ->label('View Manifest')
                     ->icon('heroicon-o-document-text')
                     ->modalContent(fn (Theme $record) => view('netserva-cms::filament.theme-manifest-modal', ['theme' => $record]))
@@ -205,7 +206,7 @@ class ThemeResource extends Resource
                     ->modalDescription('Are you sure? This will remove the theme from the database (files remain).'),
             ])
             ->toolbarActions([
-                Tables\Actions\Action::make('discover')
+                Action::make('discover')
                     ->label('Discover Themes')
                     ->icon('heroicon-o-magnifying-glass')
                     ->color('info')

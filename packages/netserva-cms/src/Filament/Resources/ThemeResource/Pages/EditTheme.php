@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NetServa\Cms\Filament\Resources\ThemeResource\Pages;
 
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use NetServa\Cms\Filament\Resources\ThemeResource;
@@ -20,7 +21,7 @@ class EditTheme extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\Action::make('activate')
+            Action::make('activate')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
@@ -40,7 +41,7 @@ class EditTheme extends EditRecord
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
 
-            \Filament\Actions\Action::make('refresh_manifest')
+            Action::make('refresh_manifest')
                 ->label('Reload Manifest')
                 ->icon('heroicon-o-arrow-path')
                 ->color('info')
