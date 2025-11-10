@@ -12,6 +12,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -97,7 +98,7 @@ class ThemeResource extends Resource
                 Section::make('Theme Manifest')
                     ->description('Theme configuration loaded from theme.json')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
                                 Forms\Components\Placeholder::make('colors_count')
                                     ->label('Colors')
@@ -158,7 +159,7 @@ class ThemeResource extends Resource
                 Section::make('Typography')
                     ->description('Font configuration')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
                                 Forms\Components\Placeholder::make('heading_font')
                                     ->label('Heading Font')
@@ -182,7 +183,7 @@ class ThemeResource extends Resource
                 Section::make('Layout')
                     ->description('Layout dimensions and spacing')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
                                 Forms\Components\Placeholder::make('content_width')
                                     ->label('Content Width')
