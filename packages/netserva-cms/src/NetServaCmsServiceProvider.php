@@ -37,6 +37,9 @@ class NetServaCmsServiceProvider extends ServiceProvider
                 Console\Commands\ExportCommand::class,
                 Console\Commands\ImportCommand::class,
                 Console\Commands\ResetCommand::class,
+                Console\Commands\ThemeDiscoverCommand::class,
+                Console\Commands\ThemeActivateCommand::class,
+                Console\Commands\ThemeListCommand::class,
             ]);
         }
 
