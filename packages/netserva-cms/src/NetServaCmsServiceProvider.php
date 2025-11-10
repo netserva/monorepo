@@ -154,6 +154,11 @@ class NetServaCmsServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../database/migrations' => database_path('migrations'),
             ], 'netserva-cms-migrations');
+
+            // Publish themes
+            $this->publishes([
+                __DIR__.'/../resources/themes' => resource_path('themes'),
+            ], 'netserva-cms-themes');
         }
     }
 

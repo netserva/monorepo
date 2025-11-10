@@ -1,0 +1,185 @@
+{
+    "name": "default",
+    "display_name": "Default NetServa Theme",
+    "description": "Clean, professional theme for NetServa CMS. Fully responsive with modern design patterns.",
+    "version": "1.0.0",
+    "author": "NetServa",
+    "parent": null,
+    "screenshot": "screenshot.png",
+    "tags": ["professional", "business", "responsive", "modern"],
+
+    "settings": {
+        "colors": {
+            "customizable": true,
+            "palette": [
+                {
+                    "name": "Primary",
+                    "slug": "primary",
+                    "value": "#DC2626",
+                    "description": "Main brand color"
+                },
+                {
+                    "name": "Secondary",
+                    "slug": "secondary",
+                    "value": "#1F2937",
+                    "description": "Secondary brand color"
+                },
+                {
+                    "name": "Accent",
+                    "slug": "accent",
+                    "value": "#3B82F6",
+                    "description": "Accent color for CTAs and highlights"
+                },
+                {
+                    "name": "Background",
+                    "slug": "background",
+                    "value": "#FFFFFF",
+                    "description": "Main background color"
+                },
+                {
+                    "name": "Surface",
+                    "slug": "surface",
+                    "value": "#F9FAFB",
+                    "description": "Card and surface background"
+                },
+                {
+                    "name": "Text",
+                    "slug": "text",
+                    "value": "#111827",
+                    "description": "Primary text color"
+                },
+                {
+                    "name": "Text Muted",
+                    "slug": "text-muted",
+                    "value": "#6B7280",
+                    "description": "Muted text color"
+                }
+            ]
+        },
+        "typography": {
+            "customizable": true,
+            "fonts": {
+                "heading": {
+                    "family": "Inter",
+                    "provider": "bunny",
+                    "weights": [400, 500, 600, 700],
+                    "fallback": "sans-serif"
+                },
+                "body": {
+                    "family": "system-ui",
+                    "provider": "system",
+                    "weights": [400, 500, 600],
+                    "fallback": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                }
+            },
+            "sizes": [
+                {"name": "Extra Small", "slug": "xs", "value": "0.75rem"},
+                {"name": "Small", "slug": "sm", "value": "0.875rem"},
+                {"name": "Base", "slug": "base", "value": "1rem"},
+                {"name": "Large", "slug": "lg", "value": "1.125rem"},
+                {"name": "Extra Large", "slug": "xl", "value": "1.25rem"},
+                {"name": "2X Large", "slug": "2xl", "value": "1.5rem"},
+                {"name": "3X Large", "slug": "3xl", "value": "1.875rem"},
+                {"name": "4X Large", "slug": "4xl", "value": "2.25rem"}
+            ],
+            "lineHeights": {
+                "tight": "1.25",
+                "normal": "1.5",
+                "relaxed": "1.75"
+            }
+        },
+        "layout": {
+            "contentWidth": "800px",
+            "wideWidth": "1200px",
+            "containerWidth": "1400px",
+            "sidebar": {
+                "enabled": true,
+                "position": "right",
+                "width": "320px"
+            },
+            "spacing": {
+                "small": "0.5rem",
+                "medium": "1rem",
+                "large": "2rem",
+                "xlarge": "4rem"
+            }
+        },
+        "darkMode": {
+            "enabled": true,
+            "default": "system",
+            "colors": {
+                "background": "#111827",
+                "surface": "#1F2937",
+                "text": "#F9FAFB",
+                "text-muted": "#9CA3AF"
+            }
+        }
+    },
+
+    "templates": {
+        "page": [
+            {
+                "name": "default",
+                "label": "Default",
+                "description": "Standard page with sidebar"
+            },
+            {
+                "name": "full-width",
+                "label": "Full Width",
+                "description": "Full width page without sidebar"
+            },
+            {
+                "name": "landing",
+                "label": "Landing Page",
+                "description": "Hero-focused landing page"
+            },
+            {
+                "name": "contact",
+                "label": "Contact",
+                "description": "Contact page with form"
+            }
+        ],
+        "post": [
+            {
+                "name": "default",
+                "label": "Standard Post",
+                "description": "Standard blog post with sidebar"
+            },
+            {
+                "name": "featured",
+                "label": "Featured Post",
+                "description": "Large hero image post"
+            }
+        ]
+    },
+
+    "regions": {
+        "header": {
+            "label": "Header",
+            "description": "Primary navigation and branding area"
+        },
+        "footer": {
+            "label": "Footer",
+            "description": "Footer content and links"
+        },
+        "sidebar": {
+            "label": "Sidebar",
+            "description": "Sidebar widgets and content"
+        },
+        "before_content": {
+            "label": "Before Content",
+            "description": "Area above main content"
+        },
+        "after_content": {
+            "label": "After Content",
+            "description": "Area below main content"
+        }
+    },
+
+    "support": {
+        "responsive": true,
+        "dark_mode": true,
+        "rtl": false,
+        "accessibility": true
+    }
+}
