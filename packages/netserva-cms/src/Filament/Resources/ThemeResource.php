@@ -93,19 +93,159 @@ class ThemeResource extends Resource
                     ->columns(2)
                     ->columnSpanFull(),
 
-                // Theme Manifest (Read-Only Display)
+                // Theme Manifest - Summary Stats
                 Section::make('Theme Manifest')
                     ->description('Theme configuration loaded from theme.json')
                     ->schema([
-                        Forms\Components\Placeholder::make('manifest_info')
-                            ->label('Manifest Information')
-                            ->content(fn (?Theme $record) => $record
-                                ? view('netserva-cms::filament.theme-manifest', ['theme' => $record])
-                                : 'No manifest data available'
-                            )
-                            ->columnSpanFull(),
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\Placeholder::make('colors_count')
+                                    ->label('Colors')
+                                    ->content(fn (?Theme $record) => $record && $record->colors()
+                                        ? count($record->colors())
+                                        : 0
+                                    ),
+
+                                Forms\Components\Placeholder::make('templates_count')
+                                    ->label('Templates')
+                                    ->content(fn (?Theme $record) => $record && ! empty($record->manifest['templates'])
+                                        ? array_sum(array_map('count', $record->manifest['templates']))
+                                        : 0
+                                    ),
+
+                                Forms\Components\Placeholder::make('features_count')
+                                    ->label('Features')
+                                    ->content(fn (?Theme $record) => $record && ! empty($record->manifest['support'])
+                                        ? count(array_filter($record->manifest['support']))
+                                        : 0
+                                    ),
+                            ]),
                     ])
                     ->columnSpanFull(),
+
+                // Colors Section
+                Section::make('Color Palette')
+                    ->description('Theme color definitions')
+                    ->schema([
+                        Forms\Components\Placeholder::make('colors_display')
+                            ->label('')
+                            ->content(function (?Theme $record) {
+                                if (! $record || empty($record->colors())) {
+                                    return 'No colors defined';
+                                }
+
+                                $html = '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">';
+                                foreach ($record->colors() as $color) {
+                                    $html .= '
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                            <div class="w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" style="background-color: '.$color['value'].'"></div>
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">'.$color['name'].'</p>
+                                                <code class="text-xs text-gray-500 dark:text-gray-400">'.$color['value'].'</code>
+                                            </div>
+                                        </div>';
+                                }
+                                $html .= '</div>';
+
+                                return new \Illuminate\Support\HtmlString($html);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->columnSpanFull()
+                    ->visible(fn (?Theme $record) => $record && ! empty($record->colors())),
+
+                // Typography Section
+                Section::make('Typography')
+                    ->description('Font configuration')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Placeholder::make('heading_font')
+                                    ->label('Heading Font')
+                                    ->content(fn (?Theme $record) => $record && ! empty($record->typography()['fonts']['heading'])
+                                        ? $record->typography()['fonts']['heading']['family'].' (via '.ucfirst($record->typography()['fonts']['heading']['provider'] ?? 'system').')'
+                                        : 'Not defined'
+                                    ),
+
+                                Forms\Components\Placeholder::make('body_font')
+                                    ->label('Body Font')
+                                    ->content(fn (?Theme $record) => $record && ! empty($record->typography()['fonts']['body'])
+                                        ? $record->typography()['fonts']['body']['family'].' (via '.ucfirst($record->typography()['fonts']['body']['provider'] ?? 'system').')'
+                                        : 'Not defined'
+                                    ),
+                            ]),
+                    ])
+                    ->columnSpanFull()
+                    ->visible(fn (?Theme $record) => $record && ! empty($record->typography())),
+
+                // Layout Section
+                Section::make('Layout')
+                    ->description('Layout dimensions and spacing')
+                    ->schema([
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\Placeholder::make('content_width')
+                                    ->label('Content Width')
+                                    ->content(fn (?Theme $record) => $record && ! empty($record->manifest['settings']['layout']['contentWidth'])
+                                        ? $record->manifest['settings']['layout']['contentWidth']
+                                        : 'Not defined'
+                                    ),
+
+                                Forms\Components\Placeholder::make('wide_width')
+                                    ->label('Wide Width')
+                                    ->content(fn (?Theme $record) => $record && ! empty($record->manifest['settings']['layout']['wideWidth'])
+                                        ? $record->manifest['settings']['layout']['wideWidth']
+                                        : 'Not defined'
+                                    ),
+
+                                Forms\Components\Placeholder::make('container_width')
+                                    ->label('Container Width')
+                                    ->content(fn (?Theme $record) => $record && ! empty($record->manifest['settings']['layout']['containerWidth'])
+                                        ? $record->manifest['settings']['layout']['containerWidth']
+                                        : 'Not defined'
+                                    ),
+                            ]),
+                    ])
+                    ->columnSpanFull()
+                    ->visible(fn (?Theme $record) => $record && ! empty($record->manifest['settings']['layout'])),
+
+                // Templates Section
+                Section::make('Templates')
+                    ->description('Available theme templates')
+                    ->schema([
+                        Forms\Components\Placeholder::make('templates_display')
+                            ->label('')
+                            ->content(function (?Theme $record) {
+                                if (! $record || empty($record->manifest['templates'])) {
+                                    return 'No templates defined';
+                                }
+
+                                $html = '<div class="space-y-4">';
+                                foreach ($record->manifest['templates'] as $type => $templates) {
+                                    $html .= '
+                                        <div>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">'.ucfirst($type).'</h4>
+                                                <span class="text-xs font-bold text-gray-500 dark:text-gray-400">'.count($templates).'</span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-2">';
+
+                                    foreach ($templates as $template) {
+                                        $html .= '<span class="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-100 rounded-md" title="'.($template['description'] ?? '').'">'.$template['label'].'</span>';
+                                    }
+
+                                    $html .= '
+                                            </div>
+                                        </div>';
+                                }
+                                $html .= '</div>';
+
+                                return new \Illuminate\Support\HtmlString($html);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->columnSpanFull()
+                    ->visible(fn (?Theme $record) => $record && ! empty($record->manifest['templates'])),
             ]);
     }
 
