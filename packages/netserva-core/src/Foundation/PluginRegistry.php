@@ -78,7 +78,7 @@ class PluginRegistry
             $orderedIds = $this->dependencyResolver->resolve($availableEnabled);
 
             // Map plugin IDs back to their class names
-            return array_map(fn($id) => $availableEnabled[$id], $orderedIds);
+            return array_map(fn ($id) => $availableEnabled[$id], $orderedIds);
         });
     }
 
@@ -333,7 +333,9 @@ class PluginRegistry
         // Only include plugins that actually implement the Plugin interface
         $potentialPlugins = [
             'netserva-core' => \NetServa\Core\CorePlugin::class,
+            'netserva-admin' => \NetServa\Admin\AdminPlugin::class,
             'netserva-cli' => \NetServa\Cli\Filament\NetServaCliPlugin::class,
+            'netserva-cms' => \NetServa\Cms\NetServaCmsPlugin::class,
             'netserva-cron' => \NetServa\Cron\Filament\NetServaCronPlugin::class,
             'netserva-wg' => \NetServa\Wg\Filament\NetServaWgPlugin::class,
             'netserva-fleet' => \NetServa\Fleet\Filament\FleetPlugin::class,

@@ -9,19 +9,18 @@ use NetServa\Dns\Services\DnsZoneManagementService;
  * Show DNS Zone Command
  *
  * Display DNS zone information
- * Follows NetServa CRUD pattern: shzone (not "dns:zone:show")
+ * Follows NetServa CRUD pattern: shzone [vnode] [zone] [options]
  *
- * Usage: shzone [zone] [options]
+ * Usage: shzone [vnode] [zone] [options]
  * Example: shzone                          # List all zones
- * Example: shzone example.com              # Show specific zone (name-based lookup)
- * Example: shzone 1 --with-dnssec          # Show with DNSSEC details (ID-based lookup)
- * Example: shzone --provider=homelab --active  # Filter zones
+ * Example: shzone ns1gc                    # List zones for vnode
+ * Example: shzone ns1gc goldcoast.org      # Show specific zone
  */
 class ShowZoneCommand extends Command
 {
     protected $signature = 'shzone
-        {zone? : Zone ID or name (shows all if omitted)}
-        {--provider= : Filter by provider ID or name}
+        {vnode? : VNode identifier (shows all providers if omitted)}
+        {zone? : Zone name (shows all zones for vnode if omitted)}
         {--type= : Filter by zone kind (Native, Primary, Secondary)}
         {--active : Show only active zones}
         {--inactive : Show only inactive zones}
@@ -46,21 +45,27 @@ class ShowZoneCommand extends Command
 
     public function handle(): int
     {
-        $identifier = $this->argument('zone');
+        $vnode = $this->argument('vnode');
+        $zone = $this->argument('zone');
 
-        // Show specific zone
-        if ($identifier) {
-            return $this->showSingleZone($identifier);
+        // Show specific zone: shzone ns1gc goldcoast.org
+        if ($vnode && $zone) {
+            return $this->showSingleZone($zone, $vnode);
         }
 
-        // List all zones with filters
+        // List zones for vnode: shzone ns1gc
+        if ($vnode && ! $zone) {
+            return $this->listZones(['provider' => $vnode]);
+        }
+
+        // List all zones: shzone
         return $this->listZones();
     }
 
     /**
      * Show single zone details
      */
-    protected function showSingleZone(string $identifier): int
+    protected function showSingleZone(string $zoneName, ?string $vnode = null): int
     {
         $options = [
             'with_records' => $this->option('with-records'),
@@ -68,9 +73,10 @@ class ShowZoneCommand extends Command
             'with_metadata' => $this->option('with-metadata'),
             'sync' => $this->option('sync'),
             'test' => $this->option('test'),
+            'provider' => $vnode,
         ];
 
-        $result = $this->zoneService->showZone($identifier, $options);
+        $result = $this->zoneService->showZone($zoneName, $options);
 
         if (! $result['success']) {
             $this->error("❌ {$result['message']}");
@@ -228,13 +234,9 @@ class ShowZoneCommand extends Command
     /**
      * List all zones with filters
      */
-    protected function listZones(): int
+    protected function listZones(array $additionalFilters = []): int
     {
-        $filters = [];
-
-        if ($this->option('provider')) {
-            $filters['provider'] = $this->option('provider');
-        }
+        $filters = $additionalFilters;
 
         if ($this->option('type')) {
             $filters['type'] = $this->option('type');
@@ -266,7 +268,7 @@ class ShowZoneCommand extends Command
 
             $this->newLine();
             $this->line('💡 Create your first zone:');
-            $this->line('   addzone example.com <dns-provider-id>');
+            $this->line('   addzone <vnode> example.com');
 
             return self::SUCCESS;
         }

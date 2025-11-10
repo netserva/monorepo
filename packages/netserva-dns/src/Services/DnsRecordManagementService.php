@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use NetServa\Dns\Models\DnsProvider;
 use NetServa\Dns\Models\DnsRecord;
 use NetServa\Dns\Models\DnsZone;
 
@@ -183,10 +184,15 @@ class DnsRecordManagementService
 
         // Filter by zone
         if (isset($filters['zone'])) {
-            $zoneResult = $this->findZone($filters['zone']);
-            if ($zoneResult['success']) {
-                $query->where('dns_zone_id', $zoneResult['zone']->id);
+            $zoneResult = $this->findZone(
+                $filters['zone'],
+                $filters['provider'] ?? null
+            );
+            if (! $zoneResult['success']) {
+                // Zone not found - return empty collection
+                return collect();
             }
+            $query->where('dns_zone_id', $zoneResult['zone']->id);
         }
 
         // Filter by type
@@ -738,28 +744,80 @@ class DnsRecordManagementService
      * - "example.com" matches "example.com."
      * - "example.com." matches "example.com."
      */
-    protected function findZone(int|string $identifier): array
+    protected function findZone(int|string $identifier, ?string $providerIdentifier = null): array
     {
+        $query = DnsZone::query();
+
+        // If provider specified, find it first and filter by it
+        if ($providerIdentifier !== null) {
+            $providerResult = $this->findProvider($providerIdentifier);
+            if (! $providerResult['success']) {
+                return $providerResult;
+            }
+            $query->where('dns_provider_id', $providerResult['provider']->id);
+        }
+
         if (is_numeric($identifier)) {
-            $zone = DnsZone::find($identifier);
+            $zone = $query->find($identifier);
         } else {
             // Normalize: ensure trailing dot for database lookup
             $normalizedName = rtrim($identifier, '.').'.';
-            $zone = DnsZone::where('name', $normalizedName)->first();
+            $zone = $query->where('name', $normalizedName)->first();
         }
 
         if (! $zone) {
+            $message = is_numeric($identifier)
+                ? "Zone ID {$identifier} not found"
+                : "Zone '{$identifier}' not found";
+
+            if ($providerIdentifier !== null) {
+                $message .= " on provider '{$providerIdentifier}'";
+            }
+
             return [
                 'success' => false,
-                'message' => is_numeric($identifier)
-                    ? "Zone ID {$identifier} not found"
-                    : "Zone '{$identifier}' not found",
+                'message' => $message,
             ];
         }
 
         return [
             'success' => true,
             'zone' => $zone,
+        ];
+    }
+
+    /**
+     * Find provider by ID, vnode, or name
+     *
+     * @param  int|string  $identifier  Provider ID, vnode, or name
+     * @return array Result with success status and provider data
+     */
+    protected function findProvider(int|string $identifier): array
+    {
+        if (is_numeric($identifier)) {
+            $provider = DnsProvider::find($identifier);
+        } else {
+            // Try vnode first (most common use case)
+            $provider = DnsProvider::where('vnode', $identifier)->first();
+
+            // Fallback to name lookup
+            if (! $provider) {
+                $provider = DnsProvider::where('name', $identifier)->first();
+            }
+        }
+
+        if (! $provider) {
+            return [
+                'success' => false,
+                'message' => is_numeric($identifier)
+                    ? "Provider ID {$identifier} not found"
+                    : "Provider '{$identifier}' not found",
+            ];
+        }
+
+        return [
+            'success' => true,
+            'provider' => $provider,
         ];
     }
 

@@ -11,17 +11,17 @@ use function Laravel\Prompts\confirm;
  * Delete DNS Zone Command
  *
  * Delete DNS zone from provider
- * Follows NetServa CRUD pattern: delzone (not "dns:zone:delete")
+ * Follows NetServa CRUD pattern: delzone <vnode> <zone> [options]
  *
- * Usage: delzone <zone> [options]
- * Example: delzone example.com
- * Example: delzone 1 --cascade         # Delete zone and all records
- * Example: delzone old.com --force     # Force deletion even if has records
+ * Usage: delzone <vnode> <zone> [options]
+ * Example: delzone ns1gc example.com
+ * Example: delzone ns1gc old.com --cascade     # Delete zone and all records
  */
 class DeleteZoneCommand extends Command
 {
     protected $signature = 'delzone
-        {zone : Zone ID or name}
+        {vnode : VNode identifier (DNS provider)}
+        {zone : Zone name}
         {--cascade : Delete all records in the zone}
         {--force : Force deletion without confirmation}
         {--skip-remote : Skip remote deletion (local only)}
@@ -39,10 +39,11 @@ class DeleteZoneCommand extends Command
 
     public function handle(): int
     {
-        $identifier = $this->argument('zone');
+        $vnode = $this->argument('vnode');
+        $zoneName = $this->argument('zone');
 
         // First, get zone details to show user what will be deleted
-        $showResult = $this->zoneService->showZone($identifier, ['with_records' => true]);
+        $showResult = $this->zoneService->showZone($zoneName, ['with_records' => true, 'provider' => $vnode]);
 
         if (! $showResult['success']) {
             $this->error("❌ {$showResult['message']}");
@@ -64,7 +65,7 @@ class DeleteZoneCommand extends Command
         $this->line("Records: <fg=cyan>{$recordsCount}</>");
 
         if ($zone->dnssec_enabled) {
-            $this->line("DNSSEC: <fg=yellow>Enabled</> ⚠️");
+            $this->line('DNSSEC: <fg=yellow>Enabled</> ⚠️');
         }
 
         // Check for records
@@ -104,9 +105,9 @@ class DeleteZoneCommand extends Command
             $this->info('🔍 Dry run - no changes will be made');
             $this->line('');
             $this->line('Would delete:');
-            $this->line('  Zone: ' . $zone->name);
-            $this->line('  Records: ' . ($this->option('cascade') ? $recordsCount : 0));
-            $this->line('  Remote: ' . ($this->option('skip-remote') ? 'No' : 'Yes'));
+            $this->line('  Zone: '.$zone->name);
+            $this->line('  Records: '.($this->option('cascade') ? $recordsCount : 0));
+            $this->line('  Remote: '.($this->option('skip-remote') ? 'No' : 'Yes'));
 
             return self::SUCCESS;
         }
@@ -138,6 +139,7 @@ class DeleteZoneCommand extends Command
             'cascade' => $this->option('cascade'),
             'force' => $this->option('force'),
             'skip_remote' => $this->option('skip-remote'),
+            'provider' => $vnode,
         ];
 
         // Delete the zone
@@ -145,7 +147,7 @@ class DeleteZoneCommand extends Command
         $this->line('🗑️  Deleting zone...');
 
         $result = $this->zoneService->deleteZone(
-            identifier: $identifier,
+            identifier: $zoneName,
             options: $options
         );
 
@@ -190,8 +192,8 @@ class DeleteZoneCommand extends Command
         // Show next steps
         $this->newLine();
         $this->line('💡 Next steps:');
-        $this->line('   - View remaining zones: shzone --provider=' . $provider->id);
-        $this->line('   - Create new zone: addzone <domain> ' . $provider->id);
+        $this->line('   - View remaining zones: shzone --provider='.$provider->id);
+        $this->line('   - Create new zone: addzone <domain> '.$provider->id);
 
         return self::SUCCESS;
     }

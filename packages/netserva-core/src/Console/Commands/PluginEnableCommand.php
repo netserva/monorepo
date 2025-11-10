@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace NetServa\Core\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Core\Services\PluginManager;
+use NetServa\Core\Foundation\PluginRegistry;
+use NetServa\Core\Models\InstalledPlugin;
 
 class PluginEnableCommand extends Command
 {
@@ -14,33 +15,39 @@ class PluginEnableCommand extends Command
 
     protected $description = 'Enable a plugin';
 
-    public function handle(PluginManager $pluginManager): int
+    public function handle(PluginRegistry $pluginRegistry): int
     {
         $name = $this->argument('name');
 
-        if (! $pluginManager->exists($name)) {
+        if (! $pluginRegistry->hasPlugin($name)) {
             $this->components->error("Plugin [{$name}] not found");
 
             return self::FAILURE;
         }
 
-        if ($pluginManager->isEnabled($name)) {
+        $installedPlugin = InstalledPlugin::where('name', $name)->first();
+
+        if ($installedPlugin && $installedPlugin->is_enabled) {
             $this->components->warn("Plugin [{$name}] is already enabled");
 
             return self::SUCCESS;
         }
 
-        $pluginManager->enable($name);
+        if ($pluginRegistry->enablePlugin($name)) {
+            $this->components->info("Plugin [{$name}] enabled successfully");
 
-        $this->components->info("Plugin [{$name}] enabled successfully");
+            // Check for dependencies
+            $installedPlugin = InstalledPlugin::where('name', $name)->first();
+            if ($installedPlugin && ! empty($installedPlugin->dependencies)) {
+                $this->components->info('Dependencies: '.implode(', ', $installedPlugin->dependencies));
+                $this->components->warn('Make sure all dependencies are enabled');
+            }
 
-        // Check for dependencies
-        $plugin = $pluginManager->get($name);
-        if (! empty($plugin['dependencies'])) {
-            $this->components->info('Dependencies: '.implode(', ', $plugin['dependencies']));
-            $this->components->warn('Make sure all dependencies are enabled');
+            return self::SUCCESS;
         }
 
-        return self::SUCCESS;
+        $this->components->error("Failed to enable plugin [{$name}]");
+
+        return self::FAILURE;
     }
 }

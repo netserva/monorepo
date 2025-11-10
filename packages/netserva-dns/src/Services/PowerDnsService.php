@@ -569,6 +569,7 @@ class PowerDnsService
                 // Check for high ACTUAL error rates (not normal counters)
                 $errorStats = array_filter($stats, function ($stat) {
                     $name = $stat['name'] ?? '';
+
                     // Only check real error metrics, not normal operational counters
                     return (str_contains($name, 'servfail') ||
                             str_contains($name, 'error')) &&
@@ -785,14 +786,55 @@ class PowerDnsService
             $recordName .= '.';
         }
 
+        $recordType = strtoupper($recordData['type']);
+        $recordContent = $recordData['content'];
+        $recordTtl = $recordData['ttl'] ?? 300;
+        $recordDisabled = $recordData['disabled'] ?? false;
+
+        // Fetch existing zone data to get current RRset
+        $zoneResult = $this->tunnelService->apiCall(
+            $provider,
+            "/servers/localhost/zones/$zoneName"
+        );
+
+        $existingRecords = [];
+        if ($zoneResult['success'] && isset($zoneResult['data']['rrsets'])) {
+            // Find existing RRset for this name+type
+            foreach ($zoneResult['data']['rrsets'] as $rrset) {
+                if ($rrset['name'] === $recordName && $rrset['type'] === $recordType) {
+                    $existingRecords = $rrset['records'] ?? [];
+                    // Use existing TTL if not explicitly set in recordData
+                    if (! isset($recordData['ttl']) && isset($rrset['ttl'])) {
+                        $recordTtl = $rrset['ttl'];
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Check if record already exists
+        foreach ($existingRecords as $existing) {
+            if ($existing['content'] === $recordContent) {
+                return [
+                    'success' => false,
+                    'message' => "Record already exists: {$recordName} {$recordType} {$recordContent}",
+                ];
+            }
+        }
+
+        // Build new records array: existing + new
+        $allRecords = $existingRecords;
+        $allRecords[] = [
+            'content' => $recordContent,
+            'disabled' => $recordDisabled,
+        ];
+
         $rrsets = [[
             'name' => $recordName,
-            'type' => strtoupper($recordData['type']),
-            'ttl' => $recordData['ttl'] ?? 300,
+            'type' => $recordType,
+            'ttl' => $recordTtl,
             'changetype' => 'REPLACE',
-            'records' => [
-                ['content' => $recordData['content'], 'disabled' => false],
-            ],
+            'records' => $allRecords,
         ]];
 
         $result = $this->tunnelService->apiCall(
@@ -807,14 +849,16 @@ class PowerDnsService
                 'provider' => $provider->name,
                 'zone' => $zoneName,
                 'name' => $recordName,
-                'type' => $recordData['type'],
-                'content' => $recordData['content'],
+                'type' => $recordType,
+                'content' => $recordContent,
+                'total_records_in_rrset' => count($allRecords),
             ]);
 
             return [
                 'success' => true,
-                'message' => "Record created: {$recordName} {$recordData['type']} {$recordData['content']}",
+                'message' => "Record created: {$recordName} {$recordType} {$recordContent}",
                 'record' => $recordData,
+                'data' => ['id' => null], // PowerDNS doesn't return record IDs
             ];
         }
 

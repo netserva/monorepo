@@ -27,6 +27,7 @@ class AddDnsCommand extends Command
         {--endpoint= : API endpoint URL}
         {--api-key= : API authentication key}
         {--api-secret= : API secret (Cloudflare/Route53)}
+        {--vnode= : VNode identifier (auto-set from ssh-host if not provided)}
         {--ssh-host= : SSH host for tunnel access (PowerDNS remote)}
         {--port=8081 : API port (default: 8081 for PowerDNS)}
         {--timeout=30 : Request timeout in seconds}
@@ -98,6 +99,12 @@ class AddDnsCommand extends Command
             return self::FAILURE; // User cancelled or error
         }
 
+        // Auto-populate vnode from ssh-host if not explicitly set
+        $vnode = $this->option('vnode');
+        if (! $vnode && isset($connectionConfig['ssh_host'])) {
+            $vnode = $connectionConfig['ssh_host'];
+        }
+
         // Build options
         $options = [
             'description' => $this->option('description'),
@@ -107,13 +114,19 @@ class AddDnsCommand extends Command
             'timeout' => (int) $this->option('timeout'),
             'sort_order' => (int) $this->option('priority'),
             'test_connection' => ! $this->option('no-test'),
+            'vnode' => $vnode,
         ];
 
         // Show what we're about to create
         $this->newLine();
         $this->line("🚀 Creating DNS Provider: <fg=yellow>{$name}</>");
-        $this->line("   Type: <fg=cyan>".ucfirst($type)."</>");
-        $this->line("   Active: <fg=".($options['active'] ? 'green' : 'red').'>'.($options['active'] ? 'Yes' : 'No').'</>');
+        $this->line('   Type: <fg=cyan>'.ucfirst($type).'</>');
+
+        if ($vnode) {
+            $this->line("   VNode: <fg=cyan>{$vnode}</>");
+        }
+
+        $this->line('   Active: <fg='.($options['active'] ? 'green' : 'red').'>'.($options['active'] ? 'Yes' : 'No').'</>');
 
         if ($type === 'powerdns') {
             $endpoint = $connectionConfig['api_endpoint'] ?? 'Not set';
@@ -163,7 +176,7 @@ class AddDnsCommand extends Command
         );
 
         if (! $result['success']) {
-            $this->error("❌ Failed to create DNS provider");
+            $this->error('❌ Failed to create DNS provider');
             $this->line("   Error: {$result['message']}");
 
             return self::FAILURE;
@@ -171,10 +184,10 @@ class AddDnsCommand extends Command
 
         $provider = $result['provider'];
 
-        $this->info("✅ DNS Provider created successfully");
+        $this->info('✅ DNS Provider created successfully');
         $this->line("   ID: <fg=yellow>{$provider->id}</>");
         $this->line("   Name: <fg=yellow>{$provider->name}</>");
-        $this->line("   Status: <fg=green>Active</>");
+        $this->line('   Status: <fg=green>Active</>');
 
         // Show connection test results
         if (isset($result['connection_test'])) {
@@ -220,7 +233,6 @@ class AddDnsCommand extends Command
     /**
      * Build connection configuration based on provider type
      *
-     * @param  string  $type
      * @return array|null Connection config or null if cancelled
      */
     protected function buildConnectionConfig(string $type): ?array

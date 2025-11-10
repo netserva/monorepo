@@ -9,16 +9,16 @@ use NetServa\Dns\Services\DnsRecordManagementService;
  * Change DNS Record Command
  *
  * Update DNS record configuration
- * Follows NetServa CRUD pattern: chrec (not "dns:record:change")
+ * Follows NetServa CRUD pattern: chrec <vnode> <record> [options]
  *
- * Usage: chrec <record> [options]
- * Example: chrec 123 --content=192.168.1.200
- * Example: chrec 456 --ttl=7200 --update-ptr
- * Example: chrec 789 --disable
+ * Usage: chrec <vnode> <record> [options]
+ * Example: chrec ns1gc 123 --content=192.168.1.200
+ * Example: chrec ns1gc 456 --ttl=7200 --update-ptr
  */
 class ChangeRecordCommand extends Command
 {
     protected $signature = 'chrec
+        {vnode : VNode identifier (DNS provider)}
         {record : Record ID}
         {--content= : Update record content}
         {--ttl= : Update TTL}
@@ -41,7 +41,8 @@ class ChangeRecordCommand extends Command
 
     public function handle(): int
     {
-        $identifier = $this->argument('record');
+        $vnode = $this->argument('vnode');
+        $recordId = $this->argument('record');
 
         $updates = [];
 
@@ -81,6 +82,7 @@ class ChangeRecordCommand extends Command
 
         $options = [
             'update_ptr' => $this->option('update-ptr'),
+            'provider' => $vnode,
         ];
 
         if ($this->option('dry-run')) {
@@ -88,17 +90,18 @@ class ChangeRecordCommand extends Command
             $this->info('🔍 Dry run - no changes will be made');
             $this->line('');
             $this->line('Would update record:');
-            $this->line('  ID: ' . $identifier);
-            $this->line('  Updates: ' . json_encode($updates, JSON_PRETTY_PRINT));
+            $this->line('  VNode: '.$vnode);
+            $this->line('  Record ID: '.$recordId);
+            $this->line('  Updates: '.json_encode($updates, JSON_PRETTY_PRINT));
 
             return self::SUCCESS;
         }
 
         $this->newLine();
-        $this->line("🔧 Updating DNS Record: <fg=yellow>{$identifier}</>");
+        $this->line("🔧 Updating DNS Record: <fg=yellow>{$recordId}</> on <fg=cyan>{$vnode}</>");
 
         $result = $this->recordService->updateRecord(
-            identifier: $identifier,
+            identifier: $recordId,
             updates: $updates,
             options: $options
         );
@@ -128,7 +131,7 @@ class ChangeRecordCommand extends Command
             }
 
             $this->newLine();
-            $this->info("✅ DNS Record updated successfully");
+            $this->info('✅ DNS Record updated successfully');
 
             if (isset($changes['ptr_updated'])) {
                 $this->newLine();

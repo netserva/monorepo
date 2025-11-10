@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace NetServa\Core\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Core\Services\PluginManager;
+use NetServa\Core\Foundation\PluginRegistry;
+use NetServa\Core\Models\InstalledPlugin;
 
 class PluginDisableCommand extends Command
 {
@@ -15,17 +16,19 @@ class PluginDisableCommand extends Command
 
     protected $description = 'Disable a plugin';
 
-    public function handle(PluginManager $pluginManager): int
+    public function handle(PluginRegistry $pluginRegistry): int
     {
         $name = $this->argument('name');
 
-        if (! $pluginManager->exists($name)) {
+        if (! $pluginRegistry->hasPlugin($name)) {
             $this->components->error("Plugin [{$name}] not found");
 
             return self::FAILURE;
         }
 
-        if (! $pluginManager->isEnabled($name)) {
+        $installedPlugin = InstalledPlugin::where('name', $name)->first();
+
+        if (! $installedPlugin || ! $installedPlugin->is_enabled) {
             $this->components->warn("Plugin [{$name}] is already disabled");
 
             return self::SUCCESS;
@@ -33,7 +36,7 @@ class PluginDisableCommand extends Command
 
         // Check if other plugins depend on this one
         if (! $this->option('force')) {
-            $dependents = $pluginManager->getDependents($name);
+            $dependents = $pluginRegistry->getDependents($name);
 
             if (! empty($dependents)) {
                 $this->components->error("Cannot disable [{$name}] - required by:");
@@ -49,10 +52,14 @@ class PluginDisableCommand extends Command
             }
         }
 
-        $pluginManager->disable($name);
+        if ($pluginRegistry->disablePlugin($name)) {
+            $this->components->info("Plugin [{$name}] disabled successfully");
 
-        $this->components->info("Plugin [{$name}] disabled successfully");
+            return self::SUCCESS;
+        }
 
-        return self::SUCCESS;
+        $this->components->error("Failed to disable plugin [{$name}]");
+
+        return self::FAILURE;
     }
 }

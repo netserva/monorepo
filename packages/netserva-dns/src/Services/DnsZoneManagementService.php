@@ -497,10 +497,13 @@ class DnsZoneManagementService
                 ];
             }
 
+            // Map PowerDNS zone kind to our enum values
+            $kind = $this->mapPowerDnsKind($remoteZone['kind'] ?? $zone->kind);
+
             // Update local zone with remote data
             $zone->update([
                 'serial' => $remoteZone['serial'] ?? $zone->serial,
-                'kind' => $remoteZone['kind'] ?? $zone->kind,
+                'kind' => $kind,
                 'masters' => $remoteZone['masters'] ?? $zone->masters,
                 'last_check' => now(),
                 'last_synced' => now(),
@@ -561,13 +564,44 @@ class DnsZoneManagementService
     }
 
     /**
-     * Find provider by ID or name
+     * Map PowerDNS zone kind to our database enum values
+     *
+     * PowerDNS v3/v4 uses different terminology:
+     * - Master → Primary
+     * - Slave → Secondary
+     * - Native → Native (unchanged)
+     *
+     * @param  string  $powerDnsKind  The kind value from PowerDNS
+     * @return string The mapped kind for our database
+     */
+    protected function mapPowerDnsKind(string $powerDnsKind): string
+    {
+        return match (strtolower($powerDnsKind)) {
+            'master' => 'Primary',
+            'slave' => 'Secondary',
+            'native' => 'Native',
+            'forwarded' => 'Forwarded',
+            // Default to Primary for unknown types
+            default => 'Primary',
+        };
+    }
+
+    /**
+     * Find provider by ID, vnode, or name
      */
     protected function findProvider(int|string $identifier): array
     {
-        $provider = is_numeric($identifier)
-            ? DnsProvider::find($identifier)
-            : DnsProvider::where('name', $identifier)->first();
+        if (is_numeric($identifier)) {
+            $provider = DnsProvider::find($identifier);
+        } else {
+            // Try vnode first (most common use case)
+            $provider = DnsProvider::where('vnode', $identifier)->first();
+
+            // Fallback to name lookup
+            if (! $provider) {
+                $provider = DnsProvider::where('name', $identifier)->first();
+            }
+        }
 
         if (! $provider) {
             return [

@@ -9,17 +9,17 @@ use NetServa\Dns\Services\DnsZoneManagementService;
  * Change DNS Zone Command
  *
  * Update DNS zone configuration
- * Follows NetServa CRUD pattern: chzone (not "dns:zone:change")
+ * Follows NetServa CRUD pattern: chzone <vnode> <zone> [options]
  *
- * Usage: chzone <zone> [options]
- * Example: chzone example.com --ttl=7200
- * Example: chzone 1 --enable-dnssec
- * Example: chzone test.local --kind=Secondary --masters=192.168.1.1
+ * Usage: chzone <vnode> <zone> [options]
+ * Example: chzone ns1gc example.com --ttl=7200
+ * Example: chzone ns1gc goldcoast.org --enable-dnssec
  */
 class ChangeZoneCommand extends Command
 {
     protected $signature = 'chzone
-        {zone : Zone ID or name}
+        {vnode : VNode identifier (DNS provider)}
+        {zone : Zone name}
         {--kind= : Change zone kind (Native, Primary, Secondary)}
         {--masters= : Update master nameservers (comma-separated)}
         {--ttl= : Update default TTL}
@@ -43,7 +43,8 @@ class ChangeZoneCommand extends Command
 
     public function handle(): int
     {
-        $identifier = $this->argument('zone');
+        $vnode = $this->argument('vnode');
+        $zoneName = $this->argument('zone');
 
         // Build updates array from options
         $updates = [];
@@ -109,6 +110,7 @@ class ChangeZoneCommand extends Command
         // Prepare options
         $options = [
             'test' => $this->option('test'),
+            'provider' => $vnode,
         ];
 
         // Dry run preview
@@ -117,7 +119,8 @@ class ChangeZoneCommand extends Command
             $this->info('🔍 Dry run - no changes will be made');
             $this->line('');
             $this->line('Would update zone:');
-            $this->line('  Identifier: '.$identifier);
+            $this->line('  VNode: '.$vnode);
+            $this->line('  Zone: '.$zoneName);
             $this->line('  Updates: '.json_encode($updates, JSON_PRETTY_PRINT));
             $this->line('  Options: '.json_encode($options, JSON_PRETTY_PRINT));
 
@@ -126,10 +129,10 @@ class ChangeZoneCommand extends Command
 
         // Update the zone
         $this->newLine();
-        $this->line("🔧 Updating DNS Zone: <fg=yellow>{$identifier}</>");
+        $this->line("🔧 Updating DNS Zone: <fg=yellow>{$zoneName}</> on <fg=cyan>{$vnode}</>");
 
         $result = $this->zoneService->updateZone(
-            identifier: $identifier,
+            identifier: $zoneName,
             updates: $updates,
             options: $options
         );

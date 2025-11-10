@@ -11,18 +11,17 @@ use function Laravel\Prompts\confirm;
  * Delete DNS Record Command
  *
  * Delete DNS record from zone
- * Follows NetServa CRUD pattern: delrec (not "dns:record:delete")
+ * Follows NetServa CRUD pattern: delrec <vnode> <record> [options]
  *
- * Usage: delrec <record> [options]
- * Example: delrec 123                        # Delete by ID
- * Example: delrec test.goldcoast.org         # Delete by domain name
- * Example: delrec 456 --delete-ptr           # Also delete related PTR
- * Example: delrec 789 --force                # No confirmation
+ * Usage: delrec <vnode> <record> [options]
+ * Example: delrec ns1gc 123                  # Delete by ID
+ * Example: delrec ns1gc 456 --delete-ptr     # Also delete related PTR
  */
 class DeleteRecordCommand extends Command
 {
     protected $signature = 'delrec
-        {record : Record ID or domain name}
+        {vnode : VNode identifier (DNS provider)}
+        {record : Record ID}
         {--delete-ptr : Also delete related PTR record (for A/AAAA)}
         {--force : Force deletion without confirmation}
         {--skip-remote : Skip remote deletion (local only)}
@@ -40,9 +39,10 @@ class DeleteRecordCommand extends Command
 
     public function handle(): int
     {
-        $identifier = $this->argument('record');
+        $vnode = $this->argument('vnode');
+        $recordId = $this->argument('record');
 
-        $showResult = $this->recordService->showRecord($identifier, ['with_ptr' => true]);
+        $showResult = $this->recordService->showRecord($recordId, ['with_ptr' => true, 'provider' => $vnode]);
 
         if (! $showResult['success']) {
             $this->error("❌ {$showResult['message']}");
@@ -118,13 +118,14 @@ class DeleteRecordCommand extends Command
             'delete_ptr' => $this->option('delete-ptr'),
             'force' => $this->option('force'),
             'skip_remote' => $this->option('skip-remote'),
+            'provider' => $vnode,
         ];
 
         $this->newLine();
         $this->line('🗑️  Deleting record...');
 
         $result = $this->recordService->deleteRecord(
-            identifier: $identifier,
+            identifier: $recordId,
             options: $options
         );
 

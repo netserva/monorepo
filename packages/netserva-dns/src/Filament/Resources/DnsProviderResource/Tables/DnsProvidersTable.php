@@ -233,11 +233,12 @@ class DnsProvidersTable
                                 ->send();
                         }),
 
-                    Action::make('view_usage')
-                        ->label('View Usage')
-                        ->icon('heroicon-o-chart-bar')
-                        ->url(fn ($record) => route('filament.admin.resources.dns-providers.usage', $record))
-                        ->openUrlInNewTab(),
+                    // TODO: Implement usage page before enabling this action
+                    // Action::make('view_usage')
+                    //     ->label('View Usage')
+                    //     ->icon('heroicon-o-chart-bar')
+                    //     ->url(fn ($record) => route('filament.admin.resources.dns-providers.usage', $record))
+                    //     ->openUrlInNewTab(),
 
                     DeleteAction::make(),
                 ])->button()->label('Actions'),

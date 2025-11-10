@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace NetServa\Core\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Core\Services\PluginManager;
+use NetServa\Core\Foundation\PluginRegistry;
+use NetServa\Core\Models\InstalledPlugin;
 
 class PluginListCommand extends Command
 {
@@ -15,19 +16,22 @@ class PluginListCommand extends Command
 
     protected $description = 'List all registered plugins';
 
-    public function handle(PluginManager $pluginManager): int
+    public function handle(PluginRegistry $pluginRegistry): int
     {
-        $plugins = $pluginManager->all();
+        // Build query based on options
+        $query = InstalledPlugin::query();
 
         if ($this->option('enabled')) {
-            $plugins = array_filter($plugins, fn ($plugin) => $plugin['is_enabled']);
+            $query->where('is_enabled', true);
         }
 
         if ($this->option('disabled')) {
-            $plugins = array_filter($plugins, fn ($plugin) => ! $plugin['is_enabled']);
+            $query->where('is_enabled', false);
         }
 
-        if (empty($plugins)) {
+        $plugins = $query->get();
+
+        if ($plugins->isEmpty()) {
             $this->components->warn('No plugins found');
 
             return self::SUCCESS;
@@ -39,17 +43,17 @@ class PluginListCommand extends Command
         $rows = [];
         foreach ($plugins as $plugin) {
             $rows[] = [
-                $plugin['name'],
-                $plugin['version'] ?? 'N/A',
-                $plugin['is_enabled'] ? '✓' : '✗',
-                $plugin['description'] ?? '',
+                $plugin->name,
+                $plugin->version ?? 'N/A',
+                $plugin->is_enabled ? '✓' : '✗',
+                $plugin->description ?? '',
             ];
         }
 
         $this->table(['Name', 'Version', 'Enabled', 'Description'], $rows);
 
         $this->newLine();
-        $this->components->info('Total: '.count($plugins).' plugin(s)');
+        $this->components->info('Total: '.$plugins->count().' plugin(s)');
 
         return self::SUCCESS;
     }

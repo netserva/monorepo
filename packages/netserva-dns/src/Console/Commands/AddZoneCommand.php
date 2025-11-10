@@ -13,17 +13,17 @@ use function Laravel\Prompts\text;
  * Add DNS Zone Command
  *
  * Creates a new DNS zone on a provider
- * Follows NetServa CRUD pattern: addzone (not "dns:zone:add")
+ * Follows NetServa CRUD pattern: addzone <vnode> <zone> [options]
  *
- * Usage: addzone <zone> <provider> [options]
- * Example: addzone example.com 1 --nameservers=ns1.example.com,ns2.example.com
- * Example: addzone test.local "Homelab PowerDNS" --kind=Native --auto-dnssec
+ * Usage: addzone <vnode> <zone> [options]
+ * Example: addzone ns1gc example.com --nameservers=ns1.example.com,ns2.example.com
+ * Example: addzone ns1gc test.local --kind=Native --auto-dnssec
  */
 class AddZoneCommand extends Command
 {
     protected $signature = 'addzone
+        {vnode? : VNode identifier (DNS provider)}
         {zone? : Zone name (e.g., "example.com")}
-        {provider? : Provider ID or name}
         {--kind=Native : Zone kind (Native, Primary, Secondary)}
         {--masters= : Master nameservers for Secondary zones (comma-separated)}
         {--nameservers=* : Authoritative nameservers for the zone}
@@ -48,6 +48,17 @@ class AddZoneCommand extends Command
 
     public function handle(): int
     {
+        // Get vnode (provider)
+        $vnode = $this->argument('vnode');
+        if (! $vnode) {
+            $vnode = text(
+                label: 'VNode (DNS Provider)',
+                placeholder: 'ns1gc',
+                required: true,
+                hint: 'Use "shdns" to list available providers'
+            );
+        }
+
         // Get zone name
         $zoneName = $this->argument('zone');
         if (! $zoneName) {
@@ -61,17 +72,6 @@ class AddZoneCommand extends Command
 
         // Normalize zone name (ensure trailing dot for PowerDNS)
         $zoneName = rtrim($zoneName, '.');
-
-        // Get provider
-        $provider = $this->argument('provider');
-        if (! $provider) {
-            $provider = text(
-                label: 'DNS Provider',
-                placeholder: 'Provider ID or name',
-                required: true,
-                hint: 'Use "shdnsprovider" to list available providers'
-            );
-        }
 
         // Get zone kind if not specified
         $kind = $this->option('kind');
@@ -143,7 +143,7 @@ class AddZoneCommand extends Command
         // Show what we're about to create
         $this->newLine();
         $this->line("🚀 Creating DNS Zone: <fg=yellow>{$zoneName}</>");
-        $this->line("   Provider: <fg=cyan>{$provider}</>");
+        $this->line("   VNode: <fg=cyan>{$vnode}</>");
         $this->line("   Kind: <fg=cyan>{$kind}</>");
 
         if ($masters) {
@@ -163,7 +163,7 @@ class AddZoneCommand extends Command
             $this->line('');
             $this->line('Would create zone with:');
             $this->line('  Zone: '.$zoneName);
-            $this->line('  Provider: '.$provider);
+            $this->line('  VNode: '.$vnode);
             $this->line('  Options: '.json_encode($options, JSON_PRETTY_PRINT));
 
             return self::SUCCESS;
@@ -174,7 +174,7 @@ class AddZoneCommand extends Command
         // Create the zone
         $result = $this->zoneService->createZone(
             zoneName: $zoneName,
-            providerId: $provider,
+            providerId: $vnode,
             options: $options
         );
 

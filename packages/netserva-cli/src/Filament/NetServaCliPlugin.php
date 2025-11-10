@@ -36,8 +36,6 @@ use NetServa\Core\Foundation\BaseFilamentPlugin;
  *         );
  * }
  * ```
- *
- * @package NetServa\Cli\Filament
  */
 class NetServaCliPlugin extends BaseFilamentPlugin
 {
@@ -80,7 +78,7 @@ class NetServaCliPlugin extends BaseFilamentPlugin
             $resources[] = SetupJobResource::class;
         }
 
-        if (!empty($resources)) {
+        if (! empty($resources)) {
             $panel->resources($resources);
         }
     }

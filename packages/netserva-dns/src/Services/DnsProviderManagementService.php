@@ -40,6 +40,7 @@ class DnsProviderManagementService
             $provider = DnsProvider::create([
                 'name' => $name,
                 'type' => $type,
+                'vnode' => $options['vnode'] ?? null,
                 'description' => $options['description'] ?? null,
                 'active' => $options['active'] ?? true,
                 'version' => $options['version'] ?? null,
@@ -75,7 +76,6 @@ class DnsProviderManagementService
      * List DNS providers with optional filtering
      *
      * @param  array  $filters  Filter criteria
-     * @return Collection
      */
     public function listProviders(array $filters = []): Collection
     {
@@ -370,7 +370,6 @@ class DnsProviderManagementService
     /**
      * Test connection to DNS provider
      *
-     * @param  DnsProvider  $provider
      * @return array Connection test result
      */
     public function testProviderConnection(DnsProvider $provider): array
@@ -406,7 +405,6 @@ class DnsProviderManagementService
     /**
      * Get provider health status
      *
-     * @param  DnsProvider  $provider
      * @return array Health status data
      */
     public function getProviderHealth(DnsProvider $provider): array
@@ -422,9 +420,6 @@ class DnsProviderManagementService
 
     /**
      * Find provider by ID or name
-     *
-     * @param  int|string  $identifier
-     * @return DnsProvider|null
      */
     protected function findProvider(int|string $identifier): ?DnsProvider
     {
@@ -432,14 +427,19 @@ class DnsProviderManagementService
             return DnsProvider::find($identifier);
         }
 
-        return DnsProvider::where('name', $identifier)->first();
+        // Try vnode first (most common use case)
+        $provider = DnsProvider::where('vnode', $identifier)->first();
+
+        // Fallback to name lookup
+        if (! $provider) {
+            $provider = DnsProvider::where('name', $identifier)->first();
+        }
+
+        return $provider;
     }
 
     /**
      * Test Cloudflare connection
-     *
-     * @param  DnsProvider  $provider
-     * @return array
      */
     protected function testCloudflareConnection(DnsProvider $provider): array
     {
@@ -466,16 +466,13 @@ class DnsProviderManagementService
         } catch (\Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Cloudflare connection test failed: ' . $e->getMessage(),
+                'message' => 'Cloudflare connection test failed: '.$e->getMessage(),
             ];
         }
     }
 
     /**
      * Test Route53 connection (stub - to be implemented)
-     *
-     * @param  DnsProvider  $provider
-     * @return array
      */
     protected function testRoute53Connection(DnsProvider $provider): array
     {
@@ -489,7 +486,6 @@ class DnsProviderManagementService
     /**
      * Get usage summary for a provider
      *
-     * @param  DnsProvider  $provider
      * @return array Usage statistics
      */
     public function getUsageSummary(DnsProvider $provider): array

@@ -9,18 +9,19 @@ use NetServa\Dns\Services\DnsRecordManagementService;
  * Show DNS Record Command
  *
  * Display DNS record information
- * Follows NetServa CRUD pattern: shrec (not "dns:record:show")
+ * Follows NetServa CRUD pattern: shrec [vnode] [identifier] [options]
  *
- * Usage: shrec [identifier] [options]
+ * Usage: shrec [vnode] [identifier] [options]
  * Example: shrec                       # List all records
- * Example: shrec 123                   # Show specific record by ID
- * Example: shrec example.com           # List all records for zone (name-based)
- * Example: shrec --type=A --active     # Filter records
+ * Example: shrec ns1gc                 # List records for vnode
+ * Example: shrec ns1gc 123             # Show specific record by ID
+ * Example: shrec ns1gc goldcoast.org   # List all records for zone
  */
 class ShowRecordCommand extends Command
 {
     protected $signature = 'shrec
-        {identifier? : Record ID or zone name/ID (shows all if omitted)}
+        {vnode? : VNode identifier (shows all providers if omitted)}
+        {identifier? : Record ID or zone name (shows all for vnode if omitted)}
         {--type= : Filter by record type (A, AAAA, MX, etc.)}
         {--active : Show only active records}
         {--inactive : Show only inactive/disabled records}
@@ -44,29 +45,35 @@ class ShowRecordCommand extends Command
 
     public function handle(): int
     {
+        $vnode = $this->argument('vnode');
         $identifier = $this->argument('identifier');
 
-        if ($identifier) {
-            // Try to determine if this is a record ID or zone identifier
-            // Numeric-only = record ID, otherwise treat as zone
+        // Show specific record: shrec ns1gc 123 or shrec ns1gc goldcoast.org
+        if ($vnode && $identifier) {
+            // Numeric likely record ID, otherwise zone name
             if (is_numeric($identifier) && $identifier < 1000) {
-                // Likely a record ID (low numbers)
-                return $this->showSingleRecord($identifier);
+                return $this->showSingleRecord($identifier, $vnode);
             } else {
-                // Treat as zone name/ID - list records for this zone
-                return $this->listRecordsForZone($identifier);
+                return $this->listRecordsForZone($identifier, $vnode);
             }
         }
 
+        // List records for vnode: shrec ns1gc
+        if ($vnode && ! $identifier) {
+            return $this->listRecords(['provider' => $vnode]);
+        }
+
+        // List all records: shrec
         return $this->listRecords();
     }
 
-    protected function showSingleRecord(string $identifier): int
+    protected function showSingleRecord(string $identifier, ?string $vnode = null): int
     {
         $options = [
             'with_ptr' => $this->option('with-ptr'),
             'with_forward' => $this->option('with-forward'),
             'sync' => $this->option('sync'),
+            'provider' => $vnode,
         ];
 
         $result = $this->recordService->showRecord($identifier, $options);
@@ -271,9 +278,13 @@ class ShowRecordCommand extends Command
     /**
      * List records for a specific zone (zone name/ID provided as argument)
      */
-    protected function listRecordsForZone(string $zoneIdentifier): int
+    protected function listRecordsForZone(string $zoneIdentifier, ?string $vnode = null): int
     {
         $filters = ['zone' => $zoneIdentifier];
+
+        if ($vnode) {
+            $filters['provider'] = $vnode;
+        }
 
         // Apply additional filters if provided
         if ($this->option('type')) {

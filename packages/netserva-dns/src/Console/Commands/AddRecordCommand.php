@@ -13,19 +13,20 @@ use function Laravel\Prompts\text;
  * Add DNS Record Command
  *
  * Creates a new DNS record in a zone
- * Follows NetServa CRUD pattern: addrec (not "dns:record:add")
+ * Follows NetServa CRUD pattern: addrec <vnode> <type> <name> <zone> <content> [options]
  *
- * Usage: addrec <type> <name> <zone> <content> [options]
- * Example: addrec A www example.com 192.168.1.100
- * Example: addrec MX @ example.com mail.example.com --priority=10
- * Example: addrec A mail example.com 192.168.1.50 --auto-ptr
+ * Usage: addrec <vnode> <type> <name> <zone> <content> [options]
+ * Example: addrec ns1gc A www goldcoast.org 192.168.1.100
+ * Example: addrec ns1gc MX @ goldcoast.org mail.goldcoast.org --priority=10
+ * Example: addrec ns1gc A mail goldcoast.org 192.168.1.50 --auto-ptr
  */
 class AddRecordCommand extends Command
 {
     protected $signature = 'addrec
+        {vnode? : VNode identifier (DNS provider)}
         {type? : Record type (A, AAAA, CNAME, MX, TXT, PTR, NS, SRV, etc.)}
         {name? : Record name (e.g., "www", "@", "mail")}
-        {zone? : Zone ID or name}
+        {zone? : Zone name}
         {content? : Record content (IP, hostname, text, etc.)}
         {--ttl= : TTL in seconds (default: zone TTL)}
         {--priority= : Priority for MX/SRV records}
@@ -48,6 +49,17 @@ class AddRecordCommand extends Command
 
     public function handle(): int
     {
+        // Get vnode (provider)
+        $vnode = $this->argument('vnode');
+        if (! $vnode) {
+            $vnode = text(
+                label: 'VNode (DNS Provider)',
+                placeholder: 'ns1gc',
+                required: true,
+                hint: 'Use "shdns" to list available providers'
+            );
+        }
+
         // Get record type
         $type = $this->argument('type');
         if (! $type) {
@@ -144,11 +156,13 @@ class AddRecordCommand extends Command
             'auto_ptr' => $autoPTR,
             'auto_create_ptr_zone' => $this->option('auto-create-ptr-zone'),
             'allow_duplicate' => $this->option('allow-duplicate'),
+            'provider' => $vnode,
         ];
 
         // Show what we're about to create
         $this->newLine();
         $this->line("🚀 Creating DNS Record: <fg=yellow>{$type} {$name}</>");
+        $this->line("   VNode: <fg=cyan>{$vnode}</>");
         $this->line("   Zone: <fg=cyan>{$zone}</>");
         $this->line("   Content: <fg=cyan>{$content}</>");
 

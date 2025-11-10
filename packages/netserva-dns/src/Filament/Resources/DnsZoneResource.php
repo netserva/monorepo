@@ -3,7 +3,6 @@
 namespace NetServa\Dns\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Dns\Filament\Resources\DnsZoneResource\Pages\ListDnsZones;
 use NetServa\Dns\Filament\Resources\DnsZoneResource\Schemas\DnsZoneForm;
 use NetServa\Dns\Filament\Resources\DnsZoneResource\Tables\DnsZonesTable;
 use NetServa\Dns\Models\DnsZone;
+use UnitEnum;
 
 class DnsZoneResource extends Resource
 {
@@ -38,7 +38,7 @@ class DnsZoneResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            DnsZoneResource\RelationManagers\RecordsRelationManager::class,
         ];
     }
 

@@ -74,7 +74,7 @@ class ShowDnsCommand extends Command
             }
 
             // Call shrec to show records for this zone
-            return $this->call('shrec', ['identifier' => $zone]);
+            return $this->call('shrec', ['vnode' => $provider, 'identifier' => $zone]);
         }
 
         // Macro overlay: --zones calls shzone under the hood
@@ -455,7 +455,7 @@ class ShowDnsCommand extends Command
             if (! empty($filters)) {
                 $this->line('');
                 $this->line('💡 Try removing filters or create a provider:');
-                $this->line('   adddnsprovider "Homelab PowerDNS" powerdns --endpoint=http://192.168.1.1:8081 --api-key=secret');
+                $this->line('   adddns "Homelab PowerDNS" powerdns --endpoint=http://192.168.1.1:8081 --api-key=secret');
             }
 
             return self::SUCCESS;
@@ -469,7 +469,7 @@ class ShowDnsCommand extends Command
         }
 
         // Display table (no header unless --all)
-        $headers = ['ID', 'Name', 'Type', 'Active'];
+        $headers = ['ID', 'VNode', 'Name', 'Type', 'Active'];
 
         // Add Description and Zones columns when --all
         if ($this->option('all')) {
@@ -490,6 +490,7 @@ class ShowDnsCommand extends Command
         $rows = $providers->map(function ($provider) {
             $row = [
                 $provider->id,
+                $provider->vnode ?: '-',
                 $provider->name,
                 ucfirst($provider->type),
                 $provider->active ? '✅' : '❌',

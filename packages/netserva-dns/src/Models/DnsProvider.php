@@ -24,6 +24,7 @@ class DnsProvider extends Model
     protected $fillable = [
         'type',
         'name',
+        'vnode',
         'description',
         'active',
         'version',

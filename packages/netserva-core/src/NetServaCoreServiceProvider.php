@@ -122,34 +122,36 @@ class NetServaCoreServiceProvider extends ServiceProvider
 
     /**
      * Register console commands
+     *
+     * Note: Commands are registered unconditionally to support Artisan::call()
+     * from web context (e.g., Filament actions)
      */
     protected function registerCommands(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                \NetServa\Core\Console\Commands\ImportSshHostsCommand::class,
+        $this->commands([
+            \NetServa\Core\Console\Commands\ImportSshHostsCommand::class,
 
-                // SSH Host CRUD Commands (NetServa 3.0)
-                \NetServa\Core\Console\Commands\AddsshCommand::class,   // CREATE
-                \NetServa\Core\Console\Commands\ShsshCommand::class,    // READ
-                \NetServa\Core\Console\Commands\ChsshCommand::class,    // UPDATE
-                \NetServa\Core\Console\Commands\DelsshCommand::class,   // DELETE
+            // SSH Host CRUD Commands (NetServa 3.0)
+            \NetServa\Core\Console\Commands\AddsshCommand::class,   // CREATE
+            \NetServa\Core\Console\Commands\ShsshCommand::class,    // READ
+            \NetServa\Core\Console\Commands\ChsshCommand::class,    // UPDATE
+            \NetServa\Core\Console\Commands\DelsshCommand::class,   // DELETE
 
-                // Settings CRUD Commands
-                \NetServa\Core\Console\Commands\AddcfgCommand::class,   // CREATE
-                \NetServa\Core\Console\Commands\ShcfgCommand::class,    // READ
-                \NetServa\Core\Console\Commands\ChcfgCommand::class,    // UPDATE
-                \NetServa\Core\Console\Commands\DelcfgCommand::class,   // DELETE
+            // Settings CRUD Commands
+            \NetServa\Core\Console\Commands\AddcfgCommand::class,   // CREATE
+            \NetServa\Core\Console\Commands\ShcfgCommand::class,    // READ
+            \NetServa\Core\Console\Commands\ChcfgCommand::class,    // UPDATE
+            \NetServa\Core\Console\Commands\DelcfgCommand::class,   // DELETE
 
-                // Install & Plugin Management
-                \NetServa\Core\Console\Commands\InstallCommand::class,
-                \NetServa\Core\Console\Commands\PluginCommand::class,
-                \NetServa\Core\Console\Commands\PluginEnableCommand::class,
-                \NetServa\Core\Console\Commands\PluginDisableCommand::class,
-                \NetServa\Core\Console\Commands\PluginInfoCommand::class,
-                \NetServa\Core\Console\Commands\PluginListCommand::class,
-            ]);
-        }
+            // Install & Plugin Management
+            \NetServa\Core\Console\Commands\InstallCommand::class,
+            \NetServa\Core\Console\Commands\PluginCommand::class,
+            \NetServa\Core\Console\Commands\PluginDiscoverCommand::class,
+            \NetServa\Core\Console\Commands\PluginEnableCommand::class,
+            \NetServa\Core\Console\Commands\PluginDisableCommand::class,
+            \NetServa\Core\Console\Commands\PluginInfoCommand::class,
+            \NetServa\Core\Console\Commands\PluginListCommand::class,
+        ]);
     }
 
     /**
