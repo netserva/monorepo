@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use NetServa\Cms\Models\Category;
 use NetServa\Cms\Models\Page;
 use NetServa\Cms\Models\Post;
 use NetServa\Cms\Models\Tag;
+use ZipArchive;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Set up test storage disk
@@ -118,11 +122,19 @@ describe('cms:export command', function () {
 
 describe('cms:import command', function () {
     it('imports CMS content from export file', function () {
-        // Create and export test data
+        // Create categories and tags first
+        $categories = Category::factory()->count(2)->create();
+        $tags = Tag::factory()->count(3)->create();
+
+        // Create post and attach existing categories
         $originalPost = Post::factory()->published()->create(['title' => 'Test Post']);
+        $originalPost->categories()->sync($categories->pluck('id'));
+        $originalPost->tags()->sync($tags->pluck('id'));
+
+        // Delete any auto-created categories that aren't attached
+        Category::whereDoesntHave('posts')->delete();
+
         $originalPage = Page::factory()->published()->create(['title' => 'Test Page']);
-        Category::factory()->count(2)->create();
-        Tag::factory()->count(3)->create();
 
         $exportPath = storage_path('app/test-import.zip');
 
@@ -157,29 +169,35 @@ describe('cms:import command', function () {
     });
 
     it('handles slug conflicts with rename strategy', function () {
-        // Create existing post
-        Post::factory()->published()->create([
-            'title' => 'Original Post',
+        // Create and export a post
+        $exportPost = Post::factory()->published()->create([
+            'title' => 'Exported Post',
             'slug' => 'test-slug',
         ]);
 
-        // Create export with same slug
-        $exportPost = Post::factory()->published()->create([
-            'title' => 'Imported Post',
-            'slug' => 'test-slug',
-        ]);
+        // Clean up any auto-created categories before export
+        Category::whereDoesntHave('posts')->delete();
 
         $exportPath = storage_path('app/test-conflict.zip');
         $this->artisan('cms:export', ['--output' => $exportPath])
             ->assertSuccessful();
 
-        // Delete the second post but keep the first
+        // Delete the post and create a different one with the same slug
         $exportPost->forceDelete();
 
-        // Import with rename strategy
+        // Also delete the orphaned categories
+        Category::whereDoesntHave('posts')->delete();
+
+        Post::factory()->published()->create([
+            'title' => 'Existing Post',
+            'slug' => 'test-slug',
+        ]);
+
+        // Import with rename strategy - should rename the imported post
         $this->artisan('cms:import', [
             'file' => $exportPath,
             '--conflict-strategy' => 'rename',
+            '--force' => true,
         ])->assertSuccessful();
 
         // Should have 2 posts with different slugs
@@ -239,8 +257,9 @@ describe('export-import round-trip', function () {
             'excerpt' => 'Tips and tricks',
         ]);
 
-        $post->categories()->attach($category);
-        $post->tags()->attach([$tag1->id, $tag2->id]);
+        // Use sync to replace any auto-created categories
+        $post->categories()->sync([$category->id]);
+        $post->tags()->sync([$tag1->id, $tag2->id]);
 
         $page = Page::factory()->published()->create([
             'title' => 'About Us',
@@ -312,6 +331,7 @@ describe('export-import round-trip', function () {
         $this->artisan('cms:import', [
             'file' => $exportPath,
             '--conflict-strategy' => 'rename',
+            '--force' => true,
         ])->assertSuccessful();
 
         // Verify hierarchy
@@ -324,6 +344,171 @@ describe('export-import round-trip', function () {
 
         $importedChild2 = Page::where('slug', 'mobile-apps')->first();
         expect($importedChild2->parent_id)->toBe($importedParent->id);
+
+        // Cleanup
+        File::delete($exportPath);
+    });
+});
+
+describe('JSON export format', function () {
+    it('exports data as valid JSON', function () {
+        Post::factory()->published()->count(2)->create();
+        Page::factory()->published()->count(1)->create();
+
+        $exportPath = storage_path('app/test-json-format.zip');
+        $this->artisan('cms:export', ['--output' => $exportPath])
+            ->assertSuccessful();
+
+        // Extract and verify JSON
+        $zip = new ZipArchive;
+        expect($zip->open($exportPath))->toBeTrue();
+
+        $jsonContent = $zip->getFromName('cms_export.json');
+        expect($jsonContent)->not->toBeEmpty();
+
+        $zip->close();
+
+        // Verify it's valid JSON
+        $data = json_decode($jsonContent, true);
+        expect(json_last_error())->toBe(JSON_ERROR_NONE);
+        expect($data)->toBeArray();
+
+        // Verify structure
+        expect($data)->toHaveKey('manifest');
+        expect($data)->toHaveKey('cms_posts');
+        expect($data)->toHaveKey('cms_pages');
+        expect($data['manifest'])->toHaveKey('export_date');
+        expect($data['manifest'])->toHaveKey('stats');
+
+        // Cleanup
+        File::delete($exportPath);
+    });
+
+    it('handles posts with complex code examples containing special characters', function () {
+        // Create a post with complex code that previously failed SQL parsing
+        $post = Post::factory()->published()->create([
+            'title' => 'Testing with Pest',
+            'slug' => 'testing-with-pest',
+            'content' => <<<'MARKDOWN'
+# Testing with Pest 4.0
+
+Here's how to test Filament resources:
+
+```php
+it('validates user input', function () {
+    expect($user)
+        ->email->toBe('test@example.com')
+        ->name->not->toBeEmpty();
+});
+```
+
+Notice the closing `);` which can confuse parsers.
+
+Another example with multiple special chars:
+
+```php
+function test() {
+    $data = ['key' => "value's here"];
+    return DB::query("SELECT * FROM users WHERE id = '1'");
+}
+```
+MARKDOWN
+        ]);
+
+        // Export
+        $exportPath = storage_path('app/test-complex-content.zip');
+        $this->artisan('cms:export', ['--output' => $exportPath])
+            ->assertSuccessful();
+
+        // Clear and import
+        $this->artisan('cms:reset', ['--force' => true])
+            ->assertSuccessful();
+
+        expect(Post::count())->toBe(0);
+
+        $this->artisan('cms:import', [
+            'file' => $exportPath,
+            '--force' => true,
+        ])->assertSuccessful();
+
+        // Verify the post imported correctly with all content intact
+        expect(Post::count())->toBe(1);
+
+        $importedPost = Post::first();
+        expect($importedPost->title)->toBe('Testing with Pest');
+        expect($importedPost->slug)->toBe('testing-with-pest');
+        expect($importedPost->content)->toContain('Testing with Pest 4.0');
+        expect($importedPost->content)->toContain('});');
+        expect($importedPost->content)->toContain("value's here");
+        expect($importedPost->content)->toContain('WHERE id = \'1\'');
+
+        // Cleanup
+        File::delete($exportPath);
+    });
+
+    it('preserves all data types correctly', function () {
+        $publishedAt = now()->subDays(5);
+
+        $post = Post::factory()->published()->create([
+            'title' => 'Test Post',
+            'is_published' => true,
+            'published_at' => $publishedAt,
+            'meta_title' => 'SEO Title',
+        ]);
+
+        $originalWordCount = $post->word_count;
+
+        // Export
+        $exportPath = storage_path('app/test-data-types.zip');
+        $this->artisan('cms:export', ['--output' => $exportPath])
+            ->assertSuccessful();
+
+        // Extract and check JSON preserves types
+        $zip = new ZipArchive;
+        $zip->open($exportPath);
+        $jsonContent = $zip->getFromName('cms_export.json');
+        $zip->close();
+
+        $data = json_decode($jsonContent, true);
+        $exportedPost = $data['cms_posts'][0];
+
+        expect($exportedPost['is_published'])->toBe(1); // SQLite stores as integer
+        expect($exportedPost['word_count'])->toBe($originalWordCount);
+        expect($exportedPost['title'])->toBeString();
+        expect($exportedPost['meta_title'])->toBe('SEO Title');
+
+        // Import and verify
+        $this->artisan('cms:reset', ['--force' => true])->assertSuccessful();
+        $this->artisan('cms:import', ['file' => $exportPath, '--force' => true])
+            ->assertSuccessful();
+
+        $importedPost = Post::first();
+        expect($importedPost->is_published)->toBeTrue();
+        expect($importedPost->word_count)->toBe($originalWordCount);
+        expect($importedPost->meta_title)->toBe('SEO Title');
+
+        // Cleanup
+        File::delete($exportPath);
+    });
+
+    it('handles multi-line content with various newline styles', function () {
+        $post = Post::factory()->published()->create([
+            'title' => 'Multi-line Test',
+            'content' => "Line 1\nLine 2\r\nLine 3\n\nDouble newline\n\n\nTriple newline",
+        ]);
+
+        $exportPath = storage_path('app/test-newlines.zip');
+        $this->artisan('cms:export', ['--output' => $exportPath])
+            ->assertSuccessful();
+
+        $this->artisan('cms:reset', ['--force' => true])->assertSuccessful();
+        $this->artisan('cms:import', ['file' => $exportPath, '--force' => true])
+            ->assertSuccessful();
+
+        $importedPost = Post::first();
+        expect($importedPost->content)->toContain('Line 1');
+        expect($importedPost->content)->toContain('Line 2');
+        expect($importedPost->content)->toContain('Double newline');
 
         // Cleanup
         File::delete($exportPath);
