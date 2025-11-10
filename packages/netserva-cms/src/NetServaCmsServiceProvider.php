@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace NetServa\Cms;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use NetServa\Cms\Services\ThemeService;
 
 /**
  * NetServa CMS Service Provider
@@ -24,6 +26,9 @@ class NetServaCmsServiceProvider extends ServiceProvider
 
         // Load helper functions
         require_once __DIR__.'/helpers.php';
+
+        // Register ThemeService as singleton
+        $this->app->singleton(ThemeService::class);
 
         // Register console commands
         if ($this->app->runningInConsole()) {
@@ -116,6 +121,15 @@ class NetServaCmsServiceProvider extends ServiceProvider
         // Load views
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'netserva-cms');
 
+        // Register Blade directives for themes
+        $this->registerBladeDirectives();
+
+        // Discover and register themes
+        $this->discoverThemes();
+
+        // Register active theme view paths
+        $this->registerThemeViewPaths();
+
         // Automatically remove Laravel welcome route if CMS frontend is enabled
         if (config('netserva-cms.frontend.enabled', true)) {
             $this->removeDefaultWelcomeRoute();
@@ -140,6 +154,49 @@ class NetServaCmsServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../database/migrations' => database_path('migrations'),
             ], 'netserva-cms-migrations');
+        }
+    }
+
+    /**
+     * Register Blade directives for theme system
+     */
+    protected function registerBladeDirectives(): void
+    {
+        // @theme('colors.primary') - Get theme setting value
+        Blade::directive('theme', function ($expression) {
+            return "<?php echo e(theme({$expression})); ?>";
+        });
+
+        // @themeAsset('images/logo.svg') - Get theme asset URL
+        Blade::directive('themeAsset', function ($expression) {
+            return "<?php echo e(theme_asset({$expression})); ?>";
+        });
+    }
+
+    /**
+     * Discover and register themes from filesystem
+     */
+    protected function discoverThemes(): void
+    {
+        try {
+            $themeService = $this->app->make(ThemeService::class);
+            $themeService->discover();
+        } catch (\Exception $e) {
+            // Silently fail during boot - themes may not be migrated yet
+        }
+    }
+
+    /**
+     * Register active theme view paths
+     */
+    protected function registerThemeViewPaths(): void
+    {
+        try {
+            $themeService = $this->app->make(ThemeService::class);
+            $activeTheme = $themeService->getActive();
+            $themeService->registerViewPaths($activeTheme);
+        } catch (\Exception $e) {
+            // Silently fail during boot - themes may not be migrated yet
         }
     }
 }
