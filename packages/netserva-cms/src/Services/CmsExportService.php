@@ -47,17 +47,14 @@ class CmsExportService
         // Gather statistics
         $this->gatherStats($includeDrafts, $includeDeleted);
 
-        // Export SQL
-        $sqlFile = $this->exportSql($includeDrafts, $includeDeleted);
+        // Export to JSON
+        $jsonFile = $this->exportJson($includeDrafts, $includeDeleted);
 
         // Export media files
         $mediaFile = $this->exportMedia();
 
-        // Create manifest
-        $manifestFile = $this->createManifest();
-
         // Create ZIP package
-        $this->createZipPackage($outputPath, $sqlFile, $mediaFile, $manifestFile);
+        $this->createZipPackage($outputPath, $jsonFile, $mediaFile);
 
         // Cleanup temp directory
         File::deleteDirectory($this->tempDir);
@@ -104,19 +101,25 @@ class CmsExportService
         return $query->count();
     }
 
-    protected function exportSql(bool $includeDrafts, bool $includeDeleted): string
+    protected function exportJson(bool $includeDrafts, bool $includeDeleted): string
     {
-        $sqlFile = $this->tempDir.'/cms_export.sql';
-        $sql = "-- NetServa CMS Export\n";
-        $sql .= '-- Generated: '.now()->toDateTimeString()."\n";
-        $sql .= '-- Database: '.DB::connection()->getDatabaseName()."\n\n";
+        $jsonFile = $this->tempDir.'/cms_export.json';
 
+        $data = [
+            'manifest' => [
+                'export_date' => now()->toIso8601String(),
+                'laravel_version' => app()->version(),
+                'cms_version' => '1.0.0',
+                'database_driver' => DB::getDriverName(),
+                'stats' => $this->stats,
+            ],
+        ];
+
+        // Export each table
         foreach ($this->cmsTables as $table) {
             if (! Schema::hasTable($table)) {
                 continue;
             }
-
-            $sql .= "-- Table: {$table}\n";
 
             $query = DB::table($table);
 
@@ -130,60 +133,24 @@ class CmsExportService
                 }
             }
 
-            $records = $query->get();
-
-            foreach ($records as $record) {
-                $values = [];
-                foreach ((array) $record as $column => $value) {
-                    if ($value === null) {
-                        $values[] = 'NULL';
-                    } elseif (is_numeric($value)) {
-                        $values[] = $value;
-                    } else {
-                        // Use str_replace to double single quotes for SQL escaping
-                        $escaped = str_replace("'", "''", $value);
-                        $values[] = "'".$escaped."'";
-                    }
-                }
-
-                $columns = implode(', ', array_keys((array) $record));
-                $valuesStr = implode(', ', $values);
-                $sql .= "INSERT INTO {$table} ({$columns}) VALUES ({$valuesStr});\n";
-            }
-
-            $sql .= "\n";
+            $records = $query->get()->map(fn ($record) => (array) $record)->toArray();
+            $data[$table] = $records;
         }
 
         // Export media records
         if (Schema::hasTable('media')) {
-            $sql .= "-- Table: media\n";
             $mediaRecords = DB::table('media')
                 ->where('model_type', 'like', 'NetServa\\Cms\\%')
-                ->get();
+                ->get()
+                ->map(fn ($record) => (array) $record)
+                ->toArray();
 
-            foreach ($mediaRecords as $record) {
-                $values = [];
-                foreach ((array) $record as $column => $value) {
-                    if ($value === null) {
-                        $values[] = 'NULL';
-                    } elseif (is_numeric($value)) {
-                        $values[] = $value;
-                    } else {
-                        // Use str_replace to double single quotes for SQL escaping
-                        $escaped = str_replace("'", "''", $value);
-                        $values[] = "'".$escaped."'";
-                    }
-                }
-
-                $columns = implode(', ', array_keys((array) $record));
-                $valuesStr = implode(', ', $values);
-                $sql .= "INSERT INTO media ({$columns}) VALUES ({$valuesStr});\n";
-            }
+            $data['media'] = $mediaRecords;
         }
 
-        File::put($sqlFile, $sql);
+        File::put($jsonFile, json_encode($data, JSON_PRETTY_PRINT));
 
-        return $sqlFile;
+        return $jsonFile;
     }
 
     protected function exportMedia(): ?string
@@ -265,23 +232,7 @@ class CmsExportService
         return $tarFile;
     }
 
-    protected function createManifest(): string
-    {
-        $manifest = [
-            'export_date' => now()->toIso8601String(),
-            'laravel_version' => app()->version(),
-            'cms_version' => '1.0.0', // TODO: Get from package version
-            'database_driver' => DB::getDriverName(),
-            'stats' => $this->stats,
-        ];
-
-        $manifestFile = $this->tempDir.'/manifest.json';
-        File::put($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT));
-
-        return $manifestFile;
-    }
-
-    protected function createZipPackage(string $outputPath, string $sqlFile, ?string $mediaFile, string $manifestFile): void
+    protected function createZipPackage(string $outputPath, string $jsonFile, ?string $mediaFile): void
     {
         $zip = new ZipArchive;
 
@@ -289,8 +240,7 @@ class CmsExportService
             throw new \RuntimeException("Failed to create ZIP archive: {$outputPath}");
         }
 
-        $zip->addFile($sqlFile, 'cms_export.sql');
-        $zip->addFile($manifestFile, 'manifest.json');
+        $zip->addFile($jsonFile, 'cms_export.json');
 
         if ($mediaFile && File::exists($mediaFile)) {
             $zip->addFile($mediaFile, 'cms_media.tar.gz');
