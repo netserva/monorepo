@@ -105,8 +105,6 @@ class ThemeResource extends Resource
                             )
                             ->columnSpanFull(),
                     ])
-                    ->collapsible()
-                    ->collapsed()
                     ->columnSpanFull(),
             ]);
     }
