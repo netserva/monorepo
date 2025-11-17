@@ -27,9 +27,9 @@ Phase 4 of the NetServa 3.0 migration system has been successfully implemented. 
 - **Lines:** 600+
 - **Key Methods:**
   ```php
-  migrateVhost(FleetVHost $vhost, bool $skipBackup = false): array
-  rollbackVhost(FleetVHost $vhost, ?string $archiveFile = null): array
-  listRollbackPoints(FleetVHost $vhost): array
+  migrateVhost(FleetVhost $vhost, bool $skipBackup = false): array
+  rollbackVhost(FleetVhost $vhost, ?string $archiveFile = null): array
+  listRollbackPoints(FleetVhost $vhost): array
   ```
 - **Features:**
   - Pre-flight checks (validation status, disk space)
@@ -98,7 +98,7 @@ Phase 4 of the NetServa 3.0 migration system has been successfully implemented. 
 - **Status:** Migrated successfully
 
 ### 6. Model Updates ✅
-- **File:** `packages/netserva-fleet/src/Models/FleetVHost.php`
+- **File:** `packages/netserva-fleet/src/Models/FleetVhost.php`
 - **Updates:**
   - Added Phase 4 fields to `$fillable` array
   - Added Phase 4 fields to `$casts` array
@@ -284,7 +284,7 @@ php artisan rollback:vhost markc wp.goldcoast.org
 | Service implemented | ✅ Complete | 600+ lines, full backup/rollback support |
 | Commands implemented | ✅ Complete | Migrate + Rollback commands with Laravel Prompts |
 | Database schema updated | ✅ Complete | Phase 4 fields migrated |
-| Model updated | ✅ Complete | FleetVHost ready for migration tracking |
+| Model updated | ✅ Complete | FleetVhost ready for migration tracking |
 | Service provider registered | ✅ Complete | Commands available via `php artisan` |
 | Dry-run mode | ✅ Complete | Shows migration plan without executing |
 | Backup/rollback | ✅ Complete | Automatic archives, list/restore functionality |
@@ -317,7 +317,7 @@ php artisan rollback:vhost markc wp.goldcoast.org
 
 ### Modified Files (2)
 1. `packages/netserva-cli/src/NetServaCliServiceProvider.php` (added service + commands)
-2. `packages/netserva-fleet/src/Models/FleetVHost.php` (added $fillable + $casts)
+2. `packages/netserva-fleet/src/Models/FleetVhost.php` (added $fillable + $casts)
 
 ---
 

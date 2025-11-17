@@ -4,7 +4,7 @@ namespace NetServa\Cli\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 /**
  * Mail Credential Model
@@ -51,7 +51,7 @@ class MailCredential extends Model
      */
     public function vhost(): BelongsTo
     {
-        return $this->belongsTo(FleetVHost::class, 'fleet_vhost_id');
+        return $this->belongsTo(FleetVhost::class, 'fleet_vhost_id');
     }
 
     /**

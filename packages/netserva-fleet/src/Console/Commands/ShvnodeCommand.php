@@ -3,8 +3,8 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Show VNode Command (NetServa 3.0 CRUD: READ)
@@ -39,7 +39,7 @@ class ShvnodeCommand extends Command
 
     protected function showSingleVNode(string $name, string $format): int
     {
-        $vnode = FleetVNode::where('name', $name)
+        $vnode = FleetVnode::where('name', $name)
             ->with(['vsite.venue', 'sshHost', 'vhosts'])
             ->first();
 
@@ -104,7 +104,7 @@ class ShvnodeCommand extends Command
 
     protected function showVNodesByVSite(string $vsiteName, string $format): int
     {
-        $vsite = FleetVSite::where('name', $vsiteName)->first();
+        $vsite = FleetVsite::where('name', $vsiteName)->first();
 
         if (! $vsite) {
             $this->error("VSite not found: {$vsiteName}");
@@ -112,7 +112,7 @@ class ShvnodeCommand extends Command
             return Command::FAILURE;
         }
 
-        $vnodes = FleetVNode::where('vsite_id', $vsite->id)
+        $vnodes = FleetVnode::where('vsite_id', $vsite->id)
             ->with(['sshHost', 'vhosts'])
             ->orderBy('name')
             ->get();
@@ -138,7 +138,7 @@ class ShvnodeCommand extends Command
 
     protected function showAllVNodes(string $format): int
     {
-        $vnodes = FleetVNode::with(['vsite', 'sshHost', 'vhosts'])->orderBy('name')->get();
+        $vnodes = FleetVnode::with(['vsite', 'sshHost', 'vhosts'])->orderBy('name')->get();
 
         if ($vnodes->isEmpty()) {
             $this->warn('No vnodes found.');

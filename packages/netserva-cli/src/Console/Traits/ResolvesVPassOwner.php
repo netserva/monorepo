@@ -3,9 +3,9 @@
 namespace NetServa\Cli\Console\Traits;
 
 use NetServa\Fleet\Models\FleetVenue;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\error;
 
@@ -30,7 +30,7 @@ trait ResolvesVPassOwner
 
         // Pattern 1: vnode + domain (explicit)
         if ($domain) {
-            $vhost = FleetVHost::where('domain', $domain)
+            $vhost = FleetVhost::where('domain', $domain)
                 ->orWhere('fqdn', $domain)
                 ->whereHas('vnode', fn ($q) => $q->where('name', $name))
                 ->first();
@@ -47,7 +47,7 @@ trait ResolvesVPassOwner
         // Pattern 2: Infer from name
         if (str_contains($name, '.')) {
             // Has dots = domain = VHost
-            $vhost = FleetVHost::where('domain', $name)
+            $vhost = FleetVhost::where('domain', $name)
                 ->orWhere('fqdn', $name)
                 ->first();
 
@@ -61,7 +61,7 @@ trait ResolvesVPassOwner
         }
 
         // Pattern 3: No dots = VNode
-        $vnode = FleetVNode::where('name', $name)->first();
+        $vnode = FleetVnode::where('name', $name)->first();
 
         if (! $vnode) {
             error("VNode not found: {$name}");
@@ -77,17 +77,17 @@ trait ResolvesVPassOwner
      */
     protected function getOwnerContext(object $owner, string $name, ?string $domain = null): string
     {
-        if ($owner instanceof FleetVHost) {
+        if ($owner instanceof FleetVhost) {
             $vnodeName = $owner->vnode->name ?? 'unknown';
 
             return $domain ? "{$name}/{$domain}" : $name;
         }
 
-        if ($owner instanceof FleetVNode) {
+        if ($owner instanceof FleetVnode) {
             return $name;
         }
 
-        if ($owner instanceof FleetVSite) {
+        if ($owner instanceof FleetVsite) {
             return "vsite:{$owner->name}";
         }
 
@@ -104,9 +104,9 @@ trait ResolvesVPassOwner
     protected function getOwnerTypeDisplay(object $owner): string
     {
         return match (true) {
-            $owner instanceof FleetVHost => 'VHost',
-            $owner instanceof FleetVNode => 'VNode',
-            $owner instanceof FleetVSite => 'VSite',
+            $owner instanceof FleetVhost => 'VHost',
+            $owner instanceof FleetVnode => 'VNode',
+            $owner instanceof FleetVsite => 'VSite',
             $owner instanceof FleetVenue => 'Venue',
             default => 'Unknown',
         };

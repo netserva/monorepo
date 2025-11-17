@@ -127,11 +127,13 @@ class NetServaCmsServiceProvider extends ServiceProvider
         // Register Blade directives for themes
         $this->registerBladeDirectives();
 
-        // Discover and register themes
-        $this->discoverThemes();
-
         // Register active theme view paths
+        // Note: Theme discovery is now manual-only via "Discover Themes" button
+        // to prevent excessive filesystem scanning on every request
         $this->registerThemeViewPaths();
+
+        // Register fleet context middleware for palette resolution
+        $this->registerFleetContextMiddleware();
 
         // Automatically remove Laravel welcome route if CMS frontend is enabled
         if (config('netserva-cms.frontend.enabled', true)) {
@@ -182,29 +184,48 @@ class NetServaCmsServiceProvider extends ServiceProvider
     }
 
     /**
-     * Discover and register themes from filesystem
-     */
-    protected function discoverThemes(): void
-    {
-        try {
-            $themeService = $this->app->make(ThemeService::class);
-            $themeService->discover();
-        } catch (\Exception $e) {
-            // Silently fail during boot - themes may not be migrated yet
-        }
-    }
-
-    /**
      * Register active theme view paths
+     *
+     * Priority order (highest to lowest):
+     * 1. Active theme views (theme can override any CMS view)
+     * 2. Parent theme views (if child theme)
+     * 3. CMS package views (fallback)
+     * 4. App views (Laravel default)
      */
     protected function registerThemeViewPaths(): void
     {
         try {
             $themeService = $this->app->make(ThemeService::class);
             $activeTheme = $themeService->getActive();
+
+            // This will prepend theme paths to have highest priority
             $themeService->registerViewPaths($activeTheme);
         } catch (\Exception $e) {
             // Silently fail during boot - themes may not be migrated yet
+        }
+    }
+
+    /**
+     * Register fleet context middleware for automatic palette resolution
+     *
+     * This middleware automatically sets the fleet context based on the current
+     * domain, enabling per-vhost palette resolution for CMS frontend visitors.
+     *
+     * Only registers if Fleet models are available (optional integration).
+     */
+    protected function registerFleetContextMiddleware(): void
+    {
+        try {
+            // Only register if Fleet models are available
+            if (! class_exists(\NetServa\Fleet\Models\FleetVhost::class)) {
+                return;
+            }
+
+            // Add to web middleware group for CMS frontend routes
+            $router = $this->app->make('router');
+            $router->pushMiddlewareToGroup('web', Http\Middleware\SetFleetContext::class);
+        } catch (\Exception $e) {
+            // Silently fail - Fleet integration is optional
         }
     }
 }

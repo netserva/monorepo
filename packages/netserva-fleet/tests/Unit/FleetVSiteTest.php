@@ -1,13 +1,13 @@
 <?php
 
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 uses()
     ->group('unit', 'fleet', 'vsite', 'priority-2');
 
 it('can create a vsite with required fields', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'local-incus',
         'provider' => 'local',
         'technology' => 'incus',
@@ -24,7 +24,7 @@ it('can create a vsite with required fields', function () {
 });
 
 it('auto-generates slug from name', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'BinaryLane Sydney VPS',
         'provider' => 'binarylane',
         'technology' => 'vps',
@@ -34,7 +34,7 @@ it('auto-generates slug from name', function () {
 });
 
 it('can determine provider technology combination', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'local-proxmox',
         'provider' => 'local',
         'technology' => 'proxmox',
@@ -44,7 +44,7 @@ it('can determine provider technology combination', function () {
 });
 
 it('can check capabilities', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'test-site',
         'provider' => 'local',
         'technology' => 'incus',
@@ -56,13 +56,13 @@ it('can check capabilities', function () {
 });
 
 it('can identify local vs cloud infrastructure', function () {
-    $localVsite = FleetVSite::create([
+    $localVsite = FleetVsite::create([
         'name' => 'local-incus',
         'provider' => 'local',
         'technology' => 'incus',
     ]);
 
-    $cloudVsite = FleetVSite::create([
+    $cloudVsite = FleetVsite::create([
         'name' => 'binarylane-vps',
         'provider' => 'binarylane',
         'technology' => 'vps',
@@ -81,7 +81,7 @@ it('can create vsite from mapping', function () {
         'location' => 'sydney',
     ];
 
-    $vsite = FleetVSite::createFromMapping('binarylane-proxmox-sydney', $mapping);
+    $vsite = FleetVsite::createFromMapping('binarylane-proxmox-sydney', $mapping);
 
     expect($vsite)
         ->name->toBe('binarylane-proxmox-sydney')
@@ -92,14 +92,14 @@ it('can create vsite from mapping', function () {
 });
 
 it('enforces unique constraint on provider-technology-location', function () {
-    FleetVSite::create([
+    FleetVsite::create([
         'name' => 'test-1',
         'provider' => 'local',
         'technology' => 'incus',
         'location' => 'workstation',
     ]);
 
-    expect(fn () => FleetVSite::create([
+    expect(fn () => FleetVsite::create([
         'name' => 'test-2',
         'provider' => 'local',
         'technology' => 'incus',
@@ -108,18 +108,18 @@ it('enforces unique constraint on provider-technology-location', function () {
 });
 
 it('can have multiple vnodes', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'local-incus',
         'provider' => 'local',
         'technology' => 'incus',
     ]);
 
-    FleetVNode::create([
+    FleetVnode::create([
         'name' => 'node1',
         'vsite_id' => $vsite->id,
     ]);
 
-    FleetVNode::create([
+    FleetVnode::create([
         'name' => 'node2',
         'vsite_id' => $vsite->id,
     ]);
@@ -129,20 +129,20 @@ it('can have multiple vnodes', function () {
 });
 
 it('can filter by provider and technology', function () {
-    FleetVSite::create([
+    FleetVsite::create([
         'name' => 'local-incus',
         'provider' => 'local',
         'technology' => 'incus',
     ]);
 
-    FleetVSite::create([
+    FleetVsite::create([
         'name' => 'binarylane-vps',
         'provider' => 'binarylane',
         'technology' => 'vps',
     ]);
 
-    $localSites = FleetVSite::byProvider('local')->get();
-    $incusSites = FleetVSite::byTechnology('incus')->get();
+    $localSites = FleetVsite::byProvider('local')->get();
+    $incusSites = FleetVsite::byTechnology('incus')->get();
 
     expect($localSites)->toHaveCount(1)
         ->and($incusSites)->toHaveCount(1)

@@ -10,10 +10,10 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "filament/filament": "^4.1.10",
-        "filament/infolists": ">=4.1.10",
-        "filament/spatie-laravel-media-library-plugin": "^4.0",
-        "laravel/framework": "^12.36.1",
+        "filament/filament": "^4.2.1",
+        "filament/infolists": ">=4.2.1",
+        "filament/spatie-laravel-media-library-plugin": "^4.2.1",
+        "laravel/framework": "^12.37.0",
         "laravel/tinker": "^2.10.1",
         "netserva/admin": "@dev",
         "netserva/cli": "@dev",
@@ -30,11 +30,11 @@
         "netserva/web": "@dev",
         "netserva/wg": "@dev",
         "phpseclib/phpseclib": "^3.0.47",
-        "spatie/laravel-settings": "^3.0"
+        "spatie/laravel-settings": "^3.5"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
-        "laravel/boost": "^1.6.0",
+        "laravel/boost": "^1.8.0",
         "laravel/pail": "^1.2.3",
         "laravel/pint": "^1.25.1",
         "laravel/sail": "^1.47",
@@ -127,59 +127,129 @@
         },
         "netserva/admin": {
             "type": "path",
-            "url": "./packages/netserva-admin"
+            "url": "./packages/netserva-admin",
+            "options": {
+                "versions": {
+                    "netserva/admin": "0.0.3"
+                }
+            }
         },
         "netserva/cms": {
             "type": "path",
-            "url": "./packages/netserva-cms"
+            "url": "./packages/netserva-cms",
+            "options": {
+                "versions": {
+                    "netserva/cms": "0.0.3"
+                }
+            }
         },
         "netserva/dns": {
             "type": "path",
-            "url": "./packages/netserva-dns"
+            "url": "./packages/netserva-dns",
+            "options": {
+                "versions": {
+                    "netserva/dns": "0.0.3"
+                }
+            }
         },
         "netserva/mail": {
             "type": "path",
-            "url": "./packages/netserva-mail"
+            "url": "./packages/netserva-mail",
+            "options": {
+                "versions": {
+                    "netserva/mail": "0.0.3"
+                }
+            }
         },
         "netserva/wg": {
             "type": "path",
-            "url": "./packages/netserva-wg"
+            "url": "./packages/netserva-wg",
+            "options": {
+                "versions": {
+                    "netserva/wg": "0.0.3"
+                }
+            }
         },
         "netserva/web": {
             "type": "path",
-            "url": "./packages/netserva-web"
+            "url": "./packages/netserva-web",
+            "options": {
+                "versions": {
+                    "netserva/web": "0.0.3"
+                }
+            }
         },
         "netserva/ops": {
             "type": "path",
-            "url": "./packages/netserva-ops"
+            "url": "./packages/netserva-ops",
+            "options": {
+                "versions": {
+                    "netserva/ops": "0.0.3"
+                }
+            }
         },
         "netserva/config": {
             "type": "path",
-            "url": "./packages/netserva-config"
+            "url": "./packages/netserva-config",
+            "options": {
+                "versions": {
+                    "netserva/config": "0.0.3"
+                }
+            }
         },
         "netserva/cron": {
             "type": "path",
-            "url": "./packages/netserva-cron"
+            "url": "./packages/netserva-cron",
+            "options": {
+                "versions": {
+                    "netserva/cron": "0.0.3"
+                }
+            }
         },
         "netserva/ipam": {
             "type": "path",
-            "url": "./packages/netserva-ipam"
+            "url": "./packages/netserva-ipam",
+            "options": {
+                "versions": {
+                    "netserva/ipam": "0.0.3"
+                }
+            }
         },
         "netserva/core": {
             "type": "path",
-            "url": "./packages/netserva-core"
+            "url": "./packages/netserva-core",
+            "options": {
+                "versions": {
+                    "netserva/core": "0.0.3"
+                }
+            }
         },
         "netserva/cli": {
             "type": "path",
-            "url": "./packages/netserva-cli"
+            "url": "./packages/netserva-cli",
+            "options": {
+                "versions": {
+                    "netserva/cli": "0.0.3"
+                }
+            }
         },
         "netserva/fleet": {
             "type": "path",
-            "url": "./packages/netserva-fleet"
+            "url": "./packages/netserva-fleet",
+            "options": {
+                "versions": {
+                    "netserva/fleet": "0.0.3"
+                }
+            }
         },
         "netserva/platform": {
             "type": "path",
-            "url": "./packages/netserva-platform"
+            "url": "./packages/netserva-platform",
+            "options": {
+                "versions": {
+                    "netserva/platform": "0.0.3"
+                }
+            }
         }
     }
 }

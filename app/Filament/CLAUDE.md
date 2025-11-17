@@ -23,19 +23,19 @@
 
 ```
 app/Filament/Resources/
-├── FleetVHostResource.php          # Main resource
+├── FleetVhostResource.php          # Main resource
 │   ├── Pages/
-│   │   ├── CreateFleetVHost.php
-│   │   ├── EditFleetVHost.php
-│   │   └── ListFleetVHosts.php
+│   │   ├── CreateFleetVhost.php
+│   │   ├── EditFleetVhost.php
+│   │   └── ListFleetVhosts.php
 │   ├── Schemas/                    # Filament v4: Form/table schemas
-│   │   ├── FleetVHostFormSchema.php
-│   │   └── FleetVHostTableSchema.php
+│   │   ├── FleetVhostFormSchema.php
+│   │   └── FleetVhostTableSchema.php
 │   ├── Actions/                    # Custom resource actions
-│   │   ├── ProvisionVHostAction.php
+│   │   ├── ProvisionVhostAction.php
 │   │   └── FixPermissionsAction.php
 │   └── RelationManagers/
-│       └── VConfsRelationManager.php
+│       └── VconfsRelationManager.php
 ```
 
 **Pattern:** Separate schema classes for maintainability (Filament v4.1 best practice)
@@ -105,7 +105,7 @@ public function getHeaderActions(): array
 {
     return [
         Action::make('provision')
-            ->action(fn() => app(VHostProvisioningService::class)->provision($this->record))
+            ->action(fn() => app(VhostProvisioningService::class)->provision($this->record))
     ];
 }
 
@@ -132,14 +132,14 @@ public function getHeaderActions(): array
 use Livewire\Livewire;
 
 test('can list vhosts', function () {
-    $vhosts = FleetVHost::factory()->count(3)->create();
+    $vhosts = FleetVhost::factory()->count(3)->create();
 
-    livewire(ListFleetVHosts::class)
+    livewire(ListFleetVhosts::class)
         ->assertCanSeeTableRecords($vhosts);
 });
 
 test('can create vhost', function () {
-    livewire(CreateFleetVHost::class)
+    livewire(CreateFleetVhost::class)
         ->fillForm([
             'fleet_vnode_id' => $vnode->id,
             'domain' => 'example.com',
@@ -165,7 +165,7 @@ RemoteExecutionService::fake([
 
 ```php
 // Resource
-protected static ?string $policy = FleetVHostPolicy::class;
+protected static ?string $policy = FleetVhostPolicy::class;
 
 // Policy methods required
 viewAny, view, create, update, delete
@@ -174,7 +174,7 @@ viewAny, view, create, update, delete
 **Test authorization:**
 ```php
 test('requires authentication', function () {
-    $this->get(FleetVHostResource::getUrl('index'))
+    $this->get(FleetVhostResource::getUrl('index'))
         ->assertRedirect('/login');
 });
 ```
@@ -213,10 +213,10 @@ protected function getHeaderActions(): array
 {
     return [
         Action::make('provision')
-            ->label('Provision VHost')
+            ->label('Provision Vhost')
             ->icon('heroicon-o-cog')
             ->requiresConfirmation()
-            ->action(fn() => app(VHostProvisioningService::class)->provision($this->record))
+            ->action(fn() => app(VhostProvisioningService::class)->provision($this->record))
             ->visible(fn() => $this->record->status === 'pending'),
     ];
 }

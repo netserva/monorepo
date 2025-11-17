@@ -11,6 +11,290 @@
 
 ---
 
+## 📦 NetServa 3.0 Package Architecture Map
+
+**CRITICAL: Check this BEFORE building new functionality - avoid duplicate implementations!**
+
+### Foundation Layer (All packages depend on these)
+
+| Package | Purpose | Key Components | When to Use |
+|---------|---------|----------------|-------------|
+| **netserva/core** | SSH connections, base models, shared utilities | `RemoteConnectionService`, `SshTunnelService`, `SshHost` model | ALL remote operations, SSH tunnels (PowerDNS, MySQL) |
+| **netserva/config** | Configuration & secrets management (STANDALONE) | Database orchestration, unified config | Standalone deployments, CMS-only setups |
+
+### Infrastructure Layer (Physical & Network)
+
+| Package | Purpose | Key Components | When to Use |
+|---------|---------|----------------|-------------|
+| **netserva/fleet** | Infrastructure topology & orchestration | `FleetVenue`, `FleetVsite`, `FleetVnode`, `FleetVhost` | Track VMs/containers, multi-package orchestration, discovery |
+| **netserva/ipam** | IPv4/IPv6 IP allocation tracking | `IpNetwork`, `IpAddress`, `IpReservation` | IP allocation, subnet management, IPv6 reverse zone calculation |
+| **netserva/dns** | DNS record management (PowerDNS, Cloudflare) | `DnsProvider`, `DnsZone`, `DnsRecord`, auto-PTR/FCrDNS | All DNS operations, PTR records, DNSSEC, domain registration |
+| **netserva/wg** | WireGuard VPN management | WireGuard server/peer management | VPN infrastructure, secure remote access |
+
+### Service Layer (Application Services)
+
+| Package | Purpose | Key Components | When to Use |
+|---------|---------|----------------|-------------|
+| **netserva/mail** | Email server management | `MailServer`, `Mailbox`, `MailDomain`, Postfix/Dovecot config | Mail infrastructure, SMTP/IMAP, mailbox admin |
+| **netserva/web** | Web server orchestration | Nginx, Apache, Let's Encrypt SSL | Web hosting, SSL certificates, web server config |
+| **netserva/cms** | Standalone CMS (does NOT use core) | Posts, Pages, Themes - **Uses netserva/config instead** | Blog/content sites, standalone deployments |
+
+### Operations Layer (Monitoring & Automation)
+
+| Package | Purpose | Key Components | When to Use |
+|---------|---------|----------------|-------------|
+| **netserva/ops** | Monitoring, backups, analytics | `MonitoringCheck`, `BackupJob`, `AlertRule`, `Incident` | Infrastructure monitoring, backup management, observability |
+| **netserva/cron** | Task automation & scheduling | Cron job orchestration, automation workflows | Scheduled tasks, automation across infrastructure |
+
+### User Interface & Integration
+
+| Package | Purpose | Key Components | When to Use |
+|---------|---------|----------------|-------------|
+| **netserva/admin** | Filament admin panel | Settings, plugin management | Main admin UI, global settings |
+| **netserva/cli** | Unified CLI interfaces | Laravel Prompts-based commands | Interactive command-line tools |
+| **netserva/platform** | Full platform suite | Complete infrastructure management | All-in-one deployments |
+
+### 🔑 Key Architectural Rules
+
+1. **netserva/core provides ALL SSH** - Never duplicate SSH logic in other packages
+2. **netserva/cms is STANDALONE** - Does NOT depend on core, uses netserva/config instead
+3. **netserva/fleet orchestrates** - Multi-package workflows live here (e.g., IPv6 PTR configuration)
+4. **Check this map FIRST** - Before implementing features, verify no package already provides it
+
+### Common Package Combinations
+
+| Use Case | Packages Used |
+|----------|---------------|
+| **IPv6 PTR Configuration** | fleet (orchestration) + ipam (IPv6 utils) + dns (PTR records) + core (SSH) + mail (Postfix config) |
+| **Mail Server Setup** | fleet (infrastructure) + mail (services) + dns (MX/SPF) + ipam (IP allocation) + core (SSH) |
+| **Standalone CMS** | cms + config (NO core dependency!) |
+| **Full Infrastructure** | platform (everything) |
+
+---
+
+## 🔧 DRY Principle: Service Layer Architecture (CRITICAL)
+
+**Business logic MUST be shared between CLI commands and Filament resources - NO DUPLICATION!**
+
+### The Service Layer Pattern
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  CLI Command (addvnode)          Filament Resource          │
+│       ↓                                  ↓                   │
+│       └──────────────┬───────────────────┘                   │
+│                      ↓                                       │
+│            VNodeService::create()  ← SINGLE SOURCE OF TRUTH  │
+│                      ↓                                       │
+│         Database, Remote SSH, Validation, etc.              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Why This Matters
+
+With **250+ CRUD commands** AND **Filament resources**, duplicating logic means:
+- ❌ Fixing bugs in TWO places
+- ❌ Adding features in TWO places
+- ❌ Testing logic in TWO places
+- ❌ Different behavior between CLI and UI
+
+**Instead:** One service, called from both environments.
+
+### ✅ CORRECT Pattern
+
+```php
+// packages/netserva-fleet/src/Services/VNodeService.php
+class VNodeService
+{
+    public function create(array $data): FleetVnode
+    {
+        // ALL business logic here
+        $vnode = FleetVnode::create([
+            'name' => $data['name'],
+            'vsite_id' => $data['vsite_id'],
+        ]);
+
+        // Remote setup
+        $this->remoteExecution->setupVNode($vnode);
+
+        // DNS registration
+        $this->dns->registerVNode($vnode);
+
+        return $vnode;
+    }
+
+    public function update(FleetVnode $vnode, array $data): FleetVnode
+    {
+        // Update logic here
+    }
+
+    public function delete(FleetVnode $vnode): bool
+    {
+        // Deletion logic here
+    }
+}
+
+// packages/netserva-fleet/src/Console/Commands/AddvnodeCommand.php
+class AddvnodeCommand extends Command
+{
+    public function __construct(
+        protected VNodeService $vnodeService
+    ) {
+        parent::__construct();
+    }
+
+    public function handle(): int
+    {
+        // THIN wrapper - just gather input and call service
+        $data = [
+            'name' => $this->argument('vnode'),
+            'vsite_id' => $this->option('vsite-id'),
+        ];
+
+        $vnode = $this->vnodeService->create($data);
+
+        $this->info("Created vnode: {$vnode->name}");
+        return 0;
+    }
+}
+
+// packages/netserva-fleet/src/Filament/Resources/FleetVnodeResource/Pages/CreateFleetVnode.php
+class CreateFleetVnode extends CreateRecord
+{
+    public function __construct(
+        protected VNodeService $vnodeService
+    ) {
+        parent::__construct();
+    }
+
+    protected function handleRecordCreation(array $data): Model
+    {
+        // SAME service call as CLI command
+        return $this->vnodeService->create($data);
+    }
+}
+```
+
+### ❌ WRONG Pattern (Duplicated Logic)
+
+```php
+// ❌ BAD: Business logic in command
+class AddvnodeCommand extends Command
+{
+    public function handle(): int
+    {
+        // DON'T DO THIS - logic should be in service
+        $vnode = FleetVnode::create([...]);
+        $this->remoteExecution->setupVNode($vnode);
+        $this->dns->registerVNode($vnode);
+        return 0;
+    }
+}
+
+// ❌ BAD: Duplicated logic in Filament
+class CreateFleetVnode extends CreateRecord
+{
+    protected function handleRecordCreation(array $data): Model
+    {
+        // DON'T DO THIS - same logic duplicated!
+        $vnode = FleetVnode::create($data);
+        app(RemoteExecutionService::class)->setupVNode($vnode);
+        app(DnsService::class)->registerVNode($vnode);
+        return $vnode;
+    }
+}
+```
+
+**Problem:** Now you have to maintain the SAME logic in TWO places!
+
+### What Goes Where?
+
+| Layer | Responsibility | Examples |
+|-------|----------------|----------|
+| **Service** (`src/Services/`) | Business logic, validation, orchestration | `VNodeService::create()`, `DnsService::createZone()` |
+| **Command** (`src/Console/Commands/`) | Input gathering, output formatting, calling service | Laravel Prompts, progress bars, table display |
+| **Filament Resource** (`src/Filament/Resources/`) | Form schema, table columns, calling service | Schema definition, filters, actions |
+| **Model** (`src/Models/`) | Relationships, scopes, accessors ONLY | `vnode()`, `scopeActive()`, `getNameAttribute()` |
+
+### Service Location Pattern
+
+```
+packages/netserva-{package}/
+├── src/
+│   ├── Console/Commands/
+│   │   ├── AddvnodeCommand.php      ← Calls service
+│   │   ├── ShvnodeCommand.php       ← Calls service
+│   │   └── ChvnodeCommand.php       ← Calls service
+│   ├── Filament/Resources/
+│   │   └── FleetVnodeResource/
+│   │       ├── Pages/
+│   │       │   ├── CreateFleetVnode.php  ← Calls service
+│   │       │   └── EditFleetVnode.php    ← Calls service
+│   └── Services/
+│       └── VNodeService.php         ← SINGLE SOURCE OF TRUTH
+```
+
+### Testing Benefits
+
+```php
+// One service = one set of tests
+it('creates vnode with DNS registration', function () {
+    $service = app(VNodeService::class);
+    $vnode = $service->create(['name' => 'test']);
+
+    expect($vnode->name)->toBe('test');
+    // Verify DNS was registered, SSH was setup, etc.
+});
+
+// Commands and Filament just test they call the service correctly
+it('addvnode command calls service', function () {
+    $mock = Mockery::mock(VNodeService::class);
+    $mock->shouldReceive('create')->once()->andReturn(new FleetVnode);
+
+    $this->app->instance(VNodeService::class, $mock);
+
+    $this->artisan('addvnode test')->assertExitCode(0);
+});
+```
+
+### Real-World Examples (Existing Codebase)
+
+```bash
+# DNS package follows this pattern
+packages/netserva-dns/
+├── src/Services/
+│   ├── DnsProviderService.php     ← Business logic
+│   ├── DnsZoneService.php         ← Business logic
+│   └── DnsRecordService.php       ← Business logic
+├── Console/Commands/
+│   ├── AdddnsCommand.php          ← Calls DnsProviderService
+│   ├── AddrecCommand.php          ← Calls DnsRecordService
+└── Filament/Resources/
+    └── DnsProviderResource/       ← Calls DnsProviderService
+```
+
+### When Creating New Features
+
+**ALWAYS follow this checklist:**
+
+1. ✅ Create service first: `{Package}Service.php`
+2. ✅ Implement business logic in service with full tests
+3. ✅ Create CLI command that calls service (thin wrapper)
+4. ✅ Create Filament resource that calls SAME service
+5. ✅ Test that both CLI and Filament produce identical results
+
+**NEVER:**
+- ❌ Put business logic in commands or Filament resources
+- ❌ Duplicate validation between CLI and Filament
+- ❌ Duplicate database operations
+- ❌ Duplicate remote SSH execution
+
+### Quick Reference
+
+**If you're writing the same code in both a Command and a Filament Resource → IT BELONGS IN A SERVICE!**
+
+---
+
 ## 🔥 CRITICAL: Filament v4 & Laravel Ecosystem Patterns (MANDATORY)
 
 **⚠️ ALWAYS FOLLOW THESE RULES - NO EXCEPTIONS:**
@@ -32,6 +316,71 @@
 
 **Why This Matters**: These tools prevent hours of troubleshooting from using outdated patterns. The `search-docs` MCP tool provides version-specific documentation tailored to this project's exact package versions.
 
+## 🛑 MANDATORY: Filament Resource Creation Checklist
+
+**Before creating ANY Filament resource, page, widget, or component, you MUST follow this process:**
+
+### The Non-Negotiable 5-Step Process:
+
+1. **🛑 STOP** - Do NOT write any code yet. Do NOT use memory or assumptions.
+
+2. **🔍 SEARCH** - Use `search-docs` MCP tool with multiple relevant queries:
+   ```php
+   mcp__laravel-boost__search-docs([
+       "filament resource table",
+       "filament resource form",
+       "filament resource actions",
+       "filament v4 schema components"
+   ])
+   ```
+
+3. **📖 READ** - Review ALL search results completely. Pay attention to:
+   - Import statements (use `Filament\Actions\Action`, NOT `Filament\Tables\Actions\Action`)
+   - Method signatures (`form(Schema $schema)`, NOT `form(Form $form)`)
+   - API changes (`->recordActions([])`, NOT `->actions([])`)
+   - Component namespaces (`Filament\Schemas\Components\Section`, NOT `Filament\Forms\Components\Section`)
+
+4. **✍️ WRITE** - Only NOW write code using exact patterns from the documentation
+
+5. **✅ VERIFY** - Cross-check against existing resources in `packages/*/src/Filament/Resources/`
+
+### Common Filament v4 Gotchas (That You Keep Getting Wrong):
+
+| ❌ WRONG (Filament v3) | ✅ CORRECT (Filament v4) |
+|------------------------|--------------------------|
+| `use Filament\Forms\Form;` | `use Filament\Schemas\Schema;` |
+| `use Filament\Tables\Actions\Action;` | `use Filament\Actions\Action;` |
+| `public static function form(Form $form)` | `public static function form(Schema $schema)` |
+| `->schema([...])` (top level) | `->components([...])` (top level) |
+| `->actions([...])` (table) | `->recordActions([...])` (table) |
+| `->bulkActions([...])` | `->toolbarActions([...])` |
+| `Forms\Components\Section::make()` | `Section::make()` (with proper import) |
+
+### Why This Process is NON-NEGOTIABLE:
+
+- **Skipping search-docs costs 10-30 minutes of debugging time PER resource**
+- **Using v3 syntax breaks the entire resource and requires complete rewrite**
+- **The search-docs tool is specifically designed for this project's exact versions**
+- **Memory-based coding ALWAYS produces outdated patterns**
+
+### Example of Correct Process:
+
+```
+User: "Create a ThemeResource for managing themes"
+
+Assistant (CORRECT):
+"I'll create the ThemeResource using Filament v4 patterns. Let me search the official documentation first."
+
+[Uses search-docs tool:]
+search-docs(["filament resource table", "filament resource form", "filament v4 actions"])
+
+[Reads results completely]
+
+[Then writes ThemeResource.php using EXACT patterns from docs]
+```
+
+**If you skip this process, you WILL write v3 code and waste 20+ minutes fixing it.**
+
 ---
 
 ## 🚨 Mandatory Architecture Rules
@@ -44,6 +393,120 @@
 6. **Laravel Boost**: ALWAYS use `search-docs` MCP tool before implementing Laravel ecosystem features
 7. **Testing**: ALL new features MUST include comprehensive Pest 4.0 tests in `packages/*/tests/`
 8. **Platform Schema**: 6 layers - `venue → vsite → vnode → vhost + vconf → vserv`
+
+---
+
+## 🎯 CRUD Command Naming Convention (CRITICAL)
+
+**ALL CRUD commands MUST follow this exact pattern - NO EXCEPTIONS:**
+
+```
+add<resource>   - Create new resource
+sh<resource>    - Show/list resource(s)
+ch<resource>    - Change/update resource
+del<resource>   - Delete resource
+```
+
+### Why This Pattern?
+
+With **~250+ CRUD commands** across 14 packages, this provides:
+- ✅ **Alphabetical grouping** in `php artisan list` (all add* together, all sh* together)
+- ✅ **Muscle memory** - always "add" to create, "sh" to show, "ch" to change, "del" to delete
+- ✅ **Predictable** - `addvnode` exists, so `shvnode`, `chvnode`, `delvnode` must exist too
+- ✅ **Concise** - short prefixes (add vs create, sh vs show/list, ch vs change/update, del vs delete)
+
+### Examples (Existing Pattern)
+
+```bash
+# DNS Management
+adddns, shdns, chdns, deldns           # Providers
+addzone, shzone, chzone, delzone       # Zones
+addrec, shrec, chrec, delrec           # Records
+
+# Fleet Management
+addvnode, shvnode, chvnode, delvnode   # Virtual nodes
+addvsite, shvsite, chvsite, delvsite   # Virtual sites
+addvhost, shvhost, chvhost, delvhost   # Virtual hosts
+
+# Mail Management
+addvmail, shvmail, chvmail, delvmail   # Virtual mailboxes
+addvalias, shvalias, chvalias, delvalias # Mail aliases
+
+# IPAM (when implemented)
+addnetwork, shnetwork, chnetwork, delnetwork  # IP networks
+addip, ship, chip, delip                       # IP addresses
+```
+
+### ❌ DO NOT Create Commands Like:
+
+```bash
+# WRONG - Inconsistent verbs
+create-vnode, new-vnode, make-vnode    # Use addvnode
+show-vnode, list-vnode, get-vnode      # Use shvnode
+update-vnode, modify-vnode, edit-vnode # Use chvnode
+remove-vnode, destroy-vnode            # Use delvnode
+
+# WRONG - Laravel-style namespacing (too verbose with 250+ commands)
+vnode:create, vnode:list, vnode:update, vnode:delete
+dns:provider:create, dns:provider:show
+
+# WRONG - Mixed conventions
+addvnode but updatevnode               # Must be chvnode
+createzone but shzone                  # Must be addzone
+```
+
+### ✅ CORRECT Pattern
+
+```bash
+# If you're creating DNS record functionality:
+addrec    # Not: create-record, dns:record:create, new-record
+shrec     # Not: show-record, list-records, dns:record:list
+chrec     # Not: update-record, modify-record, dns:record:update
+delrec    # Not: delete-record, remove-record, dns:record:delete
+
+# If you're creating IPAM network functionality:
+addnetwork  # Not: create-network, ipam:network:create
+shnetwork   # Not: show-network, list-networks
+chnetwork   # Not: update-network, change-network
+delnetwork  # Not: delete-network, remove-network
+```
+
+### Non-CRUD Commands (Allowed Exceptions)
+
+**Only non-CRUD operations can use different naming:**
+
+```bash
+# Discovery/Import (not CRUD)
+fleet:discover
+fleet:import-vhosts
+
+# Configuration/Setup (not CRUD)
+fleet:ipv6-ptr:configure
+mail:configure-dkim
+
+# Operational Tasks (not CRUD)
+ops:backup-now
+dns:verify-fcrdns
+
+# Testing/Validation (not CRUD)
+validate
+test-connection
+```
+
+**Rule of thumb:** If it's **Create/Read/Update/Delete** → Use **add/sh/ch/del** prefix
+If it's **anything else** → Use descriptive name with colons or hyphens
+
+### Command Discovery
+
+With this pattern, users can:
+```bash
+php artisan list | grep ^add    # All creation commands
+php artisan list | grep ^sh     # All show/list commands
+php artisan list | grep ^ch     # All change/update commands
+php artisan list | grep ^del    # All deletion commands
+```
+
+**This pattern is MANDATORY for all NetServa packages.**
 
 ---
 
@@ -192,7 +655,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 ## Foundational Context
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.4.13
+- php - 8.4.14
 - filament/filament (FILAMENT) - v4
 - laravel/framework (LARAVEL) - v12
 - laravel/prompts (PROMPTS) - v0
@@ -230,6 +693,15 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 ## Laravel Boost
 - Laravel Boost is an MCP server that comes with powerful tools designed specifically for this application. Use them.
+
+### Troubleshooting: MCP Tools Not Available
+If the Laravel Boost MCP tools (like `search-docs`, `database-query`, `tinker`, etc.) are not available:
+
+1. **Check `~/.claude.json`**: The server may be disabled in the configuration
+2. **Fix**: Manually edit `~/.claude.json`:
+   - Remove `"laravel-boost"` from the `disabledMcpServers` array, OR
+   - Change it to an empty array: `"disabledMcpServers": []`
+3. **Restart**: Claude Code needs to be restarted after changing the configuration
 
 ## Artisan
 - Use the `list-artisan-commands` tool when you need to call an Artisan command to double check the available parameters.
@@ -471,7 +943,7 @@ Forms\Components\Select::make('user_id')
 
 ## Livewire Core
 - Use the `search-docs` tool to find exact version specific documentation for how to write Livewire & Livewire tests.
-- Use the `php artisan make:livewire [Posts\\CreatePost]` artisan command to create new components
+- Use the `php artisan make:livewire [Posts\CreatePost]` artisan command to create new components
 - State should live on the server, with the UI reflecting it.
 - All Livewire requests hit the Laravel backend, they're like regular HTTP requests. Always validate form data, and run authorization checks in Livewire actions.
 

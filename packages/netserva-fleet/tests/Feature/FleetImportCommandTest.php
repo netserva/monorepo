@@ -1,9 +1,9 @@
 <?php
 
 use NetServa\Fleet\Console\Commands\FleetImportCommand;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 uses()
     ->group('feature', 'fleet', 'import', 'priority-2');
@@ -43,9 +43,9 @@ it('can run import command in dry-run mode', function () {
         ->expectsOutputToContain('Would import VHost');
 
     // No records should be created in dry-run
-    expect(FleetVSite::count())->toBe(0)
-        ->and(FleetVNode::count())->toBe(0)
-        ->and(FleetVHost::count())->toBe(0);
+    expect(FleetVsite::count())->toBe(0)
+        ->and(FleetVnode::count())->toBe(0)
+        ->and(FleetVhost::count())->toBe(0);
 });
 
 it('can import infrastructure from var directory', function () {
@@ -54,24 +54,24 @@ it('can import infrastructure from var directory', function () {
         ->expectsOutputToContain('Import completed successfully');
 
     // Check that VSites were created
-    expect(FleetVSite::count())->toBeGreaterThan(0);
+    expect(FleetVsite::count())->toBeGreaterThan(0);
 
-    $localIncus = FleetVSite::where('name', 'local-incus')->first();
+    $localIncus = FleetVsite::where('name', 'local-incus')->first();
     expect($localIncus)->not->toBeNull()
         ->provider->toBe('local')
         ->technology->toBe('incus');
 
     // Check that VNodes were created
-    expect(FleetVNode::count())->toBeGreaterThan(0);
+    expect(FleetVnode::count())->toBeGreaterThan(0);
 
-    $mgoNode = FleetVNode::where('name', 'mgo')->first();
+    $mgoNode = FleetVnode::where('name', 'mgo')->first();
     expect($mgoNode)->not->toBeNull()
         ->vsite_id->toBe($localIncus->id);
 
     // Check that VHosts were created
-    expect(FleetVHost::count())->toBeGreaterThan(0);
+    expect(FleetVhost::count())->toBeGreaterThan(0);
 
-    $goldcoastVHost = FleetVHost::where('domain', 'goldcoast.org')->first();
+    $goldcoastVHost = FleetVhost::where('domain', 'goldcoast.org')->first();
     expect($goldcoastVHost)->not->toBeNull()
         ->vnode_id->toBe($mgoNode->id);
 });
@@ -81,19 +81,19 @@ it('can import specific vnode only', function () {
         ->assertExitCode(0);
 
     // Should have created VNode mgo but not nsorg
-    expect(FleetVNode::where('name', 'mgo')->exists())->toBeTrue()
-        ->and(FleetVNode::where('name', 'nsorg')->exists())->toBeFalse();
+    expect(FleetVnode::where('name', 'mgo')->exists())->toBeTrue()
+        ->and(FleetVnode::where('name', 'nsorg')->exists())->toBeFalse();
 
     // Should have created VHosts for mgo only
-    expect(FleetVHost::where('domain', 'goldcoast.org')->exists())->toBeTrue()
-        ->and(FleetVHost::where('domain', 'netserva.org')->exists())->toBeFalse();
+    expect(FleetVhost::where('domain', 'goldcoast.org')->exists())->toBeTrue()
+        ->and(FleetVhost::where('domain', 'netserva.org')->exists())->toBeFalse();
 });
 
 it('can force overwrite existing data', function () {
     // Create initial import
     $this->artisan(FleetImportCommand::class)->assertExitCode(0);
 
-    $initialCount = FleetVHost::count();
+    $initialCount = FleetVhost::count();
 
     // Add another vhost file
     file_put_contents("{$this->varBase}/mgo/new.example.com", "VHOST=\"new.example.com\"\nVNODE=\"mgo\"\n");
@@ -103,15 +103,15 @@ it('can force overwrite existing data', function () {
         ->assertExitCode(0);
 
     // Should have imported the new vhost
-    expect(FleetVHost::count())->toBe($initialCount + 1)
-        ->and(FleetVHost::where('domain', 'new.example.com')->exists())->toBeTrue();
+    expect(FleetVhost::count())->toBe($initialCount + 1)
+        ->and(FleetVhost::where('domain', 'new.example.com')->exists())->toBeTrue();
 });
 
 it('correctly maps vnodes to vsites', function () {
     $this->artisan(FleetImportCommand::class)->assertExitCode(0);
 
-    $mgoNode = FleetVNode::where('name', 'mgo')->first();
-    $nsorgNode = FleetVNode::where('name', 'nsorg')->first();
+    $mgoNode = FleetVnode::where('name', 'mgo')->first();
+    $nsorgNode = FleetVnode::where('name', 'nsorg')->first();
 
     expect($mgoNode->vsite->provider)->toBe('local')
         ->and($mgoNode->vsite->technology)->toBe('incus')
@@ -122,7 +122,7 @@ it('correctly maps vnodes to vsites', function () {
 it('loads environment variables from vhost files', function () {
     $this->artisan(FleetImportCommand::class)->assertExitCode(0);
 
-    $vhost = FleetVHost::where('domain', 'goldcoast.org')->first();
+    $vhost = FleetVhost::where('domain', 'goldcoast.org')->first();
 
     expect($vhost->environment_vars)->toBeArray()
         ->and($vhost->getEnvVar('VHOST'))->toBe('goldcoast.org')
@@ -138,9 +138,9 @@ it('excludes files matching exclude patterns', function () {
     $this->artisan(FleetImportCommand::class)->assertExitCode(0);
 
     // Should not have imported excluded files
-    expect(FleetVHost::where('domain', '.hidden')->exists())->toBeFalse()
-        ->and(FleetVHost::where('domain', 'backup.bak')->exists())->toBeFalse()
-        ->and(FleetVHost::where('domain', 'temp.tmp')->exists())->toBeFalse();
+    expect(FleetVhost::where('domain', '.hidden')->exists())->toBeFalse()
+        ->and(FleetVhost::where('domain', 'backup.bak')->exists())->toBeFalse()
+        ->and(FleetVhost::where('domain', 'temp.tmp')->exists())->toBeFalse();
 });
 
 it('handles missing var directory gracefully', function () {
@@ -172,9 +172,9 @@ it('can guess vnode roles correctly', function () {
 
     $this->artisan(FleetImportCommand::class)->assertExitCode(0);
 
-    $routerNode = FleetVNode::where('name', 'router')->first();
-    $storageNode = FleetVNode::where('name', 'storage')->first();
-    $haproxyNode = FleetVNode::where('name', 'haproxy')->first();
+    $routerNode = FleetVnode::where('name', 'router')->first();
+    $storageNode = FleetVnode::where('name', 'storage')->first();
+    $haproxyNode = FleetVnode::where('name', 'haproxy')->first();
 
     expect($routerNode->role)->toBe('network')
         ->and($storageNode->role)->toBe('storage')

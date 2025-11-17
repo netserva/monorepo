@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Change VNode Command (NetServa 3.0 CRUD: UPDATE)
@@ -25,11 +25,11 @@ class ChvnodeCommand extends Command
     {
         $name = $this->argument('name');
 
-        $vnode = FleetVNode::where('name', $name)->first();
+        $vnode = FleetVnode::where('name', $name)->first();
 
         if (! $vnode) {
             $this->error("VNode not found: {$name}");
-            $this->info('Available vnodes: '.FleetVNode::pluck('name')->implode(', '));
+            $this->info('Available vnodes: '.FleetVnode::pluck('name')->implode(', '));
 
             return Command::FAILURE;
         }

@@ -4,7 +4,7 @@ namespace NetServa\Cli\Console\Commands;
 
 use NetServa\Cli\Services\DatabaseVhostConfigService;
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
@@ -16,7 +16,7 @@ use function Laravel\Prompts\spin;
  * Usage: addvconf <vnode> <vhost>
  * Example: addvconf markc markc.goldcoast.org
  *
- * DATABASE-FIRST: Populates environment_vars in FleetVHost model
+ * DATABASE-FIRST: Populates environment_vars in FleetVhost model
  * Replicates NetServa 1.0 sethost() and gethost() functions
  */
 class AddvconfCommand extends BaseNetServaCommand
@@ -38,7 +38,7 @@ class AddvconfCommand extends BaseNetServaCommand
             $VHOST = $this->argument('vhost');
 
             // Find VHost in database
-            $vhost = FleetVHost::where('domain', $VHOST)
+            $vhost = FleetVhost::where('domain', $VHOST)
                 ->whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
                 ->first();
 
@@ -48,12 +48,12 @@ class AddvconfCommand extends BaseNetServaCommand
                     return $this->showDryRunPreview($VNODE, $VHOST, $configService, $remoteExec);
                 }
 
-                // Create FleetVHost record if it doesn't exist
+                // Create FleetVhost record if it doesn't exist
                 $this->warn("⚠️  VHost '{$VHOST}' not found - creating database record...");
 
-                $vnodeModel = \NetServa\Fleet\Models\FleetVNode::where('name', $VNODE)->first();
+                $vnodeModel = \NetServa\Fleet\Models\FleetVnode::where('name', $VNODE)->first();
 
-                $vhost = FleetVHost::create([
+                $vhost = FleetVhost::create([
                     'domain' => $VHOST,
                     'vnode_id' => $vnodeModel->id,
                     'instance_type' => 'vhost',
@@ -110,7 +110,7 @@ class AddvconfCommand extends BaseNetServaCommand
     }
 
     protected function generateConfiguration(
-        FleetVHost $vhost,
+        FleetVhost $vhost,
         DatabaseVhostConfigService $configService,
         RemoteExecutionService $remoteExec,
         array $overrides = []
@@ -192,7 +192,7 @@ class AddvconfCommand extends BaseNetServaCommand
         $detectedOs = $remoteExec->getOsVariables($VNODE);
 
         // Create temporary VNode
-        $tempVnode = new \NetServa\Fleet\Models\FleetVNode(['name' => $VNODE]);
+        $tempVnode = new \NetServa\Fleet\Models\FleetVnode(['name' => $VNODE]);
 
         // Generate variables without saving (dry-run mode)
         $envVars = $configService->previewVariables($tempVnode, $VHOST, [], $detectedOs);

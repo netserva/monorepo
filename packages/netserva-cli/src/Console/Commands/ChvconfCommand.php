@@ -2,7 +2,7 @@
 
 namespace NetServa\Cli\Console\Commands;
 
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\text;
@@ -14,7 +14,7 @@ use function Laravel\Prompts\text;
  * Usage: chvconf <vnode> <vhost> <variable> [value]
  * Example: chvconf markc markc.goldcoast.org WPATH /srv/markc.goldcoast.org/web
  *
- * DATABASE-FIRST: Updates environment_vars in FleetVHost model
+ * DATABASE-FIRST: Updates environment_vars in FleetVhost model
  */
 class ChvconfCommand extends BaseNetServaCommand
 {
@@ -37,7 +37,7 @@ class ChvconfCommand extends BaseNetServaCommand
             $value = $this->argument('value');
 
             // Find VHost in database
-            $vhost = FleetVHost::where('domain', $VHOST)
+            $vhost = FleetVhost::where('domain', $VHOST)
                 ->whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
                 ->first();
 
@@ -59,8 +59,9 @@ class ChvconfCommand extends BaseNetServaCommand
             // Prompt for value if not provided
             if ($value === null) {
                 if ($this->option('dry-run')) {
-                    $this->error("❌ Value required in dry-run mode");
+                    $this->error('❌ Value required in dry-run mode');
                     $this->line("   Usage: chvconf {$VNODE} {$VHOST} {$variable} <value> --dry-run");
+
                     return 1;
                 }
 
@@ -85,11 +86,11 @@ class ChvconfCommand extends BaseNetServaCommand
                     $this->line("   Current: <fg=red>{$currentValue}</>");
                     $this->line("   New:     <fg=green>{$value}</>");
                     $this->line('');
-                    $this->line("   Would update vconfs table");
+                    $this->line('   Would update vconfs table');
                 } else {
                     $this->line("   New:     <fg=green>{$value}</>");
                     $this->line('');
-                    $this->line("   Would create new variable in vconfs table");
+                    $this->line('   Would create new variable in vconfs table');
                 }
 
                 return 0;
@@ -106,7 +107,7 @@ class ChvconfCommand extends BaseNetServaCommand
         });
     }
 
-    protected function unsetVariable(FleetVHost $vhost, string $variable): int
+    protected function unsetVariable(FleetVhost $vhost, string $variable): int
     {
         $currentValue = $vhost->getEnvVar($variable);
 
@@ -122,7 +123,7 @@ class ChvconfCommand extends BaseNetServaCommand
             $this->line('');
             $this->line("   Current value: <fg=red>{$currentValue}</>");
             $this->line('');
-            $this->line("   Would delete from vconfs table");
+            $this->line('   Would delete from vconfs table');
 
             return 0;
         }

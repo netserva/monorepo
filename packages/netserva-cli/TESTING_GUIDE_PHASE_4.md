@@ -144,7 +144,7 @@ php artisan validate:vhost test-vnode test.example.com --store
 
 # 3. Check validation results
 php artisan tinker
->>> $vhost = FleetVHost::where('domain', 'test.example.com')->first()
+>>> $vhost = FleetVhost::where('domain', 'test.example.com')->first()
 >>> $vhost->migration_status  // Should be 'validated'
 >>> $vhost->migration_issues  // Check for warnings
 
@@ -231,7 +231,7 @@ php artisan validate:vhost --all-discovered --store
 
 # 4. Check how many are validated
 php artisan tinker
->>> FleetVHost::where('migration_status', 'validated')->count()
+>>> FleetVhost::where('migration_status', 'validated')->count()
 
 # 5. Execute batch migration
 php artisan migrate:vhost --all-validated
@@ -243,7 +243,7 @@ php artisan migrate:vhost --all-validated
 
 # 7. Verify all migrated
 php artisan tinker
->>> FleetVHost::where('migration_status', 'migrated')->count()
+>>> FleetVhost::where('migration_status', 'migrated')->count()
 ```
 
 **Expected Results:**
@@ -267,7 +267,7 @@ php artisan migrate:vhost test-vnode test-disk-full.com
 
 # 3. Check database
 php artisan tinker
->>> $vhost = FleetVHost::where('domain', 'test-disk-full.com')->first()
+>>> $vhost = FleetVhost::where('domain', 'test-disk-full.com')->first()
 >>> $vhost->migration_status  // Should be 'failed'
 >>> $vhost->migration_issues['migration_execution']['errors']
 
@@ -335,11 +335,11 @@ echo "Test vhost created: $DOMAIN"
 
 ### Test Fails: "vsite_id NOT NULL constraint"
 
-**Problem:** FleetVNode requires vsite_id
+**Problem:** FleetVnode requires vsite_id
 
-**Solution:** Ensure beforeEach creates FleetVSite first
+**Solution:** Ensure beforeEach creates FleetVsite first
 ```php
-$this->vsite = FleetVSite::create([
+$this->vsite = FleetVsite::create([
     'name' => 'test-site',
     'slug' => 'test-site',
     'environment' => 'testing',
@@ -350,7 +350,7 @@ $this->vsite = FleetVSite::create([
 
 ### Test Fails: "provider NOT NULL constraint"
 
-**Problem:** FleetVSite/FleetVNode requires provider field
+**Problem:** FleetVsite/FleetVnode requires provider field
 
 **Solution:** Add provider to create calls
 ```php

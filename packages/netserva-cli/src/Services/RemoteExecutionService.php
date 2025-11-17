@@ -70,7 +70,7 @@ class RemoteExecutionService extends RemoteConnectionService
         // Build the SSH command using printf %q for proper quoting
         // This ensures complex commands with quotes, pipes, etc. work correctly
         $quotedCommand = escapeshellarg(
-            sprintf("bash -c %s", escapeshellarg($command))
+            sprintf('bash -c %s', escapeshellarg($command))
         );
 
         if ($useSudo) {
@@ -79,7 +79,7 @@ class RemoteExecutionService extends RemoteConnectionService
                 escapeshellarg($command)
             );
         } else {
-            $sshCommand = sprintf("ssh %s %s",
+            $sshCommand = sprintf('ssh %s %s',
                 escapeshellarg($host),
                 $quotedCommand
             );
@@ -558,7 +558,7 @@ class RemoteExecutionService extends RemoteConnectionService
             if ($exitCode === false || $exitCode === null) {
                 $exitCode = 255;
                 $success = false;
-                $errorMsg = "Script execution failed - no exit code returned (possible connection issue)";
+                $errorMsg = 'Script execution failed - no exit code returned (possible connection issue)';
             } else {
                 $success = $exitCode === 0;
                 $errorMsg = $success ? null : "Script failed with exit code: $exitCode";
@@ -597,20 +597,20 @@ class RemoteExecutionService extends RemoteConnectionService
     }
 
     /**
-     * Execute script with FleetVHost environment variables
+     * Execute script with FleetVhost environment variables
      *
-     * Automatically injects all environment variables from FleetVHost model
+     * Automatically injects all environment variables from FleetVhost model
      * into the script execution context.
      *
      * @param  string  $host  Host identifier
-     * @param  \NetServa\Fleet\Models\FleetVHost  $vhost  VHost model with environment vars
+     * @param  \NetServa\Fleet\Models\FleetVhost  $vhost  VHost model with environment vars
      * @param  string  $script  Bash script content
      * @param  bool  $asRoot  Execute with root privileges
      * @return array Execution result
      */
     public function executeScriptWithVhost(
         string $host,
-        $vhost,  // FleetVHost model
+        $vhost,  // FleetVhost model
         string $script,
         bool $asRoot = true
     ): array {

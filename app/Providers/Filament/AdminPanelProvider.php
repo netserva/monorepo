@@ -3,14 +3,16 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\FilamentGuestMode;
+use Filament\Enums\UserMenuPosition;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
+use Filament\Support\Facades\FilamentColor;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -22,19 +24,110 @@ use NetServa\Core\Foundation\PluginRegistry;
 
 class AdminPanelProvider extends PanelProvider
 {
+    public function boot(): void
+    {
+        // Register dynamic colors using a closure that executes AFTER authentication
+        // This is the official Filament v4 way to handle user-specific colors
+        FilamentColor::register(function () {
+            try {
+                // Check if user is authenticated and has a palette
+                if (! auth()->check() || ! auth()->user()->palette_id) {
+                    return \App\Models\Palette::default()->getFilamentColors();
+                }
+
+                // Get authenticated user's palette
+                $palette = auth()->user()->palette;
+
+                if (! $palette) {
+                    return \App\Models\Palette::default()->getFilamentColors();
+                }
+
+                return $palette->getFilamentColors();
+            } catch (\Exception $e) {
+                Log::error('Failed to load user palette colors: '.$e->getMessage());
+
+                return \App\Models\Palette::default()->getFilamentColors();
+            }
+        });
+    }
+
     public function panel(Panel $panel): Panel
     {
+        // Colors are registered via FilamentColor::register() in boot() method
+        // No need to set them here - the closure executes after auth middleware
         $panel = $panel
             ->default()
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile(\App\Filament\Pages\Auth\EditProfile::class)
             ->brandName(fn () => config('app.name'))  // Dynamic brand from config (overridden by CMS if available)
-            ->topbar(false)  // Filament 4.1 feature: enables sticky navigation
-            ->colors([
-                'primary' => Color::Amber,
+            ->topbar(false)  // Disable topbar entirely (Filament v4 method)
+            ->sidebarCollapsibleOnDesktop(true)  // Enable sidebar collapse (required for brand name to show)
+            ->userMenu(position: UserMenuPosition::Sidebar)  // Force user menu to sidebar footer
+            // Navigation groups with icons for collapsed sidebar dropdown menus
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('🚀 Fleet Management')
+                    ->icon('heroicon-o-rocket-launch')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('CMS')
+                    ->icon('heroicon-o-document-text')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('DNS & Domains')
+                    ->icon('heroicon-o-globe-alt')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Mail Services')
+                    ->icon('heroicon-o-envelope')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Web Services')
+                    ->icon('heroicon-o-server')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Databases')
+                    ->icon('heroicon-o-circle-stack')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Configuration')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Secrets')
+                    ->icon('heroicon-o-key')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('IP Address Management')
+                    ->icon('heroicon-o-computer-desktop')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('VPN Services')
+                    ->icon('heroicon-o-shield-check')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('CLI Management')
+                    ->icon('heroicon-o-command-line')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Monitoring')
+                    ->icon('heroicon-o-eye')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Analytics')
+                    ->icon('heroicon-o-chart-bar')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Backups')
+                    ->icon('heroicon-o-cloud-arrow-up')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Automation')
+                    ->icon('heroicon-o-bolt')
+                    ->collapsed(false),
             ])
-            // Navigation groups are now defined in Resource classes (Filament 4.x pattern)
             // Resources are registered via Plugin system (see registerEnabledPlugins)
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -85,12 +178,8 @@ class AdminPanelProvider extends PanelProvider
             // Get plugin registry
             $registry = app(PluginRegistry::class);
 
-            Log::info('Attempting to load enabled plugins from registry...');
-
             // Load plugins in dependency order (returns plugin classes)
             $enabledPluginClasses = $registry->getEnabledPluginsInOrder();
-
-            Log::info('Found '.count($enabledPluginClasses).' enabled plugin classes');
 
             $plugins = [];
             foreach ($enabledPluginClasses as $pluginClass) {
@@ -101,9 +190,6 @@ class AdminPanelProvider extends PanelProvider
                         } else {
                             $plugins[] = new $pluginClass;
                         }
-
-                        $pluginId = (new $pluginClass)->getId();
-                        Log::info("Registered plugin: {$pluginId}");
                     } catch (\Exception $e) {
                         Log::warning("Failed to register plugin {$pluginClass}: ".$e->getMessage());
                     }
@@ -113,7 +199,6 @@ class AdminPanelProvider extends PanelProvider
             // Register all plugins at once
             if (! empty($plugins)) {
                 $panel->plugins($plugins);
-                Log::info('Registered '.count($plugins).' plugins successfully');
             } else {
                 Log::warning('No plugins to register, falling back to critical plugins');
                 $this->registerCriticalPlugins($panel);
@@ -160,7 +245,6 @@ class AdminPanelProvider extends PanelProvider
                     } else {
                         $panel->plugin(new $pluginClass);
                     }
-                    Log::info("Manually registered critical plugin: {$pluginClass}");
                 } catch (\Exception $e) {
                     Log::warning("Failed to manually register plugin {$pluginClass}: ".$e->getMessage());
                 }

@@ -6,9 +6,9 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 use NetServa\Core\Models\SshHost;
 use NetServa\Fleet\Models\FleetVenue;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\info;
@@ -474,11 +474,11 @@ class FleetInfraDiscoveryCommand extends Command
         info('Cleaning incorrect data...');
 
         // Keep only the original Proxmox cluster VSite and its VNodes
-        $originalVSite = FleetVSite::where('name', 'goldcoast-proxmox-datacenter')->first();
+        $originalVSite = FleetVsite::where('name', 'goldcoast-proxmox-datacenter')->first();
         $originalVNodes = $originalVSite ? $originalVSite->vnodes->pluck('id') : collect();
 
         // Delete incorrectly created VHosts (most of them)
-        $incorrectVHosts = FleetVHost::whereNotIn('vnode_id', $originalVNodes)
+        $incorrectVHosts = FleetVhost::whereNotIn('vnode_id', $originalVNodes)
             ->orWhereHas('vnode', fn ($q) => $q->where('vsite_id', '!=', $originalVSite?->id))
             ->get();
 
@@ -500,8 +500,8 @@ class FleetInfraDiscoveryCommand extends Command
         }
 
         foreach ($this->vsitePatterns as $vsiteName => $config) {
-            if (! FleetVSite::where('name', $vsiteName)->exists()) {
-                FleetVSite::create([
+            if (! FleetVsite::where('name', $vsiteName)->exists()) {
+                FleetVsite::create([
                     'name' => $vsiteName,
                     'slug' => str($vsiteName)->slug(),
                     'venue_id' => $venue->id,
@@ -522,17 +522,17 @@ class FleetInfraDiscoveryCommand extends Command
     protected function createVNode(SshHost $sshHost, array $classification): bool
     {
         // Check if VNode already exists
-        if (FleetVNode::where('name', $sshHost->host)->exists()) {
+        if (FleetVnode::where('name', $sshHost->host)->exists()) {
             return false;
         }
 
-        $vsite = FleetVSite::where('name', $classification['vsite'])->first();
+        $vsite = FleetVsite::where('name', $classification['vsite'])->first();
         if (! $vsite) {
             return false;
         }
 
         try {
-            FleetVNode::create([
+            FleetVnode::create([
                 'name' => $sshHost->host,
                 'slug' => str($sshHost->host)->slug(),
                 'vsite_id' => $vsite->id,
@@ -558,12 +558,12 @@ class FleetInfraDiscoveryCommand extends Command
         $domain = $classification['domain'];
 
         // Check if VHost already exists
-        if (FleetVHost::where('domain', $domain)->exists()) {
+        if (FleetVhost::where('domain', $domain)->exists()) {
             return false;
         }
 
         // Find appropriate VNode for this VHost
-        $vsite = FleetVSite::where('name', $classification['vsite'])->first();
+        $vsite = FleetVsite::where('name', $classification['vsite'])->first();
         if (! $vsite) {
             return false;
         }
@@ -584,7 +584,7 @@ class FleetInfraDiscoveryCommand extends Command
         }
 
         try {
-            FleetVHost::create([
+            FleetVhost::create([
                 'domain' => $domain,
                 'slug' => str($domain)->slug(),
                 'vnode_id' => $vnode->id,
@@ -615,9 +615,9 @@ class FleetInfraDiscoveryCommand extends Command
         }
 
         // Delete all existing data
-        FleetVHost::truncate();
-        FleetVNode::truncate();
-        FleetVSite::truncate();
+        FleetVhost::truncate();
+        FleetVnode::truncate();
+        FleetVsite::truncate();
 
         info('Deleted all existing fleet data.');
 

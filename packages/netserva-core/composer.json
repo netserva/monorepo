@@ -36,6 +36,9 @@
         }
     },
     "extra": {
+        "branch-alias": {
+            "dev-main": "0.0.999-dev"
+        },
         "laravel": {
             "providers": [
                 "NetServa\\Core\\NetServaCoreServiceProvider"

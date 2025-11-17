@@ -3,7 +3,7 @@
 namespace NetServa\Cli\Services;
 
 use Illuminate\Support\Facades\Log;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 /**
  * VHost Repair Service
@@ -26,12 +26,12 @@ class VhostRepairService
     /**
      * Repair vhost infrastructure based on validation issues
      *
-     * @param  FleetVHost  $vhost  The vhost to repair
+     * @param  FleetVhost  $vhost  The vhost to repair
      * @param  array  $validationResult  Validation result with issues
      * @param  bool  $dryRun  Show repair plan without executing
      * @return array Result with repairs performed
      */
-    public function repairVhost(FleetVHost $vhost, array $validationResult, bool $dryRun = false): array
+    public function repairVhost(FleetVhost $vhost, array $validationResult, bool $dryRun = false): array
     {
         $vnode = $vhost->vnode;
 

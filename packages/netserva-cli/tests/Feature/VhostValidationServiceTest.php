@@ -1,8 +1,8 @@
 <?php
 
 use NetServa\Cli\Services\VhostValidationService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * VHost Validation Service Tests
@@ -14,7 +14,7 @@ describe('VhostValidationService', function () {
         $this->validationService = app(VhostValidationService::class);
 
         // Use factories to create test data
-        $this->vnode = FleetVNode::factory()->create([
+        $this->vnode = FleetVnode::factory()->create([
             'name' => 'test-vnode',
             'role' => 'compute',
             'environment' => 'testing',
@@ -22,7 +22,7 @@ describe('VhostValidationService', function () {
     });
 
     it('fails validation when vhost has no configuration', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'no-config.test',
             'vnode_id' => $this->vnode->id,
             'status' => 'active',
@@ -38,7 +38,7 @@ describe('VhostValidationService', function () {
     });
 
     it('validates vhost with complete configuration', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'complete.test',
             'vnode_id' => $this->vnode->id,
             'status' => 'active',
@@ -69,7 +69,7 @@ describe('VhostValidationService', function () {
     });
 
     it('stores validation results in database', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'storable.test',
             'vnode_id' => $this->vnode->id,
             'status' => 'active',
@@ -118,7 +118,7 @@ describe('VhostValidationService', function () {
     });
 
     it('categorizes validation status correctly', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'status-test.test',
             'vnode_id' => $this->vnode->id,
             'status' => 'active',

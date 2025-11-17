@@ -3,8 +3,8 @@
 namespace NetServa\Cli\Services;
 
 use Illuminate\Support\Facades\Log;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * VHost Validation Service - NetServa 3.0
@@ -35,10 +35,10 @@ class VhostValidationService
     /**
      * Validate a discovered vhost for NetServa 3.0 compliance
      *
-     * @param  FleetVHost  $vhost  The vhost to validate
+     * @param  FleetVhost  $vhost  The vhost to validate
      * @return array Validation result with issues list
      */
-    public function validateVhost(FleetVHost $vhost): array
+    public function validateVhost(FleetVhost $vhost): array
     {
         $vnode = $vhost->vnode;
 
@@ -132,7 +132,7 @@ class VhostValidationService
      * 2. WUGID matches OSTYP (www-data for debian, nginx for alpine/manjaro)
      */
     protected function validateVconfConsistency(
-        FleetVNode $vnode,
+        FleetVnode $vnode,
         array $vars,
         array &$issues,
         array &$warnings,
@@ -275,7 +275,7 @@ class VhostValidationService
      * Validate user and permissions
      */
     protected function validateUserAndPermissions(
-        FleetVNode $vnode,
+        FleetVnode $vnode,
         array $vars,
         array &$issues,
         array &$warnings,
@@ -362,7 +362,7 @@ class VhostValidationService
      * Validate directory structure
      */
     protected function validateDirectoryStructure(
-        FleetVNode $vnode,
+        FleetVnode $vnode,
         array $vars,
         array &$issues,
         array &$warnings,
@@ -441,7 +441,7 @@ class VhostValidationService
      * Validate configuration files
      */
     protected function validateConfigurationFiles(
-        FleetVNode $vnode,
+        FleetVnode $vnode,
         array $vars,
         array &$issues,
         array &$warnings,
@@ -518,7 +518,7 @@ class VhostValidationService
      * Validates vconfs completeness (vhost already exists since we're validating it)
      */
     protected function validateDatabaseConsistency(
-        FleetVNode $vnode,
+        FleetVnode $vnode,
         array $vars,
         array &$issues,
         array &$warnings,
@@ -554,7 +554,7 @@ class VhostValidationService
      * Validate service health
      */
     protected function validateServiceHealth(
-        FleetVNode $vnode,
+        FleetVnode $vnode,
         array $vars,
         array &$issues,
         array &$warnings,
@@ -657,7 +657,7 @@ class VhostValidationService
      * Validate security settings
      */
     protected function validateSecurity(
-        FleetVNode $vnode,
+        FleetVnode $vnode,
         array $vars,
         array &$issues,
         array &$warnings,
@@ -720,7 +720,7 @@ class VhostValidationService
     /**
      * Update vhost with validation results
      */
-    public function updateVhostValidation(FleetVHost $vhost, array $validationResult): void
+    public function updateVhostValidation(FleetVhost $vhost, array $validationResult): void
     {
         $status = $validationResult['status'] ?? 'unknown';
 

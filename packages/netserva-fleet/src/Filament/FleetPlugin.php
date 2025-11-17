@@ -4,23 +4,23 @@ namespace NetServa\Fleet\Filament;
 
 use Filament\Panel;
 use NetServa\Core\Foundation\BaseFilamentPlugin;
-use NetServa\Fleet\Filament\Resources\FleetVHostResource;
-use NetServa\Fleet\Filament\Resources\FleetVNodeResource;
-use NetServa\Fleet\Filament\Resources\FleetVSiteResource;
+use NetServa\Fleet\Filament\Resources\FleetVenueResource;
+use NetServa\Fleet\Filament\Resources\FleetVhostResource;
+use NetServa\Fleet\Filament\Resources\FleetVnodeResource;
+use NetServa\Fleet\Filament\Resources\FleetVsiteResource;
 
 /**
  * NetServa Fleet Plugin
  *
- * Provides fleet-wide management of VNodes, VHosts, and VSites across
+ * Provides fleet-wide management of Venues, VSites, VNodes, and VHosts across
  * the NetServa infrastructure.
  *
  * Features:
+ * - Venue (infrastructure location) management
+ * - VSite (site group) management
  * - VNode (server node) management
  * - VHost (virtual host) management
- * - VSite (site group) management
  * - Fleet-wide discovery and monitoring
- *
- * @package NetServa\Fleet\Filament
  */
 class FleetPlugin extends BaseFilamentPlugin
 {
@@ -34,9 +34,10 @@ class FleetPlugin extends BaseFilamentPlugin
     protected function registerResources(Panel $panel): void
     {
         $panel->resources([
-            FleetVNodeResource::class,
-            FleetVHostResource::class,
-            FleetVSiteResource::class,
+            FleetVenueResource::class,
+            FleetVsiteResource::class,
+            FleetVnodeResource::class,
+            FleetVhostResource::class,
         ]);
     }
 
@@ -68,9 +69,10 @@ class FleetPlugin extends BaseFilamentPlugin
         return [
             'version' => $this->getVersion(),
             'enabled_features' => [
+                'venue_management' => true,
+                'vsite_management' => true,
                 'vnode_management' => true,
                 'vhost_management' => true,
-                'vsite_management' => true,
                 'fleet_discovery' => true,
             ],
             'settings' => [

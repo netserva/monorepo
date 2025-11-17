@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\confirm;
 
@@ -25,7 +25,7 @@ class DelvnodeCommand extends Command
         $name = $this->argument('name');
         $force = $this->option('force');
 
-        $vnode = FleetVNode::where('name', $name)->with('vhosts')->first();
+        $vnode = FleetVnode::where('name', $name)->with('vhosts')->first();
 
         if (! $vnode) {
             $this->error("VNode not found: {$name}");

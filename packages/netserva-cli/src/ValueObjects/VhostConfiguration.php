@@ -43,19 +43,10 @@ readonly class VhostConfiguration
         $U_SHL = ($this->U_UID === 1000) ? '/bin/bash' : '/bin/sh';
 
         // Web user/group based on OS
-        $WUGID = match ($this->osConfig->type) {
-            'alpine' => 'nginx',
-            'manjaro', 'cachyos' => 'http',
-            default => 'www-data'
-        };
+        $WUGID = $this->osConfig->type->getWebUserGroup();
 
         // PHP version based on OS
-        $V_PHP = match ($this->osConfig->type) {
-            'alpine' => '84',
-            'debian' => '8.2',
-            'manjaro', 'cachyos' => '8.4',
-            default => '8.4'
-        };
+        $V_PHP = $this->osConfig->type->getPhpVersion();
 
         return [
             'ADMIN' => 'sysadm',
@@ -83,7 +74,7 @@ readonly class VhostConfiguration
             'DTYPE' => 'mysql',
             'DUSER' => $this->UUSER,
             'EPASS' => $this->passwords->email,
-            'EXMYS' => 'mariadb -BN sysadm',
+            'EXMYS' => $this->getSqlCommand(),
             'EXSQL' => "sqlite3 {$this->paths->dbpath}",
             'HDOMN' => $HDOMN,
             'HNAME' => $HNAME,
@@ -92,9 +83,9 @@ readonly class VhostConfiguration
             'MPATH' => $this->paths->mpath,
             'OSMIR' => $this->osConfig->mirror,
             'OSREL' => $this->osConfig->release,
-            'OSTYP' => $this->osConfig->type,
+            'OSTYP' => $this->osConfig->type->value,
             'VNODE' => $this->VNODE,
-            'SQCMD' => 'mariadb -BN sysadm',
+            'SQCMD' => $this->getSqlCommand(),
             'SQDNS' => 'mariadb -BN pdns',
             'TAREA' => 'Australia',
             'TCITY' => 'Sydney',
@@ -113,6 +104,30 @@ readonly class VhostConfiguration
             'WPUSR' => $this->passwords->wordpress,
             'WUGID' => $WUGID,
         ];
+    }
+
+    /**
+     * Get SQL command based on vnode's database type
+     */
+    protected function getSqlCommand(): string
+    {
+        // Load vnode to check database type
+        $vnode = \NetServa\Fleet\Models\FleetVnode::where('name', $this->VNODE)->first();
+
+        // DEBUG logging
+        \Illuminate\Support\Facades\Log::info('DEBUG getSqlCommand()', [
+            'VNODE' => $this->VNODE,
+            'vnode_found' => $vnode ? 'yes' : 'no',
+            'database_type' => $vnode->database_type ?? 'NULL',
+            'will_use_sqlite' => (! $vnode || $vnode->database_type === 'sqlite') ? 'yes' : 'no',
+        ]);
+
+        if (! $vnode || $vnode->database_type === 'sqlite') {
+            return "sqlite3 {$this->paths->dbpath}/sysadm.db";
+        }
+
+        // For MySQL/MariaDB, use mariadb command (uses .my.cnf for auth)
+        return 'mariadb -BN sysadm';
     }
 
     /**

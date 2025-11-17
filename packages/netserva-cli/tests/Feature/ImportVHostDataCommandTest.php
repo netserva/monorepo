@@ -2,9 +2,9 @@
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 uses(RefreshDatabase::class);
 
@@ -28,12 +28,12 @@ it('can import vhost data from var files', function () {
         ->assertExitCode(0);
 
     // Verify database records were created
-    expect(FleetVSite::count())->toBe(1);
-    expect(FleetVNode::count())->toBe(1);
-    expect(FleetVHost::count())->toBe(2);
+    expect(FleetVsite::count())->toBe(1);
+    expect(FleetVnode::count())->toBe(1);
+    expect(FleetVhost::count())->toBe(2);
 
     // Check specific VHost data
-    $vhost = FleetVHost::where('domain', 'example.com')->first();
+    $vhost = FleetVhost::where('domain', 'example.com')->first();
     expect($vhost)->not->toBeNull();
     expect($vhost->vnode->name)->toBe('web01');
     expect($vhost->vnode->vsite->name)->toBe('local-test');
@@ -53,9 +53,9 @@ it('performs dry run without making changes', function () {
         ->assertExitCode(0);
 
     // Verify no database records were created
-    expect(FleetVSite::count())->toBe(0);
-    expect(FleetVNode::count())->toBe(0);
-    expect(FleetVHost::count())->toBe(0);
+    expect(FleetVsite::count())->toBe(0);
+    expect(FleetVnode::count())->toBe(0);
+    expect(FleetVhost::count())->toBe(0);
 });
 
 it('can filter by vsite', function () {
@@ -67,8 +67,8 @@ it('can filter by vsite', function () {
     ])
         ->assertExitCode(0);
 
-    expect(FleetVSite::where('name', 'local-test')->count())->toBe(1);
-    expect(FleetVHost::count())->toBe(2);
+    expect(FleetVsite::where('name', 'local-test')->count())->toBe(1);
+    expect(FleetVhost::count())->toBe(2);
 });
 
 it('can filter by vnode', function () {
@@ -80,28 +80,28 @@ it('can filter by vnode', function () {
     ])
         ->assertExitCode(0);
 
-    expect(FleetVNode::where('name', 'web01')->count())->toBe(1);
-    expect(FleetVHost::count())->toBe(2);
+    expect(FleetVnode::where('name', 'web01')->count())->toBe(1);
+    expect(FleetVhost::count())->toBe(2);
 });
 
 it('skips existing vhosts without force flag', function () {
     createTestVarStructure();
 
     // Create existing VHost
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'local-test',
         'provider' => 'local',
         'technology' => 'lxc',
         'is_active' => true,
     ]);
-    $vnode = FleetVNode::create([
+    $vnode = FleetVnode::create([
         'name' => 'web01',
         'vsite_id' => $vsite->id,
         'is_active' => true,
         'ip_address' => '192.168.1.100',
         'ssh_host_id' => null,
     ]);
-    FleetVHost::create([
+    FleetVhost::create([
         'domain' => 'example.com',
         'vnode_id' => $vnode->id,
         'status' => 'active',
@@ -115,27 +115,27 @@ it('skips existing vhosts without force flag', function () {
         ->assertExitCode(0);
 
     // Should have 1 existing + 1 new VHost
-    expect(FleetVHost::count())->toBe(2);
+    expect(FleetVhost::count())->toBe(2);
 });
 
 it('overwrites existing vhosts with force flag', function () {
     createTestVarStructure();
 
     // Create existing VHost with different data
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'local-test',
         'provider' => 'local',
         'technology' => 'lxc',
         'is_active' => true,
     ]);
-    $vnode = FleetVNode::create([
+    $vnode = FleetVnode::create([
         'name' => 'web01',
         'vsite_id' => $vsite->id,
         'is_active' => true,
         'ip_address' => '192.168.1.100',
         'ssh_host_id' => null,
     ]);
-    $existingVHost = FleetVHost::create([
+    $existingVHost = FleetVhost::create([
         'domain' => 'example.com',
         'vnode_id' => $vnode->id,
         'status' => 'inactive',
@@ -176,7 +176,7 @@ it('handles malformed vhost files gracefully', function () {
         ->assertExitCode(0);
 
     // Should not create any VHost records
-    expect(FleetVHost::count())->toBe(0);
+    expect(FleetVhost::count())->toBe(0);
 });
 
 it('validates required environment variables', function () {
@@ -190,7 +190,7 @@ it('validates required environment variables', function () {
         ->assertExitCode(0);
 
     // Should not create VHost record due to missing required variables
-    expect(FleetVHost::count())->toBe(0);
+    expect(FleetVhost::count())->toBe(0);
 });
 
 it('normalizes environment variables to expected set', function () {
@@ -201,7 +201,7 @@ it('normalizes environment variables to expected set', function () {
     ])
         ->assertExitCode(0);
 
-    $vhost = FleetVHost::where('domain', 'example.com')->first();
+    $vhost = FleetVhost::where('domain', 'example.com')->first();
 
     // Check that all 53 expected variables are present
     $expectedVars = [

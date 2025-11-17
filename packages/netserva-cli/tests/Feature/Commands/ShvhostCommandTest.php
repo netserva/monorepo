@@ -2,9 +2,9 @@
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use NetServa\Cli\Models\VConf;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 uses(RefreshDatabase::class)
     ->group('feature', 'commands', 'netserva-cli', 'vhost-management', 'crud', 'priority-1');
@@ -25,13 +25,13 @@ it('shows all vhosts when database is empty', function () {
 
 it('shows all vhosts across all vnodes', function () {
     // Create test data
-    $vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    $vnode1 = FleetVNode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
-    $vnode2 = FleetVNode::factory()->create(['name' => 'prod', 'vsite_id' => $vsite->id]);
+    $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    $vnode1 = FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
+    $vnode2 = FleetVnode::factory()->create(['name' => 'prod', 'vsite_id' => $vsite->id]);
 
-    FleetVHost::factory()->create(['domain' => 'test1.com', 'vnode_id' => $vnode1->id, 'is_active' => true]);
-    FleetVHost::factory()->create(['domain' => 'test2.com', 'vnode_id' => $vnode1->id, 'is_active' => true]);
-    FleetVHost::factory()->create(['domain' => 'prod1.com', 'vnode_id' => $vnode2->id, 'is_active' => false]);
+    FleetVhost::factory()->create(['domain' => 'test1.com', 'vnode_id' => $vnode1->id, 'is_active' => true]);
+    FleetVhost::factory()->create(['domain' => 'test2.com', 'vnode_id' => $vnode1->id, 'is_active' => true]);
+    FleetVhost::factory()->create(['domain' => 'prod1.com', 'vnode_id' => $vnode2->id, 'is_active' => false]);
 
     $this->artisan('shvhost')
         ->expectsOutputToContain('📋 All VHosts:')
@@ -47,10 +47,10 @@ it('shows all vhosts across all vnodes', function () {
 
 it('lists vhosts for specific vnode', function () {
     // Create test data
-    $vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    $vnode = FleetVNode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
+    $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    $vnode = FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
 
-    FleetVHost::factory()->create([
+    FleetVhost::factory()->create([
         'domain' => 'example.com',
         'vnode_id' => $vnode->id,
         'is_active' => true,
@@ -58,7 +58,7 @@ it('lists vhosts for specific vnode', function () {
         'last_discovered_at' => now()->subHours(2),
     ]);
 
-    FleetVHost::factory()->create([
+    FleetVhost::factory()->create([
         'domain' => 'test.com',
         'vnode_id' => $vnode->id,
         'is_active' => false,
@@ -76,10 +76,10 @@ it('lists vhosts for specific vnode', function () {
 });
 
 it('lists vhosts for vnode without --list flag', function () {
-    $vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    $vnode = FleetVNode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
+    $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    $vnode = FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
 
-    FleetVHost::factory()->create(['domain' => 'example.com', 'vnode_id' => $vnode->id]);
+    FleetVhost::factory()->create(['domain' => 'example.com', 'vnode_id' => $vnode->id]);
 
     $this->artisan('shvhost markc')
         ->expectsOutputToContain('📋 VHosts on server: markc')
@@ -88,8 +88,8 @@ it('lists vhosts for vnode without --list flag', function () {
 });
 
 it('shows message when vnode has no vhosts', function () {
-    $vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    FleetVNode::factory()->create(['name' => 'empty', 'vsite_id' => $vsite->id]);
+    $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    FleetVnode::factory()->create(['name' => 'empty', 'vsite_id' => $vsite->id]);
 
     $this->artisan('shvhost empty --list')
         ->expectsOutputToContain('No vhosts found in database')
@@ -99,9 +99,9 @@ it('shows message when vnode has no vhosts', function () {
 
 it('shows specific vhost details', function () {
     // Create test data
-    $vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    $vnode = FleetVNode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
-    $vhost = FleetVHost::factory()->create([
+    $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    $vnode = FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
+    $vhost = FleetVhost::factory()->create([
         'domain' => 'example.com',
         'vnode_id' => $vnode->id,
         'is_active' => true,
@@ -147,9 +147,9 @@ it('shows specific vhost details', function () {
 
 it('shows config details with --config flag', function () {
     // Create test data
-    $vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    $vnode = FleetVNode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
-    $vhost = FleetVHost::factory()->create([
+    $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    $vnode = FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
+    $vhost = FleetVhost::factory()->create([
         'domain' => 'example.com',
         'vnode_id' => $vnode->id,
     ]);
@@ -171,8 +171,8 @@ it('shows config details with --config flag', function () {
 });
 
 it('handles missing vhost gracefully', function () {
-    $vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    FleetVNode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
+    $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
 
     $this->artisan('shvhost markc nonexistent.com')
         ->expectsOutput('❌ VHost nonexistent.com not found on markc')
@@ -187,11 +187,11 @@ it('handles missing vnode gracefully when listing', function () {
 });
 
 it('shows active/inactive status correctly', function () {
-    $vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    $vnode = FleetVNode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
+    $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    $vnode = FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
 
     // Active vhost
-    $activeVhost = FleetVHost::factory()->create([
+    $activeVhost = FleetVhost::factory()->create([
         'domain' => 'active.com',
         'vnode_id' => $vnode->id,
         'is_active' => true,
@@ -199,7 +199,7 @@ it('shows active/inactive status correctly', function () {
     VConf::factory()->create(['fleet_vhost_id' => $activeVhost->id, 'name' => 'UUSER', 'value' => 'u1001']);
 
     // Inactive vhost
-    $inactiveVhost = FleetVHost::factory()->create([
+    $inactiveVhost = FleetVhost::factory()->create([
         'domain' => 'inactive.com',
         'vnode_id' => $vnode->id,
         'is_active' => false,

@@ -116,7 +116,7 @@ chmod 700 /srv/{domain}/.archive   # Backup only
 
 **Key Methods:**
 ```php
-public function migrateVhost(FleetVHost $vhost): array
+public function migrateVhost(FleetVhost $vhost): array
 {
     // 1. Pre-flight checks (validation status, disk space)
     // 2. Create backup archive
@@ -127,7 +127,7 @@ public function migrateVhost(FleetVHost $vhost): array
     // 7. Return detailed result
 }
 
-public function rollbackVhost(FleetVHost $vhost): array
+public function rollbackVhost(FleetVhost $vhost): array
 {
     // 1. Find latest migration archive
     // 2. Stop services
@@ -137,7 +137,7 @@ public function rollbackVhost(FleetVHost $vhost): array
     // 6. Return result
 }
 
-protected function createPreMigrationBackup(FleetVNode $vnode, array $vars): array
+protected function createPreMigrationBackup(FleetVnode $vnode, array $vars): array
 {
     // Create .archive directory
     // tar czf archive with SSH/chroot directories
@@ -145,7 +145,7 @@ protected function createPreMigrationBackup(FleetVNode $vnode, array $vars): arr
     // Return archive info
 }
 
-protected function executeStructuralMigration(FleetVNode $vnode, array $vars): array
+protected function executeStructuralMigration(FleetVnode $vnode, array $vars): array
 {
     // Move var/log → web/log
     // Move var/run → web/run
@@ -155,7 +155,7 @@ protected function executeStructuralMigration(FleetVNode $vnode, array $vars): a
     // Return success/failure
 }
 
-protected function verifyMigration(FleetVNode $vnode, array $vars): array
+protected function verifyMigration(FleetVnode $vnode, array $vars): array
 {
     // Check web-centric directories exist
     // Verify permissions
@@ -355,7 +355,7 @@ echo "    New structure: {{ $WPATH }}/{app/public,log,run}"
 
 ## Database Schema Updates
 
-### FleetVHost Additional Fields
+### FleetVhost Additional Fields
 ```php
 // Already exists from Phase 3:
 'migration_status' => 'enum(native,discovered,imported,validated,migrated,failed)',

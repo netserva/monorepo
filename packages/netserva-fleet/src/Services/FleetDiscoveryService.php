@@ -10,8 +10,8 @@ use NetServa\Dns\Exceptions\DnsValidationException;
 use NetServa\Dns\Models\DnsProvider;
 use NetServa\Dns\Services\FcrDnsValidationService;
 use NetServa\Dns\Services\PowerDnsService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Fleet Discovery Service
@@ -51,7 +51,7 @@ class FleetDiscoveryService
             'errors' => [],
         ];
 
-        $vnodes = FleetVNode::needsScanning()->with(['sshHost', 'vsite'])->get();
+        $vnodes = FleetVnode::needsScanning()->with(['sshHost', 'vsite'])->get();
 
         foreach ($vnodes as $vnode) {
             $results['processed']++;
@@ -81,13 +81,13 @@ class FleetDiscoveryService
     /**
      * Discover a specific VNode
      *
-     * @param  FleetVNode  $vnode  The VNode to discover
+     * @param  FleetVnode  $vnode  The VNode to discover
      * @param  bool  $skipVhostDiscovery  Skip automatic vhost discovery (for legacy import mode)
      * @param  bool  $forceNoDns  Emergency override - skip DNS validation
      * @param  bool  $autoDns  Automatically create DNS records if missing
      * @return bool Success status
      */
-    public function discoverVNode(FleetVNode $vnode, bool $skipVhostDiscovery = false, bool $forceNoDns = false, bool $autoDns = false): bool
+    public function discoverVNode(FleetVnode $vnode, bool $skipVhostDiscovery = false, bool $forceNoDns = false, bool $autoDns = false): bool
     {
         if (! $vnode->hasSshAccess()) {
             $vnode->recordDiscoveryError('No SSH access configured');
@@ -132,7 +132,7 @@ class FleetDiscoveryService
     /**
      * Discover compute node details
      */
-    protected function discoverComputeNode(FleetVNode $vnode): ?array
+    protected function discoverComputeNode(FleetVnode $vnode): ?array
     {
         $sshHost = $vnode->sshHost;
         $commands = config('fleet.discovery.discovery_commands.compute', []);
@@ -163,7 +163,7 @@ class FleetDiscoveryService
     /**
      * Discover network node details (simplified)
      */
-    protected function discoverNetworkNode(FleetVNode $vnode): ?array
+    protected function discoverNetworkNode(FleetVnode $vnode): ?array
     {
         $sshHost = $vnode->sshHost;
         $commands = config('fleet.discovery.discovery_commands.network', []);
@@ -187,7 +187,7 @@ class FleetDiscoveryService
     /**
      * Discover storage node details
      */
-    protected function discoverStorageNode(FleetVNode $vnode): ?array
+    protected function discoverStorageNode(FleetVnode $vnode): ?array
     {
         $sshHost = $vnode->sshHost;
         $commands = config('fleet.discovery.discovery_commands.storage', []);
@@ -211,7 +211,7 @@ class FleetDiscoveryService
     /**
      * Discover mixed node (all discovery types)
      */
-    protected function discoverMixedNode(FleetVNode $vnode): ?array
+    protected function discoverMixedNode(FleetVnode $vnode): ?array
     {
         $computeData = $this->discoverComputeNode($vnode) ?? [];
         $networkData = $this->discoverNetworkNode($vnode) ?? [];
@@ -225,7 +225,7 @@ class FleetDiscoveryService
     /**
      * Discover VHosts running on a compute node
      */
-    protected function discoverVHosts(FleetVNode $vnode): void
+    protected function discoverVHosts(FleetVnode $vnode): void
     {
         // Check for container/VM instances based on the vsite technology
         $technology = $vnode->vsite->technology;
@@ -366,7 +366,7 @@ class FleetDiscoveryService
     /**
      * Discover Incus instances
      */
-    protected function discoverIncusInstances(FleetVNode $vnode): void
+    protected function discoverIncusInstances(FleetVnode $vnode): void
     {
         $output = $this->executeSshCommand($vnode->sshHost, 'incus list --format csv');
 
@@ -398,7 +398,7 @@ class FleetDiscoveryService
     /**
      * Discover Proxmox instances
      */
-    protected function discoverProxmoxInstances(FleetVNode $vnode): void
+    protected function discoverProxmoxInstances(FleetVnode $vnode): void
     {
         // Get list of VMs and containers
         $vmOutput = $this->executeSshCommand($vnode->sshHost, 'qm list');
@@ -416,7 +416,7 @@ class FleetDiscoveryService
     /**
      * Parse Proxmox command output
      */
-    protected function parseProxmoxOutput(FleetVNode $vnode, string $output, string $type): void
+    protected function parseProxmoxOutput(FleetVnode $vnode, string $output, string $type): void
     {
         $lines = explode("\n", trim($output));
 
@@ -447,7 +447,7 @@ class FleetDiscoveryService
     /**
      * Discover native VHosts from remote /srv/ directory
      */
-    protected function discoverNativeVHosts(FleetVNode $vnode): void
+    protected function discoverNativeVHosts(FleetVnode $vnode): void
     {
         // Query remote server for domains in /srv/
         $output = $this->executeSshCommand(
@@ -497,9 +497,9 @@ class FleetDiscoveryService
     /**
      * Create or update VHost
      */
-    protected function createOrUpdateVHost(FleetVNode $vnode, array $data): void
+    protected function createOrUpdateVHost(FleetVnode $vnode, array $data): void
     {
-        $vhost = FleetVHost::where('vnode_id', $vnode->id)
+        $vhost = FleetVhost::where('vnode_id', $vnode->id)
             ->where('domain', $data['domain'])
             ->first();
 
@@ -510,7 +510,7 @@ class FleetDiscoveryService
         } else {
             $data['vnode_id'] = $vnode->id;
             $data['last_discovered_at'] = now();
-            FleetVHost::create($data);
+            FleetVhost::create($data);
         }
     }
 
@@ -534,7 +534,7 @@ class FleetDiscoveryService
      *
      * @throws DnsValidationException if both FCrDNS and /etc/hosts fallback fail
      */
-    protected function discoverAndStoreFqdn(FleetVNode $vnode, bool $forceNoDns = false, bool $autoDns = false): void
+    protected function discoverAndStoreFqdn(FleetVnode $vnode, bool $forceNoDns = false, bool $autoDns = false): void
     {
         try {
             // Emergency override: Skip DNS validation entirely
@@ -690,7 +690,7 @@ class FleetDiscoveryService
      *
      * NOTE: Vnode will NOT be email_capable without FCrDNS
      */
-    protected function configureEtcHostsFallback(FleetVNode $vnode): void
+    protected function configureEtcHostsFallback(FleetVnode $vnode): void
     {
         try {
             // Determine FQDN (use existing or generate from vnode name)
@@ -820,7 +820,7 @@ BASH;
     /**
      * Get server IP address from remote server
      */
-    protected function getServerIp(FleetVNode $vnode): ?string
+    protected function getServerIp(FleetVnode $vnode): ?string
     {
         // Try to get from database first
         if ($vnode->ip_address) {
@@ -915,7 +915,7 @@ BASH;
     /**
      * Test SSH connection to a node
      */
-    public function testSshConnection(FleetVNode $vnode): array
+    public function testSshConnection(FleetVnode $vnode): array
     {
         if (! $vnode->hasSshAccess()) {
             return [
@@ -1001,7 +1001,7 @@ BASH;
      * Reads the database path from Postfix/Dovecot configuration files
      * Precedence: Postfix sqlite config > Dovecot SQL config > MySQL detection
      */
-    protected function discoverAndStoreDatabaseConfig(FleetVNode $vnode): void
+    protected function discoverAndStoreDatabaseConfig(FleetVnode $vnode): void
     {
         try {
             // Try Postfix SQLite config first

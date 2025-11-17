@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use NetServa\Cli\Database\Factories\VConfFactory;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 /**
  * VConf Model (VHost Configuration Variable)
@@ -61,7 +61,7 @@ class VConf extends Model
      */
     public function vhost(): BelongsTo
     {
-        return $this->belongsTo(FleetVHost::class, 'fleet_vhost_id');
+        return $this->belongsTo(FleetVhost::class, 'fleet_vhost_id');
     }
 
     /**

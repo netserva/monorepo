@@ -4,8 +4,8 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\error;
 use function Laravel\Prompts\info;
@@ -45,7 +45,7 @@ class FleetServicesCommand extends Command
 
         if ($target) {
             // Show services for specific VHost
-            $vhost = FleetVHost::where('domain', $target)->first();
+            $vhost = FleetVhost::where('domain', $target)->first();
             if (! $vhost) {
                 error("VHost '{$target}' not found.");
 
@@ -56,7 +56,7 @@ class FleetServicesCommand extends Command
         }
 
         // Show all VHosts with their services
-        $vhosts = FleetVHost::with('vnode.vsite')->get();
+        $vhosts = FleetVhost::with('vnode.vsite')->get();
 
         if ($vhosts->isEmpty()) {
             info('No VHosts found.');
@@ -83,7 +83,7 @@ class FleetServicesCommand extends Command
         return self::SUCCESS;
     }
 
-    protected function showVHostServices(FleetVHost $vhost): int
+    protected function showVHostServices(FleetVhost $vhost): int
     {
         info("Services for: {$vhost->domain}");
 
@@ -133,13 +133,13 @@ class FleetServicesCommand extends Command
         }
 
         // Try to find VHost first
-        $vhost = FleetVHost::where('domain', $target)->first();
+        $vhost = FleetVhost::where('domain', $target)->first();
         if ($vhost) {
             return $this->discoverVHostServices($vhost);
         }
 
         // Try to find VNode
-        $vnode = FleetVNode::where('name', $target)->first();
+        $vnode = FleetVnode::where('name', $target)->first();
         if ($vnode) {
             return $this->discoverVNodeServices($vnode);
         }
@@ -151,7 +151,7 @@ class FleetServicesCommand extends Command
 
     protected function discoverAllServices(): int
     {
-        $vhosts = FleetVHost::with('vnode')->get();
+        $vhosts = FleetVhost::with('vnode')->get();
         $processed = 0;
         $successful = 0;
 
@@ -175,7 +175,7 @@ class FleetServicesCommand extends Command
         return self::SUCCESS;
     }
 
-    protected function discoverVNodeServices(FleetVNode $vnode): int
+    protected function discoverVNodeServices(FleetVnode $vnode): int
     {
         $vhosts = $vnode->vhosts;
 
@@ -200,7 +200,7 @@ class FleetServicesCommand extends Command
         return self::SUCCESS;
     }
 
-    protected function discoverVHostServices(FleetVHost $vhost, bool $verbose = true): bool
+    protected function discoverVHostServices(FleetVhost $vhost, bool $verbose = true): bool
     {
         if ($verbose) {
             info("Discovering services for: {$vhost->domain}");
@@ -236,7 +236,7 @@ class FleetServicesCommand extends Command
         return ! empty($services);
     }
 
-    protected function discoverViaDirectSsh(FleetVHost $vhost): array
+    protected function discoverViaDirectSsh(FleetVhost $vhost): array
     {
         $ip = $vhost->primary_ip;
         if (! $ip) {
@@ -261,7 +261,7 @@ class FleetServicesCommand extends Command
         return [];
     }
 
-    protected function discoverViaProxmoxNode(FleetVHost $vhost): array
+    protected function discoverViaProxmoxNode(FleetVhost $vhost): array
     {
         $vnode = $vhost->vnode;
         if (! $vnode->ip_address && ! $vnode->ssh_host_id) {
@@ -297,7 +297,7 @@ class FleetServicesCommand extends Command
         return [];
     }
 
-    protected function detectServicesFromContext(FleetVHost $vhost): array
+    protected function detectServicesFromContext(FleetVhost $vhost): array
     {
         $services = [];
 
@@ -340,7 +340,7 @@ class FleetServicesCommand extends Command
             return self::FAILURE;
         }
 
-        $vhost = FleetVHost::where('domain', $target)->first();
+        $vhost = FleetVhost::where('domain', $target)->first();
         if (! $vhost) {
             error("VHost '{$target}' not found.");
 

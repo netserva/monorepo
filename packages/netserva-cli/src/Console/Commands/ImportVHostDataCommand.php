@@ -5,9 +5,9 @@ namespace NetServa\Cli\Console\Commands;
 use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\info;
@@ -250,7 +250,7 @@ class ImportVHostDataCommand extends BaseNetServaCommand
                 'description' => 'Updated from var file import',
             ]);
         } else {
-            FleetVHost::create([
+            FleetVhost::create([
                 'domain' => $vhostData['vhost'],
                 'vnode_id' => $vnode->id,
                 'status' => 'active',
@@ -336,7 +336,7 @@ class ImportVHostDataCommand extends BaseNetServaCommand
      */
     protected function vhostExistsInDatabase(string $vnodeName, string $vhostDomain): bool
     {
-        return FleetVHost::whereHas('vnode', fn ($q) => $q->where('name', $vnodeName))
+        return FleetVhost::whereHas('vnode', fn ($q) => $q->where('name', $vnodeName))
             ->where('domain', $vhostDomain)
             ->exists();
     }
@@ -344,9 +344,9 @@ class ImportVHostDataCommand extends BaseNetServaCommand
     /**
      * Find existing VHost in database
      */
-    protected function findExistingVHost(string $vnodeName, string $vhostDomain): ?FleetVHost
+    protected function findExistingVHost(string $vnodeName, string $vhostDomain): ?FleetVhost
     {
-        return FleetVHost::whereHas('vnode', fn ($q) => $q->where('name', $vnodeName))
+        return FleetVhost::whereHas('vnode', fn ($q) => $q->where('name', $vnodeName))
             ->where('domain', $vhostDomain)
             ->first();
     }
@@ -354,9 +354,9 @@ class ImportVHostDataCommand extends BaseNetServaCommand
     /**
      * Find or create VSite
      */
-    protected function findOrCreateVSite(string $vsiteName): FleetVSite
+    protected function findOrCreateVSite(string $vsiteName): FleetVsite
     {
-        return FleetVSite::firstOrCreate(
+        return FleetVsite::firstOrCreate(
             ['name' => $vsiteName],
             [
                 'provider' => 'local', // Default to local for imports
@@ -370,9 +370,9 @@ class ImportVHostDataCommand extends BaseNetServaCommand
     /**
      * Find or create VNode
      */
-    protected function findOrCreateVNode(string $vnodeName, FleetVSite $vsite): FleetVNode
+    protected function findOrCreateVNode(string $vnodeName, FleetVsite $vsite): FleetVnode
     {
-        return FleetVNode::firstOrCreate(
+        return FleetVnode::firstOrCreate(
             [
                 'name' => $vnodeName,
                 'vsite_id' => $vsite->id,

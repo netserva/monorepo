@@ -3,8 +3,8 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Services\FleetDiscoveryService;
 
 use function Laravel\Prompts\confirm;
@@ -47,7 +47,7 @@ class DiscoverVHostsCommand extends Command
         // Get or select VNode
         $vnodeName = $this->option('vnode');
         if (! $vnodeName) {
-            $vnodes = FleetVNode::active()
+            $vnodes = FleetVnode::active()
                 ->with('vsite')
                 ->get()
                 ->mapWithKeys(fn ($vnode) => [$vnode->name => "{$vnode->name} ({$vnode->vsite->name})"])
@@ -68,7 +68,7 @@ class DiscoverVHostsCommand extends Command
             $vnodeName = explode(' ', $vnodeName)[0];
         }
 
-        $vnode = FleetVNode::where('name', $vnodeName)->with('vsite')->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->with('vsite')->first();
         if (! $vnode) {
             error("VNode '{$vnodeName}' not found!");
 
@@ -89,7 +89,7 @@ class DiscoverVHostsCommand extends Command
      */
     protected function discoverAllVHosts(): int
     {
-        $vnodes = FleetVNode::active()->with('vsite')->get();
+        $vnodes = FleetVnode::active()->with('vsite')->get();
 
         if ($vnodes->isEmpty()) {
             error('No VNodes found.');
@@ -135,7 +135,7 @@ class DiscoverVHostsCommand extends Command
     /**
      * Automatic VHost discovery using SSH
      */
-    protected function automaticVHostDiscovery(FleetVNode $vnode): int
+    protected function automaticVHostDiscovery(FleetVnode $vnode): int
     {
         if (! $vnode->ssh_host_id) {
             warning('No SSH host configured for this VNode.');
@@ -190,7 +190,7 @@ class DiscoverVHostsCommand extends Command
     /**
      * Manual VHost discovery with interactive prompts
      */
-    protected function manualVHostDiscovery(FleetVNode $vnode): int
+    protected function manualVHostDiscovery(FleetVnode $vnode): int
     {
         info('📝 Manual VHost discovery');
         info("Add virtual hosts/instances for: {$vnode->name}");
@@ -236,7 +236,7 @@ class DiscoverVHostsCommand extends Command
         $created = 0;
         foreach ($vhosts as $vhostData) {
             try {
-                FleetVHost::create($vhostData);
+                FleetVhost::create($vhostData);
                 $created++;
             } catch (\Exception $e) {
                 error("Failed to create VHost {$vhostData['domain']}: {$e->getMessage()}");
@@ -251,7 +251,7 @@ class DiscoverVHostsCommand extends Command
     /**
      * Prompt for individual VHost details
      */
-    protected function promptForVHost(FleetVNode $vnode): ?array
+    protected function promptForVHost(FleetVnode $vnode): ?array
     {
         $domain = text(
             label: 'Domain/hostname',
@@ -261,7 +261,7 @@ class DiscoverVHostsCommand extends Command
         );
 
         // Check if already exists for this vnode
-        if (FleetVHost::where('vnode_id', $vnode->id)->where('domain', $domain)->exists()) {
+        if (FleetVhost::where('vnode_id', $vnode->id)->where('domain', $domain)->exists()) {
             error("VHost '{$domain}' already exists on this VNode!");
 
             return null;

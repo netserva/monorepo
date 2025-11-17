@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Fleet Hierarchy Widget
@@ -20,7 +20,7 @@ class FleetHierarchy extends BaseWidget
 
     public function table(Table $table): Table
     {
-        if (! class_exists(FleetVSite::class)) {
+        if (! class_exists(FleetVsite::class)) {
             return $table
                 ->heading('Fleet Infrastructure')
                 ->description('Fleet management not available')
@@ -31,7 +31,7 @@ class FleetHierarchy extends BaseWidget
             ->heading('Fleet Infrastructure Hierarchy')
             ->description('VSites, VNodes, and hosted VHosts')
             ->query(
-                FleetVSite::query()
+                FleetVsite::query()
                     ->withCount(['vnodes', 'vhosts'])
                     ->with(['venue'])
             )
@@ -41,7 +41,7 @@ class FleetHierarchy extends BaseWidget
                     ->searchable()
                     ->sortable()
                     ->icon('heroicon-o-building-office')
-                    ->description(fn (FleetVSite $record) => $record->description),
+                    ->description(fn (FleetVsite $record) => $record->description),
 
                 Tables\Columns\TextColumn::make('venue.name')
                     ->label('Venue')

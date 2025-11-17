@@ -2,7 +2,7 @@
 
 namespace NetServa\Cli\Console\Commands;
 
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
@@ -14,7 +14,7 @@ use function Laravel\Prompts\multiselect;
  * Usage: delvconf <vnode> <vhost> [variable]
  * Example: delvconf markc markc.goldcoast.org WPATH
  *
- * DATABASE-FIRST: Removes variables from FleetVHost environment_vars
+ * DATABASE-FIRST: Removes variables from FleetVhost environment_vars
  */
 class DelvconfCommand extends BaseNetServaCommand
 {
@@ -36,7 +36,7 @@ class DelvconfCommand extends BaseNetServaCommand
             $variable = $this->argument('variable');
 
             // Find VHost in database
-            $vhost = FleetVHost::where('domain', $VHOST)
+            $vhost = FleetVhost::where('domain', $VHOST)
                 ->whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
                 ->first();
 
@@ -63,11 +63,13 @@ class DelvconfCommand extends BaseNetServaCommand
             // Interactive selection (not compatible with dry-run)
             if ($this->option('interactive')) {
                 if ($this->option('dry-run')) {
-                    $this->error("❌ --dry-run not supported with --interactive");
+                    $this->error('❌ --dry-run not supported with --interactive');
                     $this->line("   Use: delvconf {$VNODE} {$VHOST} <variable> --dry-run");
                     $this->line("   Or: delvconf {$VNODE} {$VHOST} --all --dry-run");
+
                     return 1;
                 }
+
                 return $this->interactiveDelete($vhost, $envVars);
             }
 
@@ -85,7 +87,7 @@ class DelvconfCommand extends BaseNetServaCommand
         });
     }
 
-    protected function deleteVariable(FleetVHost $vhost, string $variable): int
+    protected function deleteVariable(FleetVhost $vhost, string $variable): int
     {
         $currentValue = $vhost->getEnvVar($variable);
 
@@ -107,7 +109,7 @@ class DelvconfCommand extends BaseNetServaCommand
             $this->line("   Variable: <fg=red>{$variable}</>");
             $this->line("   Current value: <fg=red>{$displayValue}</>");
             $this->line('');
-            $this->line("   Would delete from vconfs table");
+            $this->line('   Would delete from vconfs table');
 
             return 0;
         }
@@ -134,7 +136,7 @@ class DelvconfCommand extends BaseNetServaCommand
         return 0;
     }
 
-    protected function deleteAll(FleetVHost $vhost): int
+    protected function deleteAll(FleetVhost $vhost): int
     {
         $count = count($vhost->environment_vars ?? []);
 
@@ -148,7 +150,7 @@ class DelvconfCommand extends BaseNetServaCommand
         if ($this->option('dry-run')) {
             $this->info("🔍 DRY RUN: Would delete ALL {$count} variables from {$vhost->domain}");
             $this->line('');
-            $this->line("   Would delete from vconfs table:");
+            $this->line('   Would delete from vconfs table:');
 
             $varList = array_keys($vhost->environment_vars ?? []);
             foreach (array_slice($varList, 0, 10) as $var) {
@@ -156,7 +158,7 @@ class DelvconfCommand extends BaseNetServaCommand
             }
 
             if ($count > 10) {
-                $this->line("   ... and ".($count - 10)." more");
+                $this->line('   ... and '.($count - 10).' more');
             }
 
             return 0;
@@ -185,7 +187,7 @@ class DelvconfCommand extends BaseNetServaCommand
         return 0;
     }
 
-    protected function interactiveDelete(FleetVHost $vhost, array $envVars): int
+    protected function interactiveDelete(FleetVhost $vhost, array $envVars): int
     {
         $this->line("<fg=blue>📋 Select variables to delete from:</> <fg=yellow>{$vhost->domain}</>");
         $this->line('');

@@ -36,6 +36,7 @@ class FleetVenue extends Model
         'location',
         'region',
         'dns_provider_id',
+        'palette_id',
         'credentials',
         'metadata',
         'description',
@@ -68,7 +69,7 @@ class FleetVenue extends Model
      */
     public function vsites(): HasMany
     {
-        return $this->hasMany(FleetVSite::class, 'venue_id');
+        return $this->hasMany(FleetVsite::class, 'venue_id');
     }
 
     /**
@@ -80,11 +81,19 @@ class FleetVenue extends Model
     }
 
     /**
+     * Get the palette for this venue
+     */
+    public function palette(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Palette::class);
+    }
+
+    /**
      * Get all vnodes through vsites
      */
     public function vnodes()
     {
-        return $this->hasManyThrough(FleetVNode::class, FleetVSite::class, 'venue_id', 'vsite_id');
+        return $this->hasManyThrough(FleetVnode::class, FleetVsite::class, 'venue_id', 'vsite_id');
     }
 
     /**

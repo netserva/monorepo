@@ -1,8 +1,8 @@
 <?php
 
 use NetServa\Core\Models\SshHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 use NetServa\Fleet\Services\FleetDiscoveryService;
 
 uses()
@@ -60,7 +60,7 @@ it('skips loopback addresses when parsing ip', function () {
 });
 
 it('can test ssh connection for vnode with ssh host', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'test-site',
         'provider' => 'local',
         'technology' => 'incus',
@@ -74,7 +74,7 @@ it('can test ssh connection for vnode with ssh host', function () {
         'is_active' => true,
     ]);
 
-    $vnode = FleetVNode::create([
+    $vnode = FleetVnode::create([
         'name' => 'test-node',
         'vsite_id' => $vsite->id,
         'ssh_host_id' => $sshHost->id,
@@ -88,13 +88,13 @@ it('can test ssh connection for vnode with ssh host', function () {
 });
 
 it('returns error for vnode without ssh host', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'test-site',
         'provider' => 'local',
         'technology' => 'incus',
     ]);
 
-    $vnode = FleetVNode::create([
+    $vnode = FleetVnode::create([
         'name' => 'test-node',
         'vsite_id' => $vsite->id,
     ]);
@@ -127,13 +127,13 @@ it('can parse command output correctly', function () {
 });
 
 it('handles discovery gracefully when commands fail', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'test-site',
         'provider' => 'local',
         'technology' => 'incus',
     ]);
 
-    $vnode = FleetVNode::create([
+    $vnode = FleetVnode::create([
         'name' => 'test-node',
         'vsite_id' => $vsite->id,
         'role' => 'compute',
@@ -147,25 +147,25 @@ it('handles discovery gracefully when commands fail', function () {
 });
 
 it('can discover different node roles', function () {
-    $vsite = FleetVSite::create([
+    $vsite = FleetVsite::create([
         'name' => 'test-site',
         'provider' => 'local',
         'technology' => 'incus',
     ]);
 
-    $computeNode = FleetVNode::create([
+    $computeNode = FleetVnode::create([
         'name' => 'compute-node',
         'vsite_id' => $vsite->id,
         'role' => 'compute',
     ]);
 
-    $networkNode = FleetVNode::create([
+    $networkNode = FleetVnode::create([
         'name' => 'network-node',
         'vsite_id' => $vsite->id,
         'role' => 'network',
     ]);
 
-    $storageNode = FleetVNode::create([
+    $storageNode = FleetVnode::create([
         'name' => 'storage-node',
         'vsite_id' => $vsite->id,
         'role' => 'storage',

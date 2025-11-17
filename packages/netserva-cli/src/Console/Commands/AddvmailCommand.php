@@ -5,7 +5,7 @@ namespace NetServa\Cli\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use NetServa\Cli\Services\VmailManagementService;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Add Virtual Mail Command
@@ -55,7 +55,7 @@ class AddvmailCommand extends Command
         $this->info("Creating virtual mail user: {$email} on {$vnodeName}");
 
         // NetServa 3.0: Get vnode from database
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
 
         if (! $vnode) {
             $this->error("VNode not found: {$vnodeName}");

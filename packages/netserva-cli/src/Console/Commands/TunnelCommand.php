@@ -3,7 +3,7 @@
 namespace NetServa\Cli\Console\Commands;
 
 use NetServa\Cli\Services\TunnelService;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\select;
 
@@ -275,7 +275,7 @@ class TunnelCommand extends BaseNetServaCommand
 
         if (! $host || $this->option('interactive')) {
             // Get available VNodes from database
-            $vnodes = FleetVNode::pluck('name')->toArray();
+            $vnodes = FleetVnode::pluck('name')->toArray();
 
             if (empty($vnodes)) {
                 $this->error('❌ No VNodes found in database');
@@ -292,7 +292,7 @@ class TunnelCommand extends BaseNetServaCommand
         }
 
         // Validate host exists
-        if (! FleetVNode::where('name', $host)->exists()) {
+        if (! FleetVnode::where('name', $host)->exists()) {
             $this->error("❌ VNode '{$host}' not found in database");
             $this->line('   💡 Run: php artisan addfleet');
 

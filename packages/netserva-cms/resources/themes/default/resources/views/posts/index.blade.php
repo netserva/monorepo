@@ -21,7 +21,7 @@
                     <article class="bg-surface rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                         {{-- Post Image --}}
                         @if($post->featured_image)
-                            <a href="{{ route('cms.posts.show', $post->slug) }}" class="block">
+                            <a href="{{ route('cms.blog.show', $post->slug) }}" class="block">
                                 <img src="{{ $post->featured_image }}"
                                      alt="{{ $post->title }}"
                                      class="w-full h-48 object-cover">
@@ -33,7 +33,7 @@
                             @if($post->categories->count())
                                 <div class="flex flex-wrap gap-2 mb-3">
                                     @foreach($post->categories as $category)
-                                        <a href="{{ route('cms.posts.category', $category->slug) }}"
+                                        <a href="{{ route('cms.blog.category', $category->slug) }}"
                                            class="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                                             {{ $category->name }}
                                         </a>
@@ -43,7 +43,7 @@
 
                             {{-- Post Title --}}
                             <h2 class="text-xl font-bold mb-2">
-                                <a href="{{ route('cms.posts.show', $post->slug) }}" class="hover:text-primary transition-colors">
+                                <a href="{{ route('cms.blog.show', $post->slug) }}" class="hover:text-primary transition-colors">
                                     {{ $post->title }}
                                 </a>
                             </h2>

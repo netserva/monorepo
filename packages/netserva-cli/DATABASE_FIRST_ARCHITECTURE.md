@@ -232,7 +232,7 @@ Transaction rollback: ✓ SUCCESS (no partial data in DB)
 
 ```bash
 $ php artisan tinker --execute="
-\$vhost = \NetServa\Fleet\Models\FleetVHost::where('domain', 'test.com')->first();
+\$vhost = \NetServa\Fleet\Models\FleetVhost::where('domain', 'test.com')->first();
 echo \$vhost ? '❌ Rollback failed' : '✅ Rollback worked';
 "
 

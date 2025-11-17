@@ -4,7 +4,7 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Fleet\Models\FleetVenue;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Show VSite Command (NetServa 3.0 CRUD: READ)
@@ -39,7 +39,7 @@ class ShvsiteCommand extends Command
 
     protected function showSingleVSite(string $venueName, string $name, string $format): int
     {
-        $vsite = FleetVSite::where('name', $name)
+        $vsite = FleetVsite::where('name', $name)
             ->with(['venue', 'vnodes'])
             ->first();
 
@@ -98,7 +98,7 @@ class ShvsiteCommand extends Command
             return Command::FAILURE;
         }
 
-        $vsites = FleetVSite::where('venue_id', $venue->id)
+        $vsites = FleetVsite::where('venue_id', $venue->id)
             ->with('vnodes')
             ->orderBy('name')
             ->get();
@@ -124,7 +124,7 @@ class ShvsiteCommand extends Command
 
     protected function showAllVSites(string $format): int
     {
-        $vsites = FleetVSite::with(['venue', 'vnodes'])->orderBy('name')->get();
+        $vsites = FleetVsite::with(['venue', 'vnodes'])->orderBy('name')->get();
 
         if ($vsites->isEmpty()) {
             $this->warn('No vsites found.');

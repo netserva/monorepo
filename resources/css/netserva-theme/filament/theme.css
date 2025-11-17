@@ -1,0 +1,124 @@
+@import 'tailwindcss';
+
+/**
+ * NetServa Custom Filament Theme
+ *
+ * Following Filament v4 CSS architecture with proper layer support
+ * Colors are injected dynamically via middleware
+ */
+
+@layer base {
+    /* Apply custom background color to HTML and body when theme-background-color is set */
+    html {
+        background-color: var(--theme-background-color) !important;
+    }
+
+    body {
+        background-color: var(--theme-background-color) !important;
+    }
+}
+
+@layer components {
+    /*
+     * CUSTOM BACKGROUND COLOR
+     * Override Filament's default backgrounds using hook classes
+     * Only applies when --theme-background-color is set by middleware
+     */
+
+    .fi-body {
+        background-color: var(--theme-background-color) !important;
+    }
+
+    .fi-sidebar {
+        background-color: var(--theme-background-color) !important;
+    }
+
+    .fi-topbar {
+        background-color: var(--theme-background-color) !important;
+    }
+
+    .fi-main {
+        background-color: var(--theme-background-color) !important;
+    }
+
+    .fi-page {
+        background-color: var(--theme-background-color) !important;
+    }
+
+    /* Dark mode overrides */
+    .dark .fi-body,
+    .dark .fi-sidebar,
+    .dark .fi-topbar,
+    .dark .fi-main,
+    .dark .fi-page {
+        background-color: var(--theme-background-color) !important;
+    }
+
+    /*
+     * NAVIGATION LINKS
+     * Use custom nav link color or fall back to Filament defaults
+     */
+
+    .fi-sidebar-item-label {
+        color: var(--theme-nav-link-color, rgb(55 65 81));
+        transition: color 150ms ease;
+    }
+
+    .dark .fi-sidebar-item-label {
+        color: var(--theme-nav-link-color, rgb(209 213 219));
+    }
+
+    .fi-sidebar-item-icon {
+        color: var(--theme-nav-link-color, rgb(75 85 99));
+    }
+
+    .dark .fi-sidebar-item-icon {
+        color: var(--theme-nav-link-color, rgb(156 163 175));
+    }
+
+    /* Active navigation items use primary color (set by Filament) */
+    .fi-sidebar-item-active .fi-sidebar-item-label {
+        color: white !important;
+    }
+
+    .fi-sidebar-item-active .fi-sidebar-item-icon {
+        color: white !important;
+    }
+
+    /*
+     * LINKS AND BREADCRUMBS
+     * Use neutral colors, not primary colors
+     */
+
+    .fi-link {
+        color: rgb(17 24 39) !important;
+    }
+
+    .fi-link:hover {
+        color: rgb(75 85 99) !important;
+    }
+
+    .dark .fi-link {
+        color: rgb(243 244 246) !important;
+    }
+
+    .dark .fi-link:hover {
+        color: rgb(209 213 219) !important;
+    }
+
+    .fi-breadcrumbs-item a {
+        color: rgb(75 85 99) !important;
+    }
+
+    .fi-breadcrumbs-item a:hover {
+        color: rgb(17 24 39) !important;
+    }
+
+    .dark .fi-breadcrumbs-item a {
+        color: rgb(156 163 175) !important;
+    }
+
+    .dark .fi-breadcrumbs-item a:hover {
+        color: rgb(243 244 246) !important;
+    }
+}

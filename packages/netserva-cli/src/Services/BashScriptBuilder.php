@@ -124,15 +124,18 @@ class BashScriptBuilder
         return <<<'BASH'
         # 2. Create database entry
         echo ">>> Step 2: Database Entry"
-        VHOST_COUNT=$(echo "SELECT COUNT(id) FROM vhosts WHERE domain = '$VHOST'" | $SQCMD 2>/dev/null || echo "0")
+        if command -v mysql &>/dev/null || command -v mariadb &>/dev/null; then
+            VHOST_COUNT=$(echo "SELECT COUNT(id) FROM vhosts WHERE domain = '$VHOST'" | $SQCMD 2>/dev/null || echo "0")
 
-        if [[ "$VHOST_COUNT" == "0" ]]; then
-            CREATED="$(date '+%Y-%m-%d %H:%M:%S')"
-            echo "    → Creating database entry for $VHOST"
-            echo "INSERT INTO vhosts (active, created, domain, gid, uid, uname, updated) VALUES (1, '$CREATED', '$VHOST', $U_GID, $U_UID, '$UUSER', '$CREATED')" | $SQCMD
-            echo "    ✓ Database entry created"
+            if [[ "$VHOST_COUNT" == "0" ]]; then
+                echo "    → Creating database entry for $VHOST"
+                echo "INSERT INTO vhosts (domain, uid, gid, active, created_at, updated_at) VALUES ('$VHOST', $U_UID, $U_GID, 1, NOW(), NOW())" | $SQCMD
+                echo "    ✓ Database entry created"
+            else
+                echo "    ✓ Database entry already exists"
+            fi
         else
-            echo "    ✓ Database entry already exists"
+            echo "    ⚠ MySQL/MariaDB not found, skipping database entry"
         fi
         BASH;
     }
@@ -198,6 +201,12 @@ class BashScriptBuilder
 
     /**
      * Generate nginx vhost configuration section
+     *
+     * NetServa 3.0 Pattern:
+     * - Creates config directly in /etc/nginx/sites-enabled/ (no sites-available symlink)
+     * - Uses /etc/nginx/common.conf for shared settings
+     * - WWW redirect to non-WWW
+     * - HTTP-only by default (SSL added manually via acme.sh)
      */
     protected function generateNginxConfig(array $v): string
     {
@@ -205,57 +214,23 @@ class BashScriptBuilder
         # 5. nginx vhost configuration
         echo ">>> Step 5: nginx Configuration"
         if [[ -d "$C_WEB" ]]; then
-            NGINX_CONF="$C_WEB/sites-available/$VHOST"
+            NGINX_CONF="$C_WEB/sites-enabled/$VHOST"
 
             if [[ ! -f "$NGINX_CONF" ]]; then
                 echo "    → Creating nginx vhost config"
-                cat > "$NGINX_CONF" <<'NGINXEOF'
+                cat > "$NGINX_CONF" <<NGINXEOF
         server {
-            listen 80;
-            listen [::]:80;
-            server_name $VHOST;
-
-            root $WPATH/app/public;
-            index index.php index.html index.htm;
-
-            # Logging
-            access_log $WPATH/log/nginx_access.log;
-            error_log $WPATH/log/nginx_error.log;
-
-            # Security headers
-            add_header X-Frame-Options "SAMEORIGIN" always;
-            add_header X-Content-Type-Options "nosniff" always;
-            add_header X-XSS-Protection "1; mode=block" always;
-
-            # PHP-FPM via unix socket
-            location ~ \.php$ {
-                include fastcgi_params;
-                fastcgi_pass unix:$WPATH/run/php-fpm.sock;
-                fastcgi_index index.php;
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            }
-
-            # Deny access to hidden files
-            location ~ /\. {
-                deny all;
-                access_log off;
-                log_not_found off;
-            }
-
-            # Static files caching
-            location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
-                expires 30d;
-                add_header Cache-Control "public, immutable";
-            }
+            listen                      80;
+            server_name                 www.$VHOST;
+            return 301                  http://$VHOST\$request_uri;
+        }
+        server {
+            listen                      80;
+            server_name                 $VHOST;
+            include                     /etc/nginx/common.conf;
         }
         NGINXEOF
                 echo "    ✓ nginx config created"
-
-                # Create symlink to sites-enabled
-                if [[ ! -L "$C_WEB/sites-enabled/$VHOST" ]]; then
-                    ln -sf "$C_WEB/sites-available/$VHOST" "$C_WEB/sites-enabled/$VHOST"
-                    echo "    ✓ nginx config enabled"
-                fi
 
                 # Test nginx config
                 if nginx -t &>/dev/null; then

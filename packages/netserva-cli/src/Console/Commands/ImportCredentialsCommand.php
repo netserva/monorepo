@@ -3,8 +3,8 @@
 namespace NetServa\Cli\Console\Commands;
 
 use NetServa\Cli\Services\VHostResolverService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVHostCredential;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVhostCredential;
 
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\progress;
@@ -93,7 +93,7 @@ class ImportCredentialsCommand extends BaseNetServaCommand
             // Resolve target VHost
             try {
                 $context = $this->resolver->resolveVHost($domain);
-                $vhost = FleetVHost::where('domain', $context['vhost'])
+                $vhost = FleetVhost::where('domain', $context['vhost'])
                     ->whereHas('vnode', function ($q) use ($context) {
                         $q->where('name', $context['vnode']);
                     })->first();
@@ -337,7 +337,7 @@ class ImportCredentialsCommand extends BaseNetServaCommand
     /**
      * Import credentials into database
      */
-    protected function importCredentials(FleetVHost $vhost, array $credentials): int
+    protected function importCredentials(FleetVhost $vhost, array $credentials): int
     {
         if ($this->option('dry-run')) {
             $this->displayImportPreview($credentials);
@@ -350,7 +350,7 @@ class ImportCredentialsCommand extends BaseNetServaCommand
         $existingAccounts = [];
 
         foreach ($credentials as $cred) {
-            $existing = FleetVHostCredential::where('vhost_id', $vhost->id)
+            $existing = FleetVhostCredential::where('vhost_id', $vhost->id)
                 ->where('service_type', $cred['service_type'])
                 ->where('account_name', $cred['account_name'])
                 ->first();
@@ -408,7 +408,7 @@ class ImportCredentialsCommand extends BaseNetServaCommand
 
         foreach ($credentials as $cred) {
             try {
-                $existing = FleetVHostCredential::where('vhost_id', $vhost->id)
+                $existing = FleetVhostCredential::where('vhost_id', $vhost->id)
                     ->where('service_type', $cred['service_type'])
                     ->where('account_name', $cred['account_name'])
                     ->first();
@@ -423,7 +423,7 @@ class ImportCredentialsCommand extends BaseNetServaCommand
                 // Remove line_number from the data before saving
                 unset($cred['line_number']);
 
-                FleetVHostCredential::createOrUpdateCredential(
+                FleetVhostCredential::createOrUpdateCredential(
                     $vhost->id,
                     $cred['service_type'],
                     $cred['account_name'],
@@ -471,7 +471,7 @@ class ImportCredentialsCommand extends BaseNetServaCommand
         }
 
         foreach ($serviceGroups as $service => $creds) {
-            $serviceLabel = FleetVHostCredential::SERVICE_TYPES[$service] ?? $service;
+            $serviceLabel = FleetVhostCredential::SERVICE_TYPES[$service] ?? $service;
             $this->line("<fg=yellow>{$serviceLabel} ({$service}):</fg=yellow>");
 
             foreach (array_slice($creds, 0, 5) as $cred) {

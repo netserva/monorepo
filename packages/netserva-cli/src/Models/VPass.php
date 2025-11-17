@@ -5,9 +5,9 @@ namespace NetServa\Cli\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use NetServa\Fleet\Models\FleetVenue;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * VPass Model - NetServa 3.0 Unified Credential Vault
@@ -65,7 +65,7 @@ class VPass extends Model
     ];
 
     /**
-     * Polymorphic owner relationship (FleetVenue, FleetVSite, FleetVNode, FleetVHost)
+     * Polymorphic owner relationship (FleetVenue, FleetVsite, FleetVnode, FleetVhost)
      */
     public function owner(): MorphTo
     {
@@ -92,7 +92,7 @@ class VPass extends Model
      * 4. Venue-level credential (parent of VSite)
      * 5. NULL if not found
      *
-     * @param  Model  $owner  Starting owner (FleetVHost, FleetVNode, FleetVSite, FleetVenue)
+     * @param  Model  $owner  Starting owner (FleetVhost, FleetVnode, FleetVsite, FleetVenue)
      * @param  string  $pserv  Service provider (cloudflare, binarylane, proxmox, etc.)
      * @param  string  $pname  Identifier name (default = 'default')
      * @param  string|null  $ptype  Password type filter (APKEY, DBPWD, etc.)
@@ -126,7 +126,7 @@ class VPass extends Model
         }
 
         // 2. Walk up hierarchy if VHost
-        if ($owner instanceof FleetVHost && $owner->vnode) {
+        if ($owner instanceof FleetVhost && $owner->vnode) {
             $credential = static::resolve($owner->vnode, $pserv, $pname, $ptype);
             if ($credential) {
                 return $credential;
@@ -134,7 +134,7 @@ class VPass extends Model
         }
 
         // 3. Walk up hierarchy if VNode
-        if ($owner instanceof FleetVNode && $owner->vsite) {
+        if ($owner instanceof FleetVnode && $owner->vsite) {
             $credential = static::resolve($owner->vsite, $pserv, $pname, $ptype);
             if ($credential) {
                 return $credential;
@@ -142,7 +142,7 @@ class VPass extends Model
         }
 
         // 4. Walk up hierarchy if VSite
-        if ($owner instanceof FleetVSite && $owner->venue) {
+        if ($owner instanceof FleetVsite && $owner->venue) {
             $credential = static::resolve($owner->venue, $pserv, $pname, $ptype);
             if ($credential) {
                 return $credential;
@@ -301,9 +301,9 @@ class VPass extends Model
     {
         return match ($this->owner_type) {
             'NetServa\\Fleet\\Models\\FleetVenue' => 'Venue',
-            'NetServa\\Fleet\\Models\\FleetVSite' => 'VSite',
-            'NetServa\\Fleet\\Models\\FleetVNode' => 'VNode',
-            'NetServa\\Fleet\\Models\\FleetVHost' => 'VHost',
+            'NetServa\\Fleet\\Models\\FleetVsite' => 'VSite',
+            'NetServa\\Fleet\\Models\\FleetVnode' => 'VNode',
+            'NetServa\\Fleet\\Models\\FleetVhost' => 'VHost',
             default => 'Unknown',
         };
     }

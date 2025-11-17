@@ -112,7 +112,7 @@ class FleetVServ extends Model
      */
     public function vhost(): BelongsTo
     {
-        return $this->belongsTo(FleetVHost::class, 'vhost_id');
+        return $this->belongsTo(FleetVhost::class, 'vhost_id');
     }
 
     /**
@@ -120,7 +120,7 @@ class FleetVServ extends Model
      */
     public function vnode()
     {
-        return $this->hasOneThrough(FleetVNode::class, FleetVHost::class, 'id', 'id', 'vhost_id', 'vnode_id');
+        return $this->hasOneThrough(FleetVnode::class, FleetVhost::class, 'id', 'id', 'vhost_id', 'vnode_id');
     }
 
     /**

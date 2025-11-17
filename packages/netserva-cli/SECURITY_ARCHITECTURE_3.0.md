@@ -152,7 +152,7 @@ If a customer absolutely requires SSH/SCP access:
 ### Tests
 - ⚠️ `/packages/netserva-cli/tests/Feature/VhostValidationServiceTest.php`
   - Already uses web-centric structure (WPATH, MPATH)
-  - Requires FleetVNode/FleetVSite factories to be created
+  - Requires FleetVnode/FleetVsite factories to be created
 
 ---
 

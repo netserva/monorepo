@@ -3,8 +3,8 @@
 namespace NetServa\Cli\Console\Commands;
 
 use NetServa\Cli\Services\VhostManagementService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Change/Update VHost Command
@@ -14,7 +14,7 @@ use NetServa\Fleet\Models\FleetVNode;
  * Example: chvhost markc markc.goldcoast.org --php-version=8.4 --ssl=true
  *
  * DATABASE-FIRST ARCHITECTURE:
- * - Updates vconfs table via FleetVHost model
+ * - Updates vconfs table via FleetVhost model
  * - NO file-based config (no VhostConfigService)
  * - Remote execution via VhostManagementService
  */
@@ -53,7 +53,7 @@ class ChvhostCommand extends BaseNetServaCommand
             }
 
             // Find VNode in database
-            $vnode = FleetVNode::where('name', $VNODE)->first();
+            $vnode = FleetVnode::where('name', $VNODE)->first();
             if (! $vnode) {
                 $this->error("❌ VNode {$VNODE} not found in database");
                 $this->line("   Run: php artisan addfleet {$VNODE}");
@@ -61,8 +61,8 @@ class ChvhostCommand extends BaseNetServaCommand
                 return 1;
             }
 
-            // Find FleetVHost in database (DATABASE-FIRST!)
-            $fleetVhost = FleetVHost::where('domain', $VHOST)
+            // Find FleetVhost in database (DATABASE-FIRST!)
+            $fleetVhost = FleetVhost::where('domain', $VHOST)
                 ->where('vnode_id', $vnode->id)
                 ->first();
 
@@ -92,11 +92,11 @@ class ChvhostCommand extends BaseNetServaCommand
 
             if ($this->option('dry-run')) {
                 $this->dryRun("Update VHost {$VHOST} on {$VNODE}", [
-                    "Load current vhost from FleetVHost model (ID: {$fleetVhost->id})",
+                    "Load current vhost from FleetVhost model (ID: {$fleetVhost->id})",
                     'Load environment variables from vconfs table (database-first)',
                     'Backup current vconfs in database (if --backup specified)',
                     'Apply configuration changes: '.implode(', ', array_keys($changes)),
-                    'Update vconfs table with new values via FleetVHost::setEnvVar()',
+                    'Update vconfs table with new values via FleetVhost::setEnvVar()',
                     "SSH to {$VNODE} and apply changes via RemoteExecutionService heredoc",
                     'Reload relevant services (nginx, php-fpm, etc.)',
                 ]);
@@ -182,14 +182,14 @@ class ChvhostCommand extends BaseNetServaCommand
     }
 
     /**
-     * Apply changes to FleetVHost via vconfs table (DATABASE-FIRST!)
+     * Apply changes to FleetVhost via vconfs table (DATABASE-FIRST!)
      *
      * NetServa 3.0 Architecture:
-     * 1. Update vconfs table via FleetVHost::setEnvVar()
+     * 1. Update vconfs table via FleetVhost::setEnvVar()
      * 2. Execute remote script via VhostManagementService
      * 3. NO file-based config!
      */
-    protected function applyChanges(string $VNODE, string $VHOST, FleetVHost $fleetVhost, array $changes): array
+    protected function applyChanges(string $VNODE, string $VHOST, FleetVhost $fleetVhost, array $changes): array
     {
         try {
             $appliedChanges = [];
@@ -217,7 +217,7 @@ class ChvhostCommand extends BaseNetServaCommand
                 }
             }
 
-            // Save FleetVHost model changes
+            // Save FleetVhost model changes
             $fleetVhost->save();
 
             // Execute remote changes via VhostManagementService
@@ -240,13 +240,13 @@ class ChvhostCommand extends BaseNetServaCommand
     /**
      * Backup current vconfs (database backup, not file-based)
      */
-    protected function backupVhostConfig(FleetVHost $fleetVhost): bool
+    protected function backupVhostConfig(FleetVhost $fleetVhost): bool
     {
         try {
             // Get all current vconfs
             $currentVars = $fleetVhost->getAllEnvVars();
 
-            // Store backup metadata in FleetVHost
+            // Store backup metadata in FleetVhost
             $backupData = [
                 'timestamp' => now()->toIso8601String(),
                 'vconfs_count' => count($currentVars),
@@ -289,7 +289,7 @@ class ChvhostCommand extends BaseNetServaCommand
             $this->line('');
 
             // 1. Validate source vnode
-            $sourceNode = FleetVNode::where('name', $sourceVnode)->first();
+            $sourceNode = FleetVnode::where('name', $sourceVnode)->first();
             if (! $sourceNode) {
                 $this->error("❌ Source VNode '{$sourceVnode}' not found");
                 $this->line("   Run: php artisan addvnode {$sourceVnode}");
@@ -298,7 +298,7 @@ class ChvhostCommand extends BaseNetServaCommand
             }
 
             // 2. Validate destination vnode
-            $destNode = FleetVNode::where('name', $destVnode)->first();
+            $destNode = FleetVnode::where('name', $destVnode)->first();
             if (! $destNode) {
                 $this->error("❌ Destination VNode '{$destVnode}' not found");
                 $this->line("   Run: php artisan addvnode {$destVnode}");
@@ -307,15 +307,15 @@ class ChvhostCommand extends BaseNetServaCommand
             }
 
             // 3. Validate vhost exists on source vnode
-            $fleetVhost = FleetVHost::where('domain', $vhost)
+            $fleetVhost = FleetVhost::where('domain', $vhost)
                 ->where('vnode_id', $sourceNode->id)
                 ->first();
 
             if (! $fleetVhost) {
                 $this->error("❌ VHost '{$vhost}' not found on source vnode '{$sourceVnode}'");
-                $this->line("   Available vnodes for this vhost:");
+                $this->line('   Available vnodes for this vhost:');
 
-                $allVhosts = FleetVHost::where('domain', $vhost)->with('vnode')->get();
+                $allVhosts = FleetVhost::where('domain', $vhost)->with('vnode')->get();
                 if ($allVhosts->isEmpty()) {
                     $this->line("   (VHost '{$vhost}' does not exist in database)");
                 } else {
@@ -402,12 +402,12 @@ class ChvhostCommand extends BaseNetServaCommand
             $this->line("   1. Verify vhost configuration: shvconf {$destVnode} {$vhost}");
 
             if ($this->option('sync-files')) {
-                $this->line("   2. Reload services on destination:");
+                $this->line('   2. Reload services on destination:');
                 $this->line("      sx {$destVnode} 'sc reload nginx && sc reload php-fpm'");
                 $this->line("   3. Test web access: curl -I http://{$vhost}");
                 $this->line("   4. Update DNS if IP changed (old: {$sourceNode->ip_address}, new: {$destNode->ip_address})");
             } else {
-                $this->line("   2. Sync files manually (see commands above)");
+                $this->line('   2. Sync files manually (see commands above)');
                 $this->line("   3. Reload services: sx {$destVnode} 'sc reload nginx && sc reload php-fpm'");
                 $this->line("   4. Test web access: curl -I http://{$vhost}");
                 $this->line("   5. Update DNS if IP changed (old: {$sourceNode->ip_address}, new: {$destNode->ip_address})");
@@ -453,7 +453,7 @@ class ChvhostCommand extends BaseNetServaCommand
 
             foreach ($userDataPaths as $path) {
                 $sourcePath = "{$sourceVnode}:{$upath}/{$path}";
-                $destPath = "{$destVnode}:{$upath}/" . dirname($path);
+                $destPath = "{$destVnode}:{$upath}/".dirname($path);
 
                 $this->line("      • {$path}");
                 $result = shell_exec("scp -r -p {$sourcePath} {$destPath} 2>&1");
@@ -529,7 +529,7 @@ class ChvhostCommand extends BaseNetServaCommand
 
             foreach ($additionalPaths as $path) {
                 $source = "{$sourceVnode}:{$path}";
-                $dest = "{$destVnode}:" . dirname($path) . '/';
+                $dest = "{$destVnode}:".dirname($path).'/';
 
                 $result = shell_exec("scp -r -p {$source} {$dest} 2>&1");
 
@@ -562,7 +562,7 @@ class ChvhostCommand extends BaseNetServaCommand
     /**
      * Update vnode-specific environment variables after migration
      */
-    protected function updateVnodeSpecificVars(FleetVHost $fleetVhost, FleetVNode $destNode): void
+    protected function updateVnodeSpecificVars(FleetVhost $fleetVhost, FleetVnode $destNode): void
     {
         // Update VNODE variable (vnode name)
         $fleetVhost->setEnvVar('VNODE', $destNode->name);

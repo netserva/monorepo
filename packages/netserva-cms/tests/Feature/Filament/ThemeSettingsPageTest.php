@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Cache;
-use NetServa\Cms\Filament\Pages\ThemeSettings;
+use NetServa\Cms\Filament\Resources\ThemeResource\Pages\ListThemes;
 use NetServa\Cms\Models\Theme;
 use NetServa\Cms\Services\ThemeService;
 
@@ -47,29 +47,53 @@ beforeEach(function () {
     $this->actingAs(\App\Models\User::factory()->create());
 });
 
-it('can render the theme settings page', function () {
-    livewire(ThemeSettings::class)
+it('can open the edit theme modal action', function () {
+    livewire(ListThemes::class)
         ->assertSuccessful()
-        ->assertSee('Theme Settings')
-        ->assertSee('Test Theme');
+        ->assertTableActionExists('edit');
 });
 
-it('displays page title and heading correctly', function () {
-    $component = livewire(ThemeSettings::class);
+it('can save theme settings via modal action', function () {
+    livewire(ListThemes::class)
+        ->callTableAction('edit', $this->theme, data: [
+            'display_name' => $this->theme->display_name,
+            'name' => $this->theme->name,
+            'version' => $this->theme->version,
+            'author' => $this->theme->author,
+            'parent_theme' => $this->theme->parent_theme,
+            'is_active' => $this->theme->is_active,
+            'font_heading' => 'Roboto',
+            'font_body' => 'Arial',
+            'content_width' => '900px',
+            'wide_width' => '1300px',
+        ])
+        ->assertHasNoTableActionErrors()
+        ->assertNotified();
 
-    expect($component->instance()->getTitle())->toBe('Customize Test Theme');
-    expect($component->instance()->getHeading())->toBe('Theme Settings: Test Theme');
-    expect($component->instance()->getSubheading())->toContain('Customize colors, typography, and layout');
-});
+    // Check that settings were saved
+    $this->assertDatabaseHas('cms_theme_settings', [
+        'cms_theme_id' => $this->theme->id,
+        'key' => 'typography.fonts.heading.family',
+        'value' => 'Roboto',
+    ]);
 
-it('loads active theme in mount', function () {
-    livewire(ThemeSettings::class)
-        ->assertSuccessful();
+    $this->assertDatabaseHas('cms_theme_settings', [
+        'cms_theme_id' => $this->theme->id,
+        'key' => 'typography.fonts.body.family',
+        'value' => 'Arial',
+    ]);
 
-    // Verify the active theme is loaded by the service
-    $activeTheme = app(ThemeService::class)->getActive();
-    expect($activeTheme)->not->toBeNull();
-    expect($activeTheme->id)->toBe($this->theme->id);
+    $this->assertDatabaseHas('cms_theme_settings', [
+        'cms_theme_id' => $this->theme->id,
+        'key' => 'layout.contentWidth',
+        'value' => '900px',
+    ]);
+
+    $this->assertDatabaseHas('cms_theme_settings', [
+        'cms_theme_id' => $this->theme->id,
+        'key' => 'layout.wideWidth',
+        'value' => '1300px',
+    ]);
 });
 
 it('can save theme settings via model', function () {
@@ -134,18 +158,6 @@ it('can reset settings to defaults', function () {
 
     // After deletion, setting should be null (no fallback in current implementation)
     expect($theme->setting('colors.primary'))->toBeNull();
-});
-
-it('works with themes that have no manifest', function () {
-    $basicTheme = Theme::factory()->create([
-        'name' => 'basic-theme',
-        'display_name' => 'Basic Theme',
-        'is_active' => true,
-        'manifest' => null,
-    ]);
-
-    livewire(ThemeSettings::class)
-        ->assertSuccessful();
 });
 
 it('generates CSS variables from theme', function () {

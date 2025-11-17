@@ -67,15 +67,18 @@ class ThemeService
 
     /**
      * Register theme view paths with Laravel's View system (including parent theme inheritance)
+     *
+     * Uses prependLocation to ensure theme views have HIGHEST priority
      */
     public function registerViewPaths(Theme $theme): void
     {
         $paths = $this->resolveViewPaths($theme);
 
-        // Register each path with Laravel's View finder
-        foreach ($paths as $path) {
+        // Prepend paths in reverse order so they end up in correct priority
+        // (last prepended = highest priority)
+        foreach (array_reverse($paths) as $path) {
             if (file_exists($path)) {
-                View::addLocation($path);
+                View::prependLocation($path);
             }
         }
     }
@@ -137,8 +140,17 @@ class ThemeService
     {
         $theme = $this->getActive();
 
+        // Include palette ID in cache key so CSS regenerates when palette changes
+        try {
+            $paletteResolver = app(\App\Services\PaletteResolver::class);
+            $palette = $paletteResolver->getCurrentPalette();
+            $cacheKey = "cms.theme.{$theme->id}.palette.{$palette->id}.css";
+        } catch (\Exception $e) {
+            $cacheKey = "cms.theme.{$theme->id}.css";
+        }
+
         return Cache::remember(
-            "cms.theme.{$theme->id}.css",
+            $cacheKey,
             $this->cacheTtl,
             fn () => $this->buildCssVariables($theme)
         );
@@ -151,12 +163,27 @@ class ThemeService
     {
         $css = ":root {\n";
 
-        // Colors
-        $colors = $theme->colors();
-        foreach ($colors as $color) {
-            $slug = $color['slug'];
-            $value = $theme->setting("colors.{$slug}", $color['value'] ?? '#000000');
-            $css .= "    --color-{$slug}: {$value};\n";
+        // Get palette colors from PaletteResolver (integrated with Filament admin)
+        try {
+            $paletteResolver = app(\App\Services\PaletteResolver::class);
+            $palette = $paletteResolver->getCurrentPalette();
+
+            // Inject Filament palette colors into CMS frontend
+            $css .= $palette->toCssVariables();
+
+            // Map Filament colors to legacy CMS color names for backward compatibility
+            $css .= "    /* Legacy theme color mappings */\n";
+            $css .= '    --color-primary: '.$palette->getPreviewColor().";\n";
+            $css .= "    --color-secondary: #1F2937;\n"; // Keep gray as secondary
+            $css .= "    --color-accent: #3B82F6;\n"; // Keep blue as accent
+        } catch (\Exception $e) {
+            // Fallback to theme colors if palette system unavailable
+            $colors = $theme->colors();
+            foreach ($colors as $color) {
+                $slug = $color['slug'];
+                $value = $theme->setting("colors.{$slug}", $color['value'] ?? '#000000');
+                $css .= "    --color-{$slug}: {$value};\n";
+            }
         }
 
         // Typography
@@ -302,6 +329,33 @@ class ThemeService
     public function all(): \Illuminate\Database\Eloquent\Collection
     {
         return Theme::orderBy('name')->get();
+    }
+
+    /**
+     * Get Filament panel colors from active CMS theme
+     *
+     * Maps CMS theme colors to Filament's 6 semantic colors.
+     * Filament will auto-generate full palette (shades 50-950) from hex values.
+     *
+     * @return array<string, string> Hex color values for Filament panel
+     */
+    public function getFilamentColors(): array
+    {
+        $theme = $this->getActive();
+
+        return [
+            // Map CMS primary → Filament primary
+            'primary' => $theme->setting('colors.primary', '#DC2626'),
+
+            // Map CMS accent → Filament info (used for informational elements)
+            'info' => $theme->setting('colors.accent', '#3B82F6'),
+
+            // Semantic colors (use CMS secondary or defaults)
+            'success' => '#10b981', // Green - keep semantic meaning
+            'warning' => '#f59e0b', // Amber - keep semantic meaning
+            'danger' => '#ef4444',  // Red - keep semantic meaning
+            'gray' => '#64748b',    // Slate - UI chrome
+        ];
     }
 
     /**

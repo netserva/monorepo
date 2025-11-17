@@ -6,9 +6,9 @@ use Exception;
 use Illuminate\Console\Command;
 use NetServa\Cli\Models\VPass;
 use NetServa\Fleet\Models\FleetVenue;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
@@ -118,9 +118,9 @@ class DelpwCommand extends Command
     {
         return match ($type) {
             'venue' => FleetVenue::where('name', $name)->first(),
-            'vsite' => FleetVSite::where('name', $name)->first(),
-            'vnode' => FleetVNode::where('name', $name)->first(),
-            'vhost' => FleetVHost::where('fqdn', $name)->first(),
+            'vsite' => FleetVsite::where('name', $name)->first(),
+            'vnode' => FleetVnode::where('name', $name)->first(),
+            'vhost' => FleetVhost::where('fqdn', $name)->first(),
             default => null,
         };
     }

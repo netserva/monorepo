@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 use NetServa\Fleet\Services\ProxmoxApiService;
 
 use function Laravel\Prompts\error;
@@ -34,7 +34,7 @@ class DiscoverProxmoxCommand extends Command
         // Get or select VSite
         $vsiteName = $this->option('vsite');
         if (! $vsiteName) {
-            $vsites = FleetVSite::where('technology', 'proxmox')
+            $vsites = FleetVsite::where('technology', 'proxmox')
                 ->whereNotNull('api_endpoint')
                 ->pluck('name', 'name')
                 ->toArray();
@@ -51,7 +51,7 @@ class DiscoverProxmoxCommand extends Command
             );
         }
 
-        $vsite = FleetVSite::where('name', $vsiteName)->first();
+        $vsite = FleetVsite::where('name', $vsiteName)->first();
         if (! $vsite) {
             error("VSite '{$vsiteName}' not found!");
 

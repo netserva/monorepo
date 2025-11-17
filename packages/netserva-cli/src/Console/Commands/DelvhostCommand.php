@@ -110,7 +110,7 @@ class DelvhostCommand extends BaseNetServaCommand
         $this->line('<fg=blue>🌐 Cleaning up DNS records...</>');
 
         // Get vnode information
-        $vnode = \NetServa\Fleet\Models\FleetVNode::where('name', $VNODE)->first();
+        $vnode = \NetServa\Fleet\Models\FleetVnode::where('name', $VNODE)->first();
 
         if (! $vnode || ! $vnode->ip_address) {
             return [

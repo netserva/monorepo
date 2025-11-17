@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use NetServa\Cli\Exceptions\AmbiguousVHostException;
 use NetServa\Cli\Exceptions\VHostNotFoundException;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 /**
  * VHost Resolver Service
@@ -67,7 +67,7 @@ class VHostResolverService
      */
     protected function resolveFromDatabase(string $vhost, ?string $vnode = null, ?string $vsite = null): array
     {
-        $query = FleetVHost::where('domain', $vhost)->with(['vnode.vsite']);
+        $query = FleetVhost::where('domain', $vhost)->with(['vnode.vsite']);
 
         // Apply filters if provided
         if ($vnode) {
@@ -175,7 +175,7 @@ class VHostResolverService
     protected function validateFullContext(string $vsite, string $vnode, string $vhost): array
     {
         // Try database first
-        $fleetVHost = FleetVHost::whereHas('vnode.vsite', fn ($q) => $q->where('name', $vsite))
+        $fleetVHost = FleetVhost::whereHas('vnode.vsite', fn ($q) => $q->where('name', $vsite))
             ->whereHas('vnode', fn ($q) => $q->where('name', $vnode))
             ->where('domain', $vhost)
             ->with(['vnode.vsite'])
@@ -212,7 +212,7 @@ class VHostResolverService
     public function searchVHosts(string $partialDomain, int $limit = 10): Collection
     {
         // Search database first
-        $dbResults = FleetVHost::where('domain', 'like', "%{$partialDomain}%")
+        $dbResults = FleetVhost::where('domain', 'like', "%{$partialDomain}%")
             ->with(['vnode.vsite'])
             ->limit($limit)
             ->get()
@@ -259,7 +259,7 @@ class VHostResolverService
     public function getVHostsForVNode(string $vnode, ?string $vsite = null): Collection
     {
         // Try database first
-        $query = FleetVHost::whereHas('vnode', fn ($q) => $q->where('name', $vnode))
+        $query = FleetVhost::whereHas('vnode', fn ($q) => $q->where('name', $vnode))
             ->with(['vnode.vsite']);
 
         if ($vsite) {

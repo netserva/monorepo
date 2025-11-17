@@ -4,8 +4,8 @@ namespace NetServa\Cli\Services;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Legacy Import Service - NetServa 3.0
@@ -17,7 +17,7 @@ use NetServa\Fleet\Models\FleetVNode;
  * 2. Find /srv/* directories (existing vhosts)
  * 3. Read /root/.vhosts/* config files (1.0 format)
  * 4. Parse legacy config variables
- * 5. Create FleetVHost records with 'discovered' status
+ * 5. Create FleetVhost records with 'discovered' status
  * 6. Store original config in legacy_config field
  * 7. Import parsed variables to vconfs table
  *
@@ -41,10 +41,10 @@ class LegacyImportService
     /**
      * Discover existing vhosts on a vnode (NetServa 1.0 format)
      *
-     * @param  FleetVNode  $vnode  The vnode to scan
+     * @param  FleetVnode  $vnode  The vnode to scan
      * @return array Result with discovered vhosts count
      */
-    public function discoverLegacyVhosts(FleetVNode $vnode): array
+    public function discoverLegacyVhosts(FleetVnode $vnode): array
     {
         try {
             Log::info('Discovering legacy vhosts', ['vnode' => $vnode->name]);
@@ -123,10 +123,10 @@ class LegacyImportService
     /**
      * Find vhost directories in /srv/ on remote vnode
      *
-     * @param  FleetVNode  $vnode  The vnode to scan
+     * @param  FleetVnode  $vnode  The vnode to scan
      * @return array List of domain names (directory names from /srv/)
      */
-    protected function findVhostDirectories(FleetVNode $vnode): array
+    protected function findVhostDirectories(FleetVnode $vnode): array
     {
         // Use simpler command approach instead of executeScript for better debugging
         $command = <<<'BASH'
@@ -167,14 +167,14 @@ BASH;
     /**
      * Import a single legacy vhost
      *
-     * @param  FleetVNode  $vnode  The vnode this vhost is on
+     * @param  FleetVnode  $vnode  The vnode this vhost is on
      * @param  string  $domain  The domain name
      * @return array Result with success status
      */
-    protected function importLegacyVhost(FleetVNode $vnode, string $domain): array
+    protected function importLegacyVhost(FleetVnode $vnode, string $domain): array
     {
         // Check if already imported
-        $existing = FleetVHost::where('domain', $domain)
+        $existing = FleetVhost::where('domain', $domain)
             ->where('vnode_id', $vnode->id)
             ->first();
 
@@ -202,8 +202,8 @@ BASH;
             $platformVars = $this->configService->extractPlatformVariables($vhostConfig);
         }
 
-        // Create FleetVHost record with 'discovered' migration_status
-        $fleetVhost = FleetVHost::create([
+        // Create FleetVhost record with 'discovered' migration_status
+        $fleetVhost = FleetVhost::create([
             'domain' => $domain,
             'vnode_id' => $vnode->id,
             'instance_type' => 'vhost',
@@ -234,11 +234,11 @@ BASH;
     /**
      * Read legacy config file from /root/.vhosts/$VHOST on remote vnode
      *
-     * @param  FleetVNode  $vnode  The vnode
+     * @param  FleetVnode  $vnode  The vnode
      * @param  string  $domain  The domain name
      * @return array|null Parsed config as associative array, or null if not found
      */
-    protected function readLegacyConfig(FleetVNode $vnode, string $domain): ?array
+    protected function readLegacyConfig(FleetVnode $vnode, string $domain): ?array
     {
         $script = <<<BASH
 #!/bin/bash

@@ -123,7 +123,7 @@ class AddVhostCommand extends BaseNetServaCommand
         $this->line('<fg=blue>🌐 Checking DNS records for FCrDNS...</>');
 
         // Get vnode information (IP address)
-        $vnode = \NetServa\Fleet\Models\FleetVNode::where('name', $VNODE)->first();
+        $vnode = \NetServa\Fleet\Models\FleetVnode::where('name', $VNODE)->first();
 
         if (! $vnode || ! $vnode->ip_address) {
             return [

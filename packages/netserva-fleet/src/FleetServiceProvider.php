@@ -58,6 +58,9 @@ class FleetServiceProvider extends ServiceProvider
                 Console\Commands\ChvnodeCommand::class,     // UPDATE
                 Console\Commands\DelvnodeCommand::class,    // DELETE
 
+                // VNode Configuration Commands (Non-CRUD)
+                Console\Commands\FleetIpv6PtrConfigureCommand::class,  // Configure IPv6 PTR records
+
                 // Dnsmasq CRUD Commands (Infrastructure - Router/Gateway DNS)
                 Console\Commands\AddDnsmasqCommand::class,  // CREATE: Add DNS host
                 Console\Commands\ShDnsmasqCommand::class,   // READ: Show DNS hosts (--sync to refresh)

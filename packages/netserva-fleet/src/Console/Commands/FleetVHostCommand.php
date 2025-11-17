@@ -3,8 +3,8 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
@@ -18,7 +18,7 @@ use function Laravel\Prompts\text;
  *
  * Full CRUD operations for VHosts matching Filament admin panel
  */
-class FleetVHostCommand extends Command
+class FleetVhostCommand extends Command
 {
     protected $signature = 'fleet:vhost
                             {action : Action to perform (list|show|create|edit|delete)}
@@ -45,10 +45,10 @@ class FleetVHostCommand extends Command
 
     protected function listVHosts(): int
     {
-        $query = FleetVHost::with(['vnode.vsite']);
+        $query = FleetVhost::with(['vnode.vsite']);
 
         if ($vnodeName = $this->option('vnode')) {
-            $vnode = FleetVNode::where('name', $vnodeName)->first();
+            $vnode = FleetVnode::where('name', $vnodeName)->first();
             if (! $vnode) {
                 error("VNode '{$vnodeName}' not found.");
 
@@ -147,7 +147,7 @@ class FleetVHostCommand extends Command
         info('Creating new VHost');
 
         // Select VNode
-        $vnodes = FleetVNode::with('vsite')->get()->mapWithKeys(fn ($vn) => [
+        $vnodes = FleetVnode::with('vsite')->get()->mapWithKeys(fn ($vn) => [
             $vn->id => "{$vn->name} ({$vn->vsite->name})",
         ])->toArray();
 
@@ -163,7 +163,7 @@ class FleetVHostCommand extends Command
             label: 'Domain/hostname',
             placeholder: 'e.g., example.com, mail.domain.org',
             required: true,
-            validate: fn ($value) => FleetVHost::where('domain', $value)->exists()
+            validate: fn ($value) => FleetVhost::where('domain', $value)->exists()
                 ? 'VHost with this domain already exists'
                 : null
         );
@@ -200,7 +200,7 @@ class FleetVHostCommand extends Command
         $description = text('Description (optional)');
 
         try {
-            $vhost = FleetVHost::create([
+            $vhost = FleetVhost::create([
                 'domain' => $domain,
                 'slug' => str($domain)->slug(),
                 'vnode_id' => $vnodeId,
@@ -408,7 +408,7 @@ class FleetVHostCommand extends Command
         }
     }
 
-    protected function getVHost(): ?FleetVHost
+    protected function getVHost(): ?FleetVhost
     {
         $id = $this->argument('id');
         if (! $id) {
@@ -417,7 +417,7 @@ class FleetVHostCommand extends Command
             return null;
         }
 
-        $vhost = FleetVHost::with(['vnode.vsite'])
+        $vhost = FleetVhost::with(['vnode.vsite'])
             ->where('id', $id)
             ->orWhere('domain', $id)
             ->first();

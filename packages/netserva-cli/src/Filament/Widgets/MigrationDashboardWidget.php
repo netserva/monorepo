@@ -4,7 +4,7 @@ namespace NetServa\Cli\Filament\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 /**
  * Migration Dashboard Widget
@@ -27,7 +27,7 @@ class MigrationDashboardWidget extends BaseWidget
     protected function getStats(): array
     {
         // Get migration status counts
-        $statusCounts = FleetVHost::selectRaw('migration_status, COUNT(*) as count')
+        $statusCounts = FleetVhost::selectRaw('migration_status, COUNT(*) as count')
             ->groupBy('migration_status')
             ->pluck('count', 'migration_status')
             ->toArray();
@@ -44,7 +44,7 @@ class MigrationDashboardWidget extends BaseWidget
         $successRate = $attempted > 0 ? round(($migrated / $attempted) * 100, 1) : 0;
 
         // Get recent migration
-        $recentMigration = FleetVHost::where('migration_status', 'migrated')
+        $recentMigration = FleetVhost::where('migration_status', 'migrated')
             ->latest('migrated_at')
             ->first();
 
@@ -64,7 +64,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Already running NS 3.0')
                 ->descriptionIcon('heroicon-o-check-badge')
                 ->color('success')
-                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
+                ->url(route('filament.admin.resources.fleet-vhosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'native']],
                 ])),
 
@@ -73,7 +73,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Legacy vhosts found')
                 ->descriptionIcon('heroicon-o-magnifying-glass')
                 ->color('info')
-                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
+                ->url(route('filament.admin.resources.fleet-vhosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'discovered']],
                 ])),
 
@@ -82,7 +82,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Ready for migration')
                 ->descriptionIcon('heroicon-o-clipboard-document-check')
                 ->color('warning')
-                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
+                ->url(route('filament.admin.resources.fleet-vhosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'validated']],
                 ])),
 
@@ -91,7 +91,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Successfully migrated')
                 ->descriptionIcon('heroicon-o-arrow-path')
                 ->color('success')
-                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
+                ->url(route('filament.admin.resources.fleet-vhosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'migrated']],
                 ])),
 
@@ -100,7 +100,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Migration errors')
                 ->descriptionIcon('heroicon-o-x-circle')
                 ->color('danger')
-                ->url(route('filament.admin.resources.fleet-v-hosts.index', [
+                ->url(route('filament.admin.resources.fleet-vhosts.index', [
                     'tableFilters' => ['migration_status' => ['value' => 'failed']],
                 ])),
 
@@ -115,7 +115,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->description('Most recent migration')
                 ->descriptionIcon('heroicon-o-clock')
                 ->color('gray')
-                ->url($recentMigration ? route('filament.admin.resources.fleet-v-hosts.view', $recentMigration) : null),
+                ->url($recentMigration ? route('filament.admin.resources.fleet-vhosts.view', $recentMigration) : null),
         ];
     }
 

@@ -4,7 +4,7 @@ namespace NetServa\Cli\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Show Virtual Mail Users Command
@@ -42,7 +42,7 @@ class ShvmailCommand extends Command
         $this->info("Querying virtual mail users on: {$vnodeName}");
 
         // NetServa 3.0: Get vnode from database
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
 
         if (! $vnode) {
             $this->error("VNode not found: {$vnodeName}");

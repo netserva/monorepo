@@ -2,9 +2,9 @@
 
 use NetServa\Cli\Services\MigrationExecutionService;
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Migration Execution Service Tests
@@ -18,7 +18,7 @@ describe('MigrationExecutionService', function () {
         $this->migrationService = new MigrationExecutionService($this->mockRemoteExecution);
 
         // Create test vsite first (required for vnode)
-        $this->vsite = FleetVSite::create([
+        $this->vsite = FleetVsite::create([
             'name' => 'test-site',
             'slug' => 'test-site',
             'environment' => 'testing',
@@ -27,7 +27,7 @@ describe('MigrationExecutionService', function () {
         ]);
 
         // Create test vnode
-        $this->vnode = FleetVNode::create([
+        $this->vnode = FleetVnode::create([
             'name' => 'test-vnode',
             'hostname' => 'test.example.com',
             'vsite_id' => $this->vsite->id,
@@ -43,7 +43,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('fails migration when vhost has no vnode', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'orphan.test',
             'vnode_id' => null, // No vnode
             'provider' => 'local',
@@ -59,7 +59,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('fails migration when vhost is already migrated', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'already-migrated.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -76,7 +76,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('fails migration when vhost is native', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'native.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -93,7 +93,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('fails migration when vhost has no configuration', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'no-config.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -110,7 +110,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('successfully migrates validated vhost with backup', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'migrate-me.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -236,7 +236,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('successfully migrates without backup when skipBackup is true', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'no-backup.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -288,7 +288,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('fails migration and updates status to failed on error', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'fail-me.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -332,7 +332,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('successfully rolls back a migrated vhost', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'rollback-me.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -381,7 +381,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('fails rollback when rollback is not available', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'no-rollback.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -399,7 +399,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('lists available rollback points', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'list-rollbacks.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -432,7 +432,7 @@ describe('MigrationExecutionService', function () {
     });
 
     it('returns empty array when no rollback points exist', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'no-archives.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',

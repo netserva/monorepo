@@ -5,8 +5,8 @@ namespace NetServa\Cli\Services;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * VHost Management Service - NetServa 3.0
@@ -44,7 +44,7 @@ class VhostManagementService
      * Architecture:
      * 1. Find or fail VNode
      * 2. Generate VHost config via NetServaConfigurationService
-     * 3. Create FleetVHost database record
+     * 3. Create FleetVhost database record
      * 4. Store ALL config variables in vconfs table
      * 5. Execute single heredoc script via SSH (never copy scripts to remote)
      *
@@ -63,13 +63,13 @@ class VhostManagementService
             ]);
 
             // Step 1: Find VNode in database
-            $vnode = FleetVNode::where('name', $vnodeName)->first();
+            $vnode = FleetVnode::where('name', $vnodeName)->first();
             if (! $vnode) {
                 throw new Exception("VNode '{$vnodeName}' not found. Run 'php artisan addfleet {$vnodeName}' first.");
             }
 
             // Step 2: Check if vhost already exists
-            $existing = FleetVHost::where('domain', $domain)
+            $existing = FleetVhost::where('domain', $domain)
                 ->where('vnode_id', $vnode->id)
                 ->first();
 
@@ -80,8 +80,8 @@ class VhostManagementService
             // Step 3: Generate VHost configuration using NetServaConfigurationService
             $vhostConfig = $this->configService->generateVhostConfig($vnodeName, $domain);
 
-            // Step 4: Create FleetVHost database record
-            $fleetVhost = FleetVHost::create([
+            // Step 4: Create FleetVhost database record
+            $fleetVhost = FleetVhost::create([
                 'domain' => $domain,
                 'vnode_id' => $vnode->id,
                 'instance_type' => 'vhost',
@@ -166,10 +166,24 @@ class VhostManagementService
         // Build heredoc script with ALL operations
         $script = $this->buildProvisioningScript($vars);
 
+        // DEBUG: Extract SQCMD from script to verify
+        if (preg_match('/SQCMD=\'([^\']+)\'/', $script, $matches)) {
+            Log::info('DEBUG: SQCMD in generated script', [
+                'SQCMD' => $matches[1],
+                'domain' => $domain,
+            ]);
+        }
+
+        // DEBUG: Save script to file
+        $debugFile = "/tmp/debug-{$domain}.sh";
+        file_put_contents($debugFile, $script);
+
         Log::info('Executing remote provisioning script', [
             'vnode' => $vnode,
             'domain' => $domain,
             'script_lines' => substr_count($script, "\n") + 1,
+            'debug_file' => $debugFile,
+            'SQCMD_from_vars' => $vars['SQCMD'] ?? 'NOT SET',
         ]);
 
         // Execute via RemoteExecutionService::executeScript()
@@ -205,10 +219,10 @@ class VhostManagementService
      * Delete a virtual host (NetServa 3.0 Database-First)
      *
      * Architecture:
-     * 1. Find FleetVHost in database
+     * 1. Find FleetVhost in database
      * 2. Load config from vconfs table
      * 3. Execute single heredoc cleanup script via SSH
-     * 4. Soft-delete FleetVHost (cascades to vconfs via foreign key)
+     * 4. Soft-delete FleetVhost (cascades to vconfs via foreign key)
      */
     public function deleteVhost(string $vnodeName, string $domain): array
     {
@@ -221,13 +235,13 @@ class VhostManagementService
             ]);
 
             // Step 1: Find VNode
-            $vnode = FleetVNode::where('name', $vnodeName)->first();
+            $vnode = FleetVnode::where('name', $vnodeName)->first();
             if (! $vnode) {
                 throw new Exception("VNode '{$vnodeName}' not found");
             }
 
-            // Step 2: Find FleetVHost
-            $fleetVhost = FleetVHost::where('domain', $domain)
+            // Step 2: Find FleetVhost
+            $fleetVhost = FleetVhost::where('domain', $domain)
                 ->where('vnode_id', $vnode->id)
                 ->first();
 
@@ -253,7 +267,7 @@ class VhostManagementService
                 }
             }
 
-            // Step 5: Soft-delete FleetVHost (cascades to vconfs via FK)
+            // Step 5: Soft-delete FleetVhost (cascades to vconfs via FK)
             $fleetVhost->delete();
 
             DB::commit();

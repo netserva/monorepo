@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Console\Command;
 use NetServa\Cli\Models\MailCredential;
 use NetServa\Cli\Models\VPass;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
@@ -179,7 +179,7 @@ class MigrateCredentialsCommand extends Command
 
         // Create VPass entry
         VPass::create([
-            'owner_type' => FleetVHost::class,
+            'owner_type' => FleetVhost::class,
             'owner_id' => $vhost->id,
             'ptype' => 'VMAIL',
             'pserv' => 'dovecot',

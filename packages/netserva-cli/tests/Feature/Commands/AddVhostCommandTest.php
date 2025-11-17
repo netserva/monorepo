@@ -2,8 +2,6 @@
 
 use NetServa\Cli\Services\NetServaContext;
 use NetServa\Cli\Services\VhostManagementService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
 
 uses()
     ->group('feature', 'commands', 'netserva-cli', 'vhost-management', 'crud', 'priority-1');

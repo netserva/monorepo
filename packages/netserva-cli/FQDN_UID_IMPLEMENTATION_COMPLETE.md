@@ -168,7 +168,7 @@ CREATE INDEX idx_fleet_vnodes_fqdn ON fleet_vnodes(fqdn);
 ```
 
 ### Updated Models
-- `FleetVNode::$fillable` includes 'fqdn'
+- `FleetVnode::$fillable` includes 'fqdn'
 - Display includes FQDN in fleet:discover output
 
 ---
@@ -247,7 +247,7 @@ php artisan fleet:discover --vnode=server1 --fqdn=server1.newdomain.com --force
 
 # Method 2: Direct database update
 php artisan tinker --execute="
-\$vnode = \NetServa\Fleet\Models\FleetVNode::where('name', 'server1')->first();
+\$vnode = \NetServa\Fleet\Models\FleetVnode::where('name', 'server1')->first();
 \$vnode->update(['fqdn' => 'server1.newdomain.com']);
 "
 ```
@@ -260,7 +260,7 @@ php artisan fleet:discover --vnode=markc --force
 
 # Check vhost UID assignments
 php artisan tinker --execute="
-\$vhost = \NetServa\Fleet\Models\FleetVHost::where('domain', 'example.com')->first();
+\$vhost = \NetServa\Fleet\Models\FleetVhost::where('domain', 'example.com')->first();
 echo 'User: ' . \$vhost->getEnvVar('UUSER') . ', UID: ' . \$vhost->getEnvVar('U_UID');
 "
 ```
@@ -292,7 +292,7 @@ echo 'User: ' . \$vhost->getEnvVar('UUSER') . ', UID: ' . \$vhost->getEnvVar('U_
    - Added FQDN detection methods (lines 483-569)
    - Integrated FQDN storage during discovery (line 94)
 
-5. `packages/netserva-fleet/src/Models/FleetVNode.php`
+5. `packages/netserva-fleet/src/Models/FleetVnode.php`
    - Added 'fqdn' to fillable array (line 27)
 
 6. `packages/netserva-fleet/src/Console/Commands/FleetDiscoverCommand.php`

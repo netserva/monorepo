@@ -15,7 +15,7 @@
                 @if($post->categories->count())
                     <div class="flex flex-wrap gap-2 mb-4">
                         @foreach($post->categories as $category)
-                            <a href="{{ route('cms.posts.category', $category->slug) }}"
+                            <a href="{{ route('cms.blog.category', $category->slug) }}"
                                class="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                                 {{ $category->name }}
                             </a>
@@ -63,7 +63,7 @@
                     <h3 class="text-sm font-semibold mb-3">Tags:</h3>
                     <div class="flex flex-wrap gap-2">
                         @foreach($post->tags as $tag)
-                            <a href="{{ route('cms.posts.tag', $tag->slug) }}"
+                            <a href="{{ route('cms.blog.tag', $tag->slug) }}"
                                class="text-sm px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                                 #{{ $tag->name }}
                             </a>
@@ -76,7 +76,7 @@
             <div class="py-6 border-t border-gray-200 dark:border-gray-700">
                 <h3 class="text-sm font-semibold mb-3">Share this post:</h3>
                 <div class="flex gap-3">
-                    <a href="https://twitter.com/intent/tweet?text={{ urlencode($post->title) }}&url={{ urlencode(route('cms.posts.show', $post->slug)) }}"
+                    <a href="https://twitter.com/intent/tweet?text={{ urlencode($post->title) }}&url={{ urlencode(route('cms.blog.show', $post->slug)) }}"
                        target="_blank"
                        rel="noopener noreferrer"
                        class="inline-flex items-center px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
@@ -85,7 +85,7 @@
                         </svg>
                         Twitter
                     </a>
-                    <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(route('cms.posts.show', $post->slug)) }}&title={{ urlencode($post->title) }}"
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(route('cms.blog.show', $post->slug)) }}&title={{ urlencode($post->title) }}"
                        target="_blank"
                        rel="noopener noreferrer"
                        class="inline-flex items-center px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
@@ -109,7 +109,7 @@
                 @foreach($relatedPosts as $relatedPost)
                     <article class="bg-background rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                         @if($relatedPost->featured_image)
-                            <a href="{{ route('cms.posts.show', $relatedPost->slug) }}" class="block">
+                            <a href="{{ route('cms.blog.show', $relatedPost->slug) }}" class="block">
                                 <img src="{{ $relatedPost->featured_image }}"
                                      alt="{{ $relatedPost->title }}"
                                      class="w-full h-48 object-cover">
@@ -117,7 +117,7 @@
                         @endif
                         <div class="p-6">
                             <h3 class="text-lg font-bold mb-2">
-                                <a href="{{ route('cms.posts.show', $relatedPost->slug) }}" class="hover:text-primary transition-colors">
+                                <a href="{{ route('cms.blog.show', $relatedPost->slug) }}" class="hover:text-primary transition-colors">
                                     {{ $relatedPost->title }}
                                 </a>
                             </h3>

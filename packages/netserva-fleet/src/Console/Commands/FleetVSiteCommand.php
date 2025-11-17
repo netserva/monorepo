@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
@@ -18,7 +18,7 @@ use function Laravel\Prompts\warning;
  *
  * Full CRUD operations for VSites matching Filament admin panel
  */
-class FleetVSiteCommand extends Command
+class FleetVsiteCommand extends Command
 {
     protected $signature = 'fleet:vsite
                             {action : Action to perform (list|show|create|edit|delete)}
@@ -42,7 +42,7 @@ class FleetVSiteCommand extends Command
 
     protected function listVSites(): int
     {
-        $vsites = FleetVSite::withCount('vnodes')->get();
+        $vsites = FleetVsite::withCount('vnodes')->get();
 
         if ($vsites->isEmpty()) {
             info('No VSites found.');
@@ -121,7 +121,7 @@ class FleetVSiteCommand extends Command
             label: 'VSite name',
             placeholder: 'e.g., aws-east-production',
             required: true,
-            validate: fn ($value) => FleetVSite::where('name', $value)->exists()
+            validate: fn ($value) => FleetVsite::where('name', $value)->exists()
                 ? 'VSite with this name already exists'
                 : null
         );
@@ -197,7 +197,7 @@ class FleetVSiteCommand extends Command
         $capabilities = $this->getCapabilitiesForTechnology($technology);
 
         try {
-            $vsite = FleetVSite::create([
+            $vsite = FleetVsite::create([
                 'name' => $name,
                 'slug' => str($name)->slug(),
                 'provider' => $provider,
@@ -320,7 +320,7 @@ class FleetVSiteCommand extends Command
         }
     }
 
-    protected function getVSite(): ?FleetVSite
+    protected function getVSite(): ?FleetVsite
     {
         $id = $this->argument('id');
         if (! $id) {
@@ -329,7 +329,7 @@ class FleetVSiteCommand extends Command
             return null;
         }
 
-        $vsite = FleetVSite::where('id', $id)->orWhere('name', $id)->first();
+        $vsite = FleetVsite::where('id', $id)->orWhere('name', $id)->first();
         if (! $vsite) {
             error("VSite with ID or name '{$id}' not found.");
 

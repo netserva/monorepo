@@ -25,7 +25,7 @@ All business logic lives in **Services** that are used by BOTH:
 // Service layer (shared)
 namespace NetServa\Cli\Services;
 class VHostPermissionsService {
-    public function fixPermissions(FleetVHost $vhost): array { }
+    public function fixPermissions(FleetVhost $vhost): array { }
 }
 
 // CLI Command (uses service)
@@ -37,9 +37,9 @@ class ChpermsCommand extends BaseNetServaCommand {
 }
 
 // Filament Action (uses same service)
-namespace NetServa\Fleet\Filament\Resources\FleetVHostResource;
+namespace NetServa\Fleet\Filament\Resources\FleetVhostResource;
 Action::make('fixPermissions')
-    ->action(fn(FleetVHost $record, VHostPermissionsService $service) =>
+    ->action(fn(FleetVhost $record, VHostPermissionsService $service) =>
         $service->fixPermissions($record)
     );
 ```
@@ -50,15 +50,15 @@ Every CLI command has a corresponding Filament admin panel operation:
 
 | CLI Command | Filament Resource | Shared Service |
 |-------------|-------------------|----------------|
-| `addvhost` | FleetVHostResource::Create | VhostManagementService |
-| `shvhost` | FleetVHostResource::List/View | VhostManagementService |
-| `chvhost` | FleetVHostResource::Edit | VhostManagementService |
-| `delvhost` | FleetVHostResource::Delete | VhostManagementService |
-| `chperms` | FleetVHostResource::Action | VHostPermissionsService |
-| `addvconf` | FleetVHostResource::Action | DatabaseVhostConfigService |
-| `shvconf` | FleetVHostResource::Action | DatabaseVhostConfigService |
-| `chvconf` | FleetVHostResource::Action | DatabaseVhostConfigService |
-| `delvconf` | FleetVHostResource::Action | DatabaseVhostConfigService |
+| `addvhost` | FleetVhostResource::Create | VhostManagementService |
+| `shvhost` | FleetVhostResource::List/View | VhostManagementService |
+| `chvhost` | FleetVhostResource::Edit | VhostManagementService |
+| `delvhost` | FleetVhostResource::Delete | VhostManagementService |
+| `chperms` | FleetVhostResource::Action | VHostPermissionsService |
+| `addvconf` | FleetVhostResource::Action | DatabaseVhostConfigService |
+| `shvconf` | FleetVhostResource::Action | DatabaseVhostConfigService |
+| `chvconf` | FleetVhostResource::Action | DatabaseVhostConfigService |
+| `delvconf` | FleetVhostResource::Action | DatabaseVhostConfigService |
 | `addvmail` | MailboxResource::Create | VmailManagementService |
 | `addpw` | SecretResource::Create | (config plugin) |
 | `shpw` | SecretResource::View | (config plugin) |
@@ -97,7 +97,7 @@ Every CLI command has a corresponding Filament admin panel operation:
 - `VHostResolverService` - Resolve vnode/vhost from arguments
 - `VhostManagementService` - VHost CRUD operations
 - `VHostPermissionsService` - Fix file/directory permissions
-- `DatabaseVhostConfigService` - Manage FleetVHost.environment_vars
+- `DatabaseVhostConfigService` - Manage FleetVhost.environment_vars
 
 ## Directory Structure
 
@@ -195,13 +195,13 @@ it('creates vhost with Laravel Prompts', function () {
         ->expectsOutput('✅ VHost created successfully')
         ->assertSuccessful();
 
-    expect(FleetVHost::where('domain', 'example.com')->exists())->toBeTrue();
+    expect(FleetVhost::where('domain', 'example.com')->exists())->toBeTrue();
 });
 
 // Unit test (Service)
 it('fixes permissions on remote server', function () {
     $service = app(VHostPermissionsService::class);
-    $vhost = FleetVHost::factory()->create();
+    $vhost = FleetVhost::factory()->create();
 
     $result = $service->fixPermissions($vhost);
 
@@ -210,7 +210,7 @@ it('fixes permissions on remote server', function () {
 
 // Filament test (Web GUI)
 it('creates vhost via Filament panel', function () {
-    livewire(FleetVHostResource\Pages\CreateFleetVHost::class)
+    livewire(FleetVhostResource\Pages\CreateFleetVhost::class)
         ->fillForm(['domain' => 'example.com', 'vnode_id' => $vnode->id])
         ->call('create')
         ->assertNotified()
@@ -233,7 +233,7 @@ class VHostPermissionsService
         protected RemoteExecutionService $remoteExecution
     ) {}
 
-    public function fixPermissions(FleetVHost $vhost): array
+    public function fixPermissions(FleetVhost $vhost): array
     {
         // Automatically injects environment_vars from database
         return $this->remoteExecution->executeScriptWithVhost(
@@ -272,10 +272,10 @@ class VhostManagementService
         protected DatabaseVhostConfigService $config
     ) {}
 
-    public function create(string $vnode, string $domain): FleetVHost
+    public function create(string $vnode, string $domain): FleetVhost
     {
         // Create database record
-        $vhost = FleetVHost::create([...]);
+        $vhost = FleetVhost::create([...]);
 
         // Initialize configuration
         $this->config->initialize($vhost);

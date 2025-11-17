@@ -4,8 +4,8 @@ namespace NetServa\Cli\Services;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Migration Execution Service - NetServa 3.0
@@ -40,11 +40,11 @@ class MigrationExecutionService
     /**
      * Migrate a validated vhost from NS 1.0 to NS 3.0 structure
      *
-     * @param  FleetVHost  $vhost  The vhost to migrate
+     * @param  FleetVhost  $vhost  The vhost to migrate
      * @param  bool  $skipBackup  Skip backup creation (dangerous!)
      * @return array Result with success status and details
      */
-    public function migrateVhost(FleetVHost $vhost, bool $skipBackup = false): array
+    public function migrateVhost(FleetVhost $vhost, bool $skipBackup = false): array
     {
         $vnode = $vhost->vnode;
 
@@ -202,7 +202,7 @@ class MigrationExecutionService
     /**
      * Run pre-flight checks before migration
      */
-    protected function runPreflightChecks(FleetVHost $vhost): array
+    protected function runPreflightChecks(FleetVhost $vhost): array
     {
         // Check migration status
         if ($vhost->migration_status === 'migrated') {
@@ -232,7 +232,7 @@ class MigrationExecutionService
     /**
      * Create pre-migration backup archive
      */
-    protected function createPreMigrationBackup(FleetVNode $vnode, array $vars): array
+    protected function createPreMigrationBackup(FleetVnode $vnode, array $vars): array
     {
         $VHOST = $vars['VHOST'];
         $VNODE = $vars['VNODE'] ?? $vnode->name;
@@ -306,7 +306,7 @@ BASH;
     /**
      * Execute structural migration
      */
-    protected function executeStructuralMigration(FleetVNode $vnode, array $vars): array
+    protected function executeStructuralMigration(FleetVnode $vnode, array $vars): array
     {
         $UPATH = $vars['UPATH'];
         $WPATH = $vars['WPATH'];
@@ -391,7 +391,7 @@ BASH;
      * 1. Primary vhost (UUSER=sysadm): /srv/{domain}/ → 1000:1000, /srv/{domain}/web/ → 1000:www-data
      * 2. Subsequent vhosts (UUSER=u1001+): /srv/{domain}/ → UID:UID, /srv/{domain}/web/ → UID:www-data
      */
-    protected function updatePermissions(FleetVNode $vnode, array $vars): array
+    protected function updatePermissions(FleetVnode $vnode, array $vars): array
     {
         $UPATH = $vars['UPATH'];
         $WPATH = $vars['WPATH'];
@@ -458,7 +458,7 @@ BASH;
     /**
      * Reload web services
      */
-    protected function reloadServices(FleetVNode $vnode): array
+    protected function reloadServices(FleetVnode $vnode): array
     {
         $script = <<<'BASH'
 #!/bin/bash
@@ -486,7 +486,7 @@ BASH;
     /**
      * Verify migration completed successfully
      */
-    protected function verifyMigration(FleetVNode $vnode, array $vars): array
+    protected function verifyMigration(FleetVnode $vnode, array $vars): array
     {
         $WPATH = $vars['WPATH'];
 
@@ -542,11 +542,11 @@ BASH;
     /**
      * Rollback a migrated vhost to pre-migration state
      *
-     * @param  FleetVHost  $vhost  The vhost to rollback
+     * @param  FleetVhost  $vhost  The vhost to rollback
      * @param  string|null  $archiveFile  Specific archive to restore from
      * @return array Result with success status and details
      */
-    public function rollbackVhost(FleetVHost $vhost, ?string $archiveFile = null): array
+    public function rollbackVhost(FleetVhost $vhost, ?string $archiveFile = null): array
     {
         $vnode = $vhost->vnode;
 
@@ -686,7 +686,7 @@ BASH;
     /**
      * List available rollback points for a vhost
      */
-    public function listRollbackPoints(FleetVHost $vhost): array
+    public function listRollbackPoints(FleetVhost $vhost): array
     {
         $vnode = $vhost->vnode;
 

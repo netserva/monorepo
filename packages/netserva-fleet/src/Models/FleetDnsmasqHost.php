@@ -40,13 +40,13 @@ class FleetDnsmasqHost extends Model
      */
     public function vnode(): BelongsTo
     {
-        return $this->belongsTo(FleetVNode::class, 'fleet_vnode_id');
+        return $this->belongsTo(FleetVnode::class, 'fleet_vnode_id');
     }
 
     /**
      * Scope: Filter by vnode
      */
-    public function scopeForVnode($query, FleetVNode $vnode)
+    public function scopeForVnode($query, FleetVnode $vnode)
     {
         return $query->where('fleet_vnode_id', $vnode->id);
     }
@@ -102,12 +102,12 @@ class FleetDnsmasqHost extends Model
     /**
      * Check if cache is stale (older than threshold)
      */
-    public static function isCacheStale(FleetVNode $vnode, int $maxAgeMinutes = 60): bool
+    public static function isCacheStale(FleetVnode $vnode, int $maxAgeMinutes = 60): bool
     {
         $lastUpdate = static::where('fleet_vnode_id', $vnode->id)
             ->max('updated_at');
 
-        if (!$lastUpdate) {
+        if (! $lastUpdate) {
             return true; // No cache exists
         }
 
@@ -128,6 +128,7 @@ class FleetDnsmasqHost extends Model
     public function getFormattedRecordAttribute(): string
     {
         $mac = $this->mac ? " [MAC: {$this->mac}]" : '';
+
         return "{$this->hostname} → {$this->ip}{$mac}";
     }
 }

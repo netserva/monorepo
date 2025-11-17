@@ -7,14 +7,20 @@
 
     {{-- SEO Meta Tags --}}
     @php
-        $pageTitle = $page->meta_title ?? $page->title ?? cms_setting('name');
+        $pageTitle = (isset($page) ? ($page->meta_title ?? $page->title) : null)
+            ?? (isset($post) ? ($post->meta_title ?? $post->title) : null)
+            ?? cms_setting('name');
         $siteTitle = str_replace(
             ['{page_title}', '{site_name}'],
             [$pageTitle, cms_setting('name')],
             cms_setting('seo_title_template', '{page_title} | {site_name}')
         );
-        $description = $page->meta_description ?? cms_setting('seo_description');
-        $keywords = $page->meta_keywords ?? cms_setting('seo_keywords');
+        $description = (isset($page) ? $page->meta_description : null)
+            ?? (isset($post) ? ($post->meta_description ?? $post->excerpt) : null)
+            ?? cms_setting('seo_description');
+        $keywords = (isset($page) ? $page->meta_keywords : null)
+            ?? (isset($post) ? $post->meta_keywords : null)
+            ?? cms_setting('seo_keywords');
     @endphp
     <title>{{ $siteTitle }}</title>
     <meta name="description" content="{{ $description }}">
@@ -61,6 +67,31 @@
             document.documentElement.classList.remove('dark')
         }
     </script>
+
+    {{-- Theme CSS Variables --}}
+    <style>
+        {!! app(\NetServa\Cms\Services\ThemeService::class)->generateCssVariables() !!}
+
+        /* Theme color utilities */
+        .bg-theme-primary { background-color: var(--color-primary); }
+        .text-theme-primary { color: var(--color-primary); }
+        .border-theme-primary { border-color: var(--color-primary); }
+        .hover\:bg-theme-primary:hover { background-color: var(--color-primary); }
+        .hover\:text-theme-primary:hover { color: var(--color-primary); }
+
+        .bg-theme-secondary { background-color: var(--color-secondary); }
+        .text-theme-secondary { color: var(--color-secondary); }
+
+        .bg-theme-accent { background-color: var(--color-accent); }
+        .text-theme-accent { color: var(--color-accent); }
+
+        /* Light variants for theme colors */
+        .bg-theme-primary-light { background-color: color-mix(in srgb, var(--color-primary) 10%, white); }
+        .bg-theme-primary-lighter { background-color: color-mix(in srgb, var(--color-primary) 20%, white); }
+        .dark .dark\:bg-theme-primary-dark { background-color: color-mix(in srgb, var(--color-primary) 30%, black); }
+        .dark .dark\:bg-theme-primary-darker { background-color: color-mix(in srgb, var(--color-primary) 50%, black); }
+        .dark .dark\:text-theme-primary-light { color: color-mix(in srgb, var(--color-primary) 40%, white); }
+    </style>
 
     {{-- Styles --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])

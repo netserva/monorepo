@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Services\Infrastructure\DnsmasqService;
 
 class ChDnsmasqCommand extends Command
@@ -24,31 +24,35 @@ class ChDnsmasqCommand extends Command
         $newMac = $this->option('mac');
         $newHostname = $this->option('new-hostname');
 
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
 
-        if (!$vnode) {
+        if (! $vnode) {
             $this->error("VNode '{$vnodeName}' not found");
+
             return 1;
         }
 
-        if (!$vnode->sshHost) {
+        if (! $vnode->sshHost) {
             $this->error("VNode '{$vnodeName}' has no SSH host configured");
+
             return 1;
         }
 
         // Validate that at least one change is specified
-        if (!$newIp && !$newMac && !$newHostname) {
+        if (! $newIp && ! $newMac && ! $newHostname) {
             $this->error('You must specify at least one change: --ip, --mac, or --new-hostname');
+
             return 1;
         }
 
         // Validate IP if provided
-        if ($newIp && !filter_var($newIp, FILTER_VALIDATE_IP)) {
+        if ($newIp && ! filter_var($newIp, FILTER_VALIDATE_IP)) {
             $this->error("Invalid IP address: {$newIp}");
+
             return 1;
         }
 
-        $this->info("Modifying DNS record...");
+        $this->info('Modifying DNS record...');
         $this->line("VNode: {$vnode->name}");
         $this->line("Current Hostname: {$hostname}");
         if ($newHostname) {
@@ -78,17 +82,20 @@ class ChDnsmasqCommand extends Command
                 $this->info('✓ DNS record modified successfully!');
                 $this->newLine();
                 $this->line($result['output']);
+
                 return 0;
             } else {
                 $this->error('✗ Failed to modify DNS record');
                 $this->line($result['error'] ?? 'Unknown error');
+
                 return 1;
             }
         } catch (\Exception $e) {
-            $this->error('✗ Failed to modify DNS record: ' . $e->getMessage());
+            $this->error('✗ Failed to modify DNS record: '.$e->getMessage());
             if ($this->output->isVerbose()) {
                 $this->line($e->getTraceAsString());
             }
+
             return 1;
         }
     }

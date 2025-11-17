@@ -322,7 +322,8 @@ class PluginRegistry
             }
         }
 
-        Log::info('Discovered '.count($this->availablePlugins).' plugins');
+        // Plugin discovery completed silently
+        // (Logging removed to prevent noise on every request)
     }
 
     /**

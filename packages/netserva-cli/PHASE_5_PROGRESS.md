@@ -32,7 +32,7 @@
 - ✅ Registered widget in `NetServaCliPlugin.php`
 
 ### 3. Validation Results Viewer
-- ✅ Created `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource/Pages/ViewValidation.php`
+- ✅ Created `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource/Pages/ViewValidation.php`
 - ✅ Built comprehensive Infolist schema with 7 sections:
   - Validation Status (domain, migration_status, vnode)
   - Validation Summary (passed/warnings/failed counts)
@@ -49,7 +49,7 @@
 - ✅ Added table action button "Validation" (visible for discovered/validated/failed)
 
 ### 4. Bulk Migration Actions
-- ✅ Created bulk action in FleetVHostResource table
+- ✅ Created bulk action in FleetVhostResource table
 - ✅ Implemented confirmation modal with vhost count
 - ✅ Added batch processing (sequential migration)
 - ✅ Built comprehensive summary notification with:
@@ -60,7 +60,7 @@
 - ✅ Deselects records after completion
 
 ### 5. Migration Logs Viewer
-- ✅ Created `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource/Pages/ViewMigrationLog.php`
+- ✅ Created `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource/Pages/ViewMigrationLog.php`
 - ✅ Built comprehensive Infolist schema with 9 sections:
   - Migration Overview (domain, status, migrated_at, duration)
   - Backup Information (archive path, rollback availability)
@@ -76,7 +76,7 @@
 - ✅ Automatic duration calculation from timestamps
 
 ### 6. Rollback UI
-- ✅ Created rollback action in FleetVHostResource table
+- ✅ Created rollback action in FleetVhostResource table
 - ✅ Implemented dynamic archive listing (calls MigrationExecutionService)
 - ✅ Built selection dropdown with formatted dates
 - ✅ Added confirmation modal with clear description
@@ -93,9 +93,9 @@
 1. ✅ `packages/netserva-cli/PHASE_5_FILAMENT_UI.md` - Architecture document (250+ lines)
 2. ✅ `packages/netserva-cli/src/Filament/Widgets/MigrationDashboardWidget.php` - Dashboard widget
 3. ✅ `packages/netserva-cli/src/Filament/NetServaCliPlugin.php` - Updated with widget registration
-4. ✅ `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource/Pages/ViewValidation.php` - Validation viewer (270+ lines)
-5. ✅ `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource/Pages/ViewMigrationLog.php` - Migration logs viewer (260+ lines)
-6. ✅ `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource.php` - Updated with:
+4. ✅ `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource/Pages/ViewValidation.php` - Validation viewer (270+ lines)
+5. ✅ `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource/Pages/ViewMigrationLog.php` - Migration logs viewer (260+ lines)
+6. ✅ `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource.php` - Updated with:
    - Validation page route
    - Migration log page route
    - Table action: "Validation" button

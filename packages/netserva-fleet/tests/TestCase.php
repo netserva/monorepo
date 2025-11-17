@@ -6,9 +6,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use NetServa\Core\Models\SshHost;
 use NetServa\Fleet\Models\FleetVenue;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 use Tests\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
@@ -53,13 +53,13 @@ abstract class TestCase extends BaseTestCase
             'location' => 'Test Location',
         ]);
 
-        $vsite = FleetVSite::factory()->create([
+        $vsite = FleetVsite::factory()->create([
             'venue_id' => $venue->id,
             'name' => 'test-vsite',
             'provider' => 'local',
         ]);
 
-        $vnode = FleetVNode::factory()->create([
+        $vnode = FleetVnode::factory()->create([
             'vsite_id' => $vsite->id,
             'name' => 'test-vnode',
             'technology' => 'proxmox',
@@ -70,7 +70,7 @@ abstract class TestCase extends BaseTestCase
             'hostname' => 'test.example.com',
         ]);
 
-        $vhost = FleetVHost::factory()->create([
+        $vhost = FleetVhost::factory()->create([
             'vnode_id' => $vnode->id,
             'ssh_host_id' => $sshHost->id,
             'domain' => 'test.example.com',

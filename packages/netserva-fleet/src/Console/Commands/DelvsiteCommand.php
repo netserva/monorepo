@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\confirm;
 
@@ -25,7 +25,7 @@ class DelvsiteCommand extends Command
         $name = $this->argument('name');
         $force = $this->option('force');
 
-        $vsite = FleetVSite::where('name', $name)->with('vnodes.vhosts')->first();
+        $vsite = FleetVsite::where('name', $name)->with('vnodes.vhosts')->first();
 
         if (! $vsite) {
             $this->error("VSite not found: {$name}");

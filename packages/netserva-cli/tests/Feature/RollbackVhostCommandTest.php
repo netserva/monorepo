@@ -1,9 +1,9 @@
 <?php
 
 use NetServa\Cli\Services\MigrationExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Rollback VHost Command Tests
@@ -13,7 +13,7 @@ use NetServa\Fleet\Models\FleetVSite;
 describe('RollbackVhostCommand', function () {
     beforeEach(function () {
         // Create test vsite first
-        $this->vsite = FleetVSite::create([
+        $this->vsite = FleetVsite::create([
             'name' => 'test-site',
             'slug' => 'test-site',
             'environment' => 'testing',
@@ -22,7 +22,7 @@ describe('RollbackVhostCommand', function () {
         ]);
 
         // Create test vnode
-        $this->vnode = FleetVNode::create([
+        $this->vnode = FleetVnode::create([
             'name' => 'test-vnode',
             'hostname' => 'test.example.com',
             'vsite_id' => $this->vsite->id,
@@ -51,7 +51,7 @@ describe('RollbackVhostCommand', function () {
     });
 
     it('lists available rollback points', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'list-rollbacks.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -95,7 +95,7 @@ describe('RollbackVhostCommand', function () {
     });
 
     it('shows message when no rollback points exist', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'no-rollbacks.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -124,7 +124,7 @@ describe('RollbackVhostCommand', function () {
     });
 
     it('fails rollback when rollback is not available', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'no-rollback-available.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -140,7 +140,7 @@ describe('RollbackVhostCommand', function () {
     });
 
     it('successfully rolls back a migrated vhost', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'rollback.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -200,7 +200,7 @@ describe('RollbackVhostCommand', function () {
     });
 
     it('displays rollback failure with error message', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'fail-rollback.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -246,7 +246,7 @@ describe('RollbackVhostCommand', function () {
     });
 
     it('shows warning about SSH directory restoration', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'warning.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -279,7 +279,7 @@ describe('RollbackVhostCommand', function () {
     });
 
     it('fails when no backup archives are found despite rollback_available flag', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'missing-archives.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',

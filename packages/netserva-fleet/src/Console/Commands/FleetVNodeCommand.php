@@ -4,8 +4,8 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Core\Models\SshHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
@@ -20,7 +20,7 @@ use function Laravel\Prompts\warning;
  *
  * Full CRUD operations for VNodes matching Filament admin panel
  */
-class FleetVNodeCommand extends Command
+class FleetVnodeCommand extends Command
 {
     protected $signature = 'fleet:vnode
                             {action : Action to perform (list|show|create|edit|delete)}
@@ -45,10 +45,10 @@ class FleetVNodeCommand extends Command
 
     protected function listVNodes(): int
     {
-        $query = FleetVNode::with(['vsite', 'sshHost'])->withCount('vhosts');
+        $query = FleetVnode::with(['vsite', 'sshHost'])->withCount('vhosts');
 
         if ($vsiteName = $this->option('vsite')) {
-            $vsite = FleetVSite::where('name', $vsiteName)->first();
+            $vsite = FleetVsite::where('name', $vsiteName)->first();
             if (! $vsite) {
                 error("VSite '{$vsiteName}' not found.");
 
@@ -144,7 +144,7 @@ class FleetVNodeCommand extends Command
         info('Creating new VNode');
 
         // Select VSite
-        $vsites = FleetVSite::pluck('name', 'id')->toArray();
+        $vsites = FleetVsite::pluck('name', 'id')->toArray();
         if (empty($vsites)) {
             error('No VSites found. Create a VSite first.');
 
@@ -157,7 +157,7 @@ class FleetVNodeCommand extends Command
             label: 'VNode name',
             placeholder: 'e.g., pve1, k8s-master-01',
             required: true,
-            validate: fn ($value) => FleetVNode::where('name', $value)->exists()
+            validate: fn ($value) => FleetVnode::where('name', $value)->exists()
                 ? 'VNode with this name already exists'
                 : null
         );
@@ -192,7 +192,7 @@ class FleetVNodeCommand extends Command
         }
 
         try {
-            $vnode = FleetVNode::create([
+            $vnode = FleetVnode::create([
                 'name' => $name,
                 'slug' => str($name)->slug(),
                 'vsite_id' => $vsiteId,
@@ -318,7 +318,7 @@ class FleetVNodeCommand extends Command
         }
     }
 
-    protected function getVNode(): ?FleetVNode
+    protected function getVNode(): ?FleetVnode
     {
         $id = $this->argument('id');
         if (! $id) {
@@ -327,7 +327,7 @@ class FleetVNodeCommand extends Command
             return null;
         }
 
-        $vnode = FleetVNode::with(['vsite', 'sshHost'])
+        $vnode = FleetVnode::with(['vsite', 'sshHost'])
             ->where('id', $id)
             ->orWhere('name', $id)
             ->first();

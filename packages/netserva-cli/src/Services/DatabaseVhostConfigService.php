@@ -6,13 +6,13 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 use NetServa\Cli\Contracts\ConfigManagerInterface;
 use NetServa\Cli\Exceptions\VHostNotFoundException;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Database VHost Configuration Service
  *
- * Manages VHost configurations using the database (FleetVHost model) as the primary source.
+ * Manages VHost configurations using the database (FleetVhost model) as the primary source.
  * Implements the same interface as VhostConfigService for drop-in replacement.
  */
 class DatabaseVhostConfigService implements ConfigManagerInterface
@@ -63,7 +63,7 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
         }
 
         if ($context['source'] === 'database' && isset($context['model'])) {
-            /** @var FleetVHost $fleetVHost */
+            /** @var FleetVhost $fleetVHost */
             $fleetVHost = $context['model'];
 
             if (! $fleetVHost->environment_vars) {
@@ -171,7 +171,7 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
             }
 
             if ($context['source'] === 'database' && isset($context['model'])) {
-                /** @var FleetVHost $fleetVHost */
+                /** @var FleetVhost $fleetVHost */
                 $fleetVHost = $context['model'];
 
                 return $fleetVHost->delete();
@@ -194,7 +194,7 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
      */
     public function list(): array
     {
-        return FleetVHost::with(['vnode.vsite'])
+        return FleetVhost::with(['vnode.vsite'])
             ->get()
             ->map(fn ($v) => "{$v->vnode->name}/{$v->domain}")
             ->toArray();
@@ -234,7 +234,7 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
      */
     public function getVhostsForServer(string $vnode): array
     {
-        return FleetVHost::whereHas('vnode', fn ($q) => $q->where('name', $vnode))
+        return FleetVhost::whereHas('vnode', fn ($q) => $q->where('name', $vnode))
             ->pluck('domain')
             ->toArray();
     }
@@ -256,19 +256,19 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
     }
 
     /**
-     * Find or create FleetVHost record
+     * Find or create FleetVhost record
      */
-    protected function findOrCreateVHost(string $vnodeName, string $vhostDomain, array $config): FleetVHost
+    protected function findOrCreateVHost(string $vnodeName, string $vhostDomain, array $config): FleetVhost
     {
         // Find the vnode
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
 
         if (! $vnode) {
             throw new Exception("VNode not found: {$vnodeName}");
         }
 
         // Find or create the vhost
-        return FleetVHost::firstOrCreate(
+        return FleetVhost::firstOrCreate(
             [
                 'domain' => $vhostDomain,
                 'vnode_id' => $vnode->id,
@@ -299,12 +299,12 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
      *
      * This replicates the NetServa 1.0 sethost() function
      *
-     * @param  FleetVHost  $vhost  The vhost to initialize
+     * @param  FleetVhost  $vhost  The vhost to initialize
      * @param  array  $overrides  Override specific variables
      * @param  array|null  $detectedOs  OS info from remote detection (OSTYP, OSREL, OSMIR)
      * @return array All generated environment variables
      */
-    public function initialize(FleetVHost $vhost, array $overrides = [], ?array $detectedOs = null): array
+    public function initialize(FleetVhost $vhost, array $overrides = [], ?array $detectedOs = null): array
     {
         $vnode = $vhost->vnode;
 
@@ -320,13 +320,13 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
     /**
      * Preview variables without saving (for dry-run)
      *
-     * @param  FleetVNode  $vnode  The vnode
+     * @param  FleetVnode  $vnode  The vnode
      * @param  string  $domain  The domain
      * @param  array  $overrides  Override specific variables
      * @param  array|null  $detectedOs  OS info from remote detection
      * @return array All generated environment variables (not saved)
      */
-    public function previewVariables(FleetVNode $vnode, string $domain, array $overrides = [], ?array $detectedOs = null): array
+    public function previewVariables(FleetVnode $vnode, string $domain, array $overrides = [], ?array $detectedOs = null): array
     {
         return $this->envGenerator->generate($vnode, $domain, $overrides, $detectedOs);
     }
@@ -334,11 +334,11 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
     /**
      * Initialize with minimal variables (for testing/simple configs)
      *
-     * @param  FleetVHost  $vhost  The vhost to initialize
+     * @param  FleetVhost  $vhost  The vhost to initialize
      * @param  array|null  $detectedOs  OS info from remote detection
      * @return array Minimal set of environment variables
      */
-    public function initializeMinimal(FleetVHost $vhost, ?array $detectedOs = null): array
+    public function initializeMinimal(FleetVhost $vhost, ?array $detectedOs = null): array
     {
         $vnode = $vhost->vnode;
 
@@ -359,7 +359,7 @@ class DatabaseVhostConfigService implements ConfigManagerInterface
     public function createFromTemplate(string $vnode, string $vhost, array $overrides = []): array
     {
         // Find vnode
-        $vnodeModel = FleetVNode::where('name', $vnode)->firstOrFail();
+        $vnodeModel = FleetVnode::where('name', $vnode)->firstOrFail();
 
         // Use generator
         return $this->envGenerator->generate($vnodeModel, $vhost, $overrides);

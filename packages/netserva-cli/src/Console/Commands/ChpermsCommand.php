@@ -3,7 +3,7 @@
 namespace NetServa\Cli\Console\Commands;
 
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 /**
  * Change Permissions Command
@@ -13,7 +13,7 @@ use NetServa\Fleet\Models\FleetVHost;
  * Example: chperms markc markc.goldcoast.org
  * System-wide: chperms <vnode> --all
  *
- * DATABASE-FIRST: Uses FleetVHost model (environment_vars JSON column)
+ * DATABASE-FIRST: Uses FleetVhost model (environment_vars JSON column)
  * SSH EXECUTION: Uses heredoc-based executeScript() for safe remote execution
  */
 class ChpermsCommand extends BaseNetServaCommand
@@ -62,7 +62,7 @@ class ChpermsCommand extends BaseNetServaCommand
     {
         try {
             // Find VHost in database
-            $vhost = FleetVHost::where('domain', $VHOST)
+            $vhost = FleetVhost::where('domain', $VHOST)
                 ->whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
                 ->first();
 
@@ -148,7 +148,7 @@ class ChpermsCommand extends BaseNetServaCommand
     protected function fixAllVhostPermissions(string $VNODE): int
     {
         // Get all vhosts for this vnode from database
-        $vhosts = FleetVHost::whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
+        $vhosts = FleetVhost::whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
             ->pluck('domain')
             ->toArray();
 
@@ -228,18 +228,25 @@ find "$upath" -type d -exec chmod 00750 {} +
 find "$upath" -type f -exec chmod 00640 {} +
 echo "✓ Base permissions applied to subdirectories (750/640)"
 
-# Step 2: CRITICAL - Fix top-level /srv/vhost LAST (required for nginx/ACME access)
-# Must be user:www-data with setgid bit (02750) for nginx to traverse path
-# Done AFTER recursive chown to preserve correct top-level ownership
-chown "$uuser:$wugid" "$upath"
-chmod 02750 "$upath"
-echo "✓ Top-level $upath: 02750 $uuser:$wugid (CRITICAL for nginx/ACME)"
+# Step 2: CRITICAL - Fix top-level /srv/vhost ownership for SSH chroot
+# For SSH chroot to work, top-level MUST be root:root for all vhosts EXCEPT sysadm (UID 1000)
+if [ "$p_uid" -eq 1000 ]; then
+    # sysadm vhost (primary) - user:user ownership (1000:1000)
+    chown "$p_uid:$p_gid" "$upath"
+    chmod 0755 "$upath"
+    echo "✓ Top-level $upath: 0755 $p_uid:$p_gid (sysadm primary vhost)"
+else
+    # Regular vhost - MUST be root:root for SSH chroot
+    chown root:root "$upath"
+    chmod 0755 "$upath"
+    echo "✓ Top-level $upath: 0755 root:root (SSH chroot requirement)"
+fi
 
 # Step 3: Directory structure - create if missing (NS 3.0 paths)
 mkdir -p "$upath/msg"
 mkdir -p "$upath/web"/{log,run,tmp}
 chmod 750 "$upath/msg"
-chmod 755 "$upath/web"
+chmod 02750 "$upath/web"  # CRITICAL: setgid on web/ so new files inherit www-data group
 echo "✓ msg/ and web/ directories created"
 
 # Step 4: SSH directory (critical for security)
@@ -285,10 +292,10 @@ if [ -d "$mpath" ]; then
     echo "✓ msg/: 750 (mail only)"
 fi
 
-# Fix web directory ownership to www-data group (CRITICAL for nginx access)
+# Fix web directory ownership to www-data group (CRITICAL for nginx/PHP-FPM access)
 chown "$p_uid:$wugid" -R "$upath/web"
-chmod 00755 "$upath/web"             # web/ needs world execute for path traversal
-echo "✓ web/: 755 (world-executable for nginx)"
+chmod 02750 "$upath/web"             # setgid so new files inherit www-data group
+echo "✓ web/: 02750 with setgid (files inherit www-data group)"
 
 # Set proper permissions for web subdirectories
 chmod 660 "$upath/web/log/access.log" 2>/dev/null || true
@@ -335,9 +342,9 @@ BASH;
     }
 
     /**
-     * Build script arguments from FleetVHost environment variables
+     * Build script arguments from FleetVhost environment variables
      */
-    protected function buildScriptArguments(FleetVHost $vhost): array
+    protected function buildScriptArguments(FleetVhost $vhost): array
     {
         return [
             $vhost->getEnvVar('UPATH') ?? '',      // /srv/domain.com

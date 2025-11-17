@@ -6,9 +6,9 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use NetServa\Core\Models\VHost;
 use NetServa\Dns\Models\DnsZone;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 use NetServa\Mail\Models\MailDomain;
 use NetServa\Web\Models\SslCertificate;
 
@@ -61,29 +61,29 @@ class InfrastructureOverview extends BaseWidget
 
     protected function getVSitesCount(): int
     {
-        if (! class_exists(FleetVSite::class)) {
+        if (! class_exists(FleetVsite::class)) {
             return 0;
         }
 
-        return FleetVSite::count();
+        return FleetVsite::count();
     }
 
     protected function getVNodesCount(): int
     {
-        if (! class_exists(FleetVNode::class)) {
+        if (! class_exists(FleetVnode::class)) {
             return 0;
         }
 
-        return FleetVNode::count();
+        return FleetVnode::count();
     }
 
     protected function getVHostsCount(): int
     {
-        if (! class_exists(FleetVHost::class)) {
+        if (! class_exists(FleetVhost::class)) {
             return VHost::count();
         }
 
-        return FleetVHost::count();
+        return FleetVhost::count();
     }
 
     protected function getDnsZonesCount(): int
@@ -146,17 +146,17 @@ class InfrastructureOverview extends BaseWidget
     protected function getVSitesTrend(): array
     {
         // Simple trend - last 7 days count
-        return $this->generateTrend(FleetVSite::class);
+        return $this->generateTrend(FleetVsite::class);
     }
 
     protected function getVNodesTrend(): array
     {
-        return $this->generateTrend(FleetVNode::class);
+        return $this->generateTrend(FleetVnode::class);
     }
 
     protected function getVHostsTrend(): array
     {
-        return $this->generateTrend(FleetVHost::class);
+        return $this->generateTrend(FleetVhost::class);
     }
 
     protected function generateTrend(string $modelClass): array

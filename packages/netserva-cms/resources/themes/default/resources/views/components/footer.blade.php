@@ -19,7 +19,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('cms.posts.index') }}" class="text-muted hover:text-primary transition-colors">
+                        <a href="{{ route('cms.blog.index') }}" class="text-muted hover:text-primary transition-colors">
                             Blog
                         </a>
                     </li>

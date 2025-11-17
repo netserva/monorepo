@@ -2,11 +2,11 @@
 
 namespace NetServa\Fleet\Services\Infrastructure;
 
-use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetDnsmasqHost;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Fleet\Models\FleetDnsmasqHost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Dnsmasq Infrastructure Service
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  * Architecture:
  * - Sync FROM remote: Parse dnsmasq/UCI config → return structured data
  * - Sync TO remote: Generate config from data → deploy via SSH
- * - VNode-based: Operates on FleetVNode (typically 'gw' router)
+ * - VNode-based: Operates on FleetVnode (typically 'gw' router)
  */
 class DnsmasqService
 {
@@ -28,14 +28,14 @@ class DnsmasqService
     /**
      * Sync FROM remote: Read current dnsmasq configuration
      *
-     * @param FleetVNode $vnode The router/gateway vnode running dnsmasq
+     * @param  FleetVnode  $vnode  The router/gateway vnode running dnsmasq
      * @return array ['uci_hosts' => array, 'config_hosts' => array, 'stats' => array]
      */
-    public function syncFromRemote(FleetVNode $vnode): array
+    public function syncFromRemote(FleetVnode $vnode): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         // Read UCI DHCP configuration
@@ -68,15 +68,15 @@ class DnsmasqService
     /**
      * Sync TO remote: Deploy dnsmasq configuration
      *
-     * @param FleetVNode $vnode The router/gateway vnode
-     * @param array $hosts Array of host records to deploy
+     * @param  FleetVnode  $vnode  The router/gateway vnode
+     * @param  array  $hosts  Array of host records to deploy
      * @return array Deployment result
      */
-    public function syncToRemote(FleetVNode $vnode, array $hosts): array
+    public function syncToRemote(FleetVnode $vnode, array $hosts): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         // Generate config from hosts data
@@ -136,8 +136,8 @@ BASH;
 
         $result = $this->remoteExecution->executeScript($sshHost, $script);
 
-        if (!$result['success']) {
-            throw new \RuntimeException("Failed to read UCI DHCP config: " . $result['error']);
+        if (! $result['success']) {
+            throw new \RuntimeException('Failed to read UCI DHCP config: '.$result['error']);
         }
 
         return $this->parseHostOutput($result['output']);
@@ -185,8 +185,8 @@ BASH;
 
         $result = $this->remoteExecution->executeScript($sshHost, $script);
 
-        if (!$result['success']) {
-            throw new \RuntimeException("Failed to read dnsmasq config files: " . $result['error']);
+        if (! $result['success']) {
+            throw new \RuntimeException('Failed to read dnsmasq config files: '.$result['error']);
         }
 
         return $this->parseConfigOutput($result['output']);
@@ -225,8 +225,8 @@ BASH;
 
         $result = $this->remoteExecution->executeScript($sshHost, $script);
 
-        if (!$result['success']) {
-            throw new \RuntimeException("Failed to read UCI address list: " . $result['error']);
+        if (! $result['success']) {
+            throw new \RuntimeException('Failed to read UCI address list: '.$result['error']);
         }
 
         return $this->parseConfigOutput($result['output']);
@@ -241,11 +241,15 @@ BASH;
         $lines = explode("\n", trim($output));
 
         foreach ($lines as $line) {
-            if (empty($line)) continue;
+            if (empty($line)) {
+                continue;
+            }
 
             [$hostname, $ip, $mac, $dnsEnabled] = array_pad(explode('|', $line), 4, '');
 
-            if (empty($hostname) || empty($ip)) continue;
+            if (empty($hostname) || empty($ip)) {
+                continue;
+            }
 
             // Determine record type
             $type = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? 'AAAA' : 'A';
@@ -271,11 +275,15 @@ BASH;
         $lines = explode("\n", trim($output));
 
         foreach ($lines as $line) {
-            if (empty($line)) continue;
+            if (empty($line)) {
+                continue;
+            }
 
             [$hostname, $ip, $type] = array_pad(explode('|', $line), 3, '');
 
-            if (empty($hostname) || empty($ip)) continue;
+            if (empty($hostname) || empty($ip)) {
+                continue;
+            }
 
             $hosts[] = [
                 'name' => $hostname,
@@ -300,13 +308,13 @@ BASH;
             $parts = explode('.', $host['name']);
 
             if (count($parts) >= 2) {
-                $zone = $parts[count($parts) - 2] . '.' . $parts[count($parts) - 1] . '.';
+                $zone = $parts[count($parts) - 2].'.'.$parts[count($parts) - 1].'.';
             } else {
                 // Unqualified hostname - use special "local" zone
                 $zone = 'local.';
             }
 
-            if (!isset($zones[$zone])) {
+            if (! isset($zones[$zone])) {
                 $zones[$zone] = [];
             }
 
@@ -322,7 +330,7 @@ BASH;
     private function generateDnsmasqConfig(array $hosts): string
     {
         $config = "# NetServa-managed dnsmasq configuration\n";
-        $config .= "# Generated: " . now()->toDateTimeString() . "\n";
+        $config .= '# Generated: '.now()->toDateTimeString()."\n";
         $config .= "# DO NOT EDIT - managed by NetServa Fleet\n\n";
 
         // Group by zone for better organization
@@ -381,11 +389,11 @@ BASH;
     /**
      * Get current dnsmasq status from remote vnode
      */
-    public function getStatus(FleetVNode $vnode): array
+    public function getStatus(FleetVnode $vnode): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         $script = <<<'BASH'
@@ -417,7 +425,7 @@ BASH;
 
         $result = $this->remoteExecution->executeScript($sshHost, $script);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return [
                 'success' => false,
                 'error' => $result['error'],
@@ -443,11 +451,11 @@ BASH;
     /**
      * Add UCI DHCP static host entry
      */
-    public function addUciHost(FleetVNode $vnode, string $hostname, string $ip, ?string $mac = null, bool $dns = true): array
+    public function addUciHost(FleetVnode $vnode, string $hostname, string $ip, ?string $mac = null, bool $dns = true): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         $dnsFlag = $dns ? '1' : '0';
@@ -482,11 +490,11 @@ BASH;
     /**
      * Add config file host entry
      */
-    public function addConfigHost(FleetVNode $vnode, string $hostname, string $ip): array
+    public function addConfigHost(FleetVnode $vnode, string $hostname, string $ip): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         $script = <<<BASH
@@ -513,11 +521,11 @@ BASH;
     /**
      * Update UCI DHCP static host entry
      */
-    public function updateUciHost(FleetVNode $vnode, string $hostname, array $changes): array
+    public function updateUciHost(FleetVnode $vnode, string $hostname, array $changes): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         // Build uci set commands
@@ -531,7 +539,7 @@ BASH;
 
         $findResult = $this->remoteExecution->executeScript($sshHost, $findScript);
 
-        if (!$findResult['success'] || empty(trim($findResult['output']))) {
+        if (! $findResult['success'] || empty(trim($findResult['output']))) {
             return [
                 'success' => false,
                 'output' => '',
@@ -577,17 +585,17 @@ BASH;
     /**
      * Update config file host entry
      */
-    public function updateConfigHost(FleetVNode $vnode, string $hostname, array $changes): array
+    public function updateConfigHost(FleetVnode $vnode, string $hostname, array $changes): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         $newHostname = $changes['hostname'] ?? $hostname;
         $newIp = $changes['ip'] ?? null;
 
-        if (!$newIp) {
+        if (! $newIp) {
             return [
                 'success' => false,
                 'output' => '',
@@ -636,11 +644,11 @@ BASH;
     /**
      * Delete UCI DHCP static host entry
      */
-    public function deleteUciHost(FleetVNode $vnode, string $hostname): array
+    public function deleteUciHost(FleetVnode $vnode, string $hostname): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         $script = <<<BASH
@@ -676,11 +684,11 @@ BASH;
     /**
      * Delete config file host entry
      */
-    public function deleteConfigHost(FleetVNode $vnode, string $hostname): array
+    public function deleteConfigHost(FleetVnode $vnode, string $hostname): array
     {
         $sshHost = $vnode->sshHost->host ?? null;
-        if (!$sshHost) {
-            throw new \InvalidArgumentException("VNode must have SSH host configured");
+        if (! $sshHost) {
+            throw new \InvalidArgumentException('VNode must have SSH host configured');
         }
 
         // Escape dots in hostname for sed regex
@@ -719,10 +727,9 @@ BASH;
     /**
      * Sync from remote and update local cache
      *
-     * @param FleetVNode $vnode
      * @return array Sync result with updated cache
      */
-    public function syncAndCache(FleetVNode $vnode): array
+    public function syncAndCache(FleetVnode $vnode): array
     {
         // Fetch from remote
         $result = $this->syncFromRemote($vnode);
@@ -735,11 +742,8 @@ BASH;
 
     /**
      * Get hosts from local cache
-     *
-     * @param FleetVNode $vnode
-     * @return Collection
      */
-    public function getCachedHosts(FleetVNode $vnode): Collection
+    public function getCachedHosts(FleetVnode $vnode): Collection
     {
         return FleetDnsmasqHost::forVnode($vnode)
             ->orderBy('type', 'asc')  // A records first, then AAAA
@@ -750,11 +754,9 @@ BASH;
     /**
      * Update local cache with host data
      *
-     * @param FleetVNode $vnode
-     * @param array $hosts Array of host records from remote
-     * @return void
+     * @param  array  $hosts  Array of host records from remote
      */
-    public function updateCache(FleetVNode $vnode, array $hosts): void
+    public function updateCache(FleetVnode $vnode, array $hosts): void
     {
         DB::transaction(function () use ($vnode, $hosts) {
             // Delete existing cache for this vnode
@@ -777,14 +779,8 @@ BASH;
 
     /**
      * Add single host to cache
-     *
-     * @param FleetVNode $vnode
-     * @param string $hostname
-     * @param string $ip
-     * @param string|null $mac
-     * @return FleetDnsmasqHost
      */
-    public function addToCache(FleetVNode $vnode, string $hostname, string $ip, ?string $mac = null): FleetDnsmasqHost
+    public function addToCache(FleetVnode $vnode, string $hostname, string $ip, ?string $mac = null): FleetDnsmasqHost
     {
         $type = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? 'AAAA' : 'A';
 
@@ -805,13 +801,8 @@ BASH;
 
     /**
      * Update host in cache
-     *
-     * @param FleetVNode $vnode
-     * @param string $hostname
-     * @param array $changes
-     * @return void
      */
-    public function updateInCache(FleetVNode $vnode, string $hostname, array $changes): void
+    public function updateInCache(FleetVnode $vnode, string $hostname, array $changes): void
     {
         $query = FleetDnsmasqHost::forVnode($vnode)->where('hostname', $hostname);
 
@@ -837,12 +828,8 @@ BASH;
 
     /**
      * Delete host from cache
-     *
-     * @param FleetVNode $vnode
-     * @param string $hostname
-     * @return void
      */
-    public function deleteFromCache(FleetVNode $vnode, string $hostname): void
+    public function deleteFromCache(FleetVnode $vnode, string $hostname): void
     {
         FleetDnsmasqHost::forVnode($vnode)
             ->where('hostname', $hostname)
@@ -851,23 +838,16 @@ BASH;
 
     /**
      * Check if cache is stale
-     *
-     * @param FleetVNode $vnode
-     * @param int $maxAgeMinutes
-     * @return bool
      */
-    public function isCacheStale(FleetVNode $vnode, int $maxAgeMinutes = 60): bool
+    public function isCacheStale(FleetVnode $vnode, int $maxAgeMinutes = 60): bool
     {
         return FleetDnsmasqHost::isCacheStale($vnode, $maxAgeMinutes);
     }
 
     /**
      * Get cache statistics
-     *
-     * @param FleetVNode $vnode
-     * @return array
      */
-    public function getCacheStats(FleetVNode $vnode): array
+    public function getCacheStats(FleetVnode $vnode): array
     {
         $lastUpdate = FleetDnsmasqHost::forVnode($vnode)->max('updated_at');
 

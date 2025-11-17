@@ -5,8 +5,8 @@ namespace NetServa\Cli\Services;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use NetServa\Cli\Models\MailCredential;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Virtual Mail Management Service - NetServa 3.0
@@ -49,7 +49,7 @@ class VmailManagementService
             $localpart = substr($email, 0, strpos($email, '@'));
 
             // Get vnode from database
-            $vnode = FleetVNode::where('name', $vnodeName)->first();
+            $vnode = FleetVnode::where('name', $vnodeName)->first();
             if (! $vnode) {
                 return [
                     'success' => false,
@@ -58,7 +58,7 @@ class VmailManagementService
             }
 
             // Check if vhost exists in fleet_vhosts
-            $vhost = FleetVHost::where('vnode_id', $vnode->id)
+            $vhost = FleetVhost::where('vnode_id', $vnode->id)
                 ->where('fqdn', $domain)
                 ->first();
 

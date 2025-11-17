@@ -1,11 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Log;
 use NetServa\Cli\Services\LazyConfigurationCache;
 use NetServa\Cli\Services\NetServaConfigurationService;
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
 
 beforeEach(function () {
     // Create real service instance with mocked dependencies

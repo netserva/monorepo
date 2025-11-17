@@ -4,7 +4,7 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Fleet\Models\FleetVenue;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Add VSite Command (NetServa 3.0 CRUD: CREATE)
@@ -39,7 +39,7 @@ class AddvsiteCommand extends Command
         }
 
         // Check if vsite already exists
-        $existing = FleetVSite::where('name', $name)->first();
+        $existing = FleetVsite::where('name', $name)->first();
         if ($existing) {
             $this->error("VSite '{$name}' already exists.");
 
@@ -56,10 +56,10 @@ class AddvsiteCommand extends Command
         $this->info("Creating vsite: {$name} on venue {$venueName}");
 
         // Get default capabilities for technology
-        $capabilities = FleetVSite::getDefaultCapabilities($technology);
+        $capabilities = FleetVsite::getDefaultCapabilities($technology);
 
         // Create vsite
-        $vsite = FleetVSite::create([
+        $vsite = FleetVsite::create([
             'venue_id' => $venue->id,
             'name' => $name,
             'provider' => $venue->provider,  // Inherit from venue

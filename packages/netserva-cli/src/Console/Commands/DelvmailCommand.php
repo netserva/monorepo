@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\confirm;
 
@@ -47,7 +47,7 @@ class DelvmailCommand extends Command
         $keepMaildir = $this->option('keep-maildir');
 
         // NetServa 3.0: Get vnode from database
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
 
         if (! $vnode) {
             $this->error("VNode not found: {$vnodeName}");

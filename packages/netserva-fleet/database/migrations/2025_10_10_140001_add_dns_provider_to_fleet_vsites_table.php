@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * Add DNS provider association to FleetVSite.
+     * Add DNS provider association to FleetVsite.
      * Enables site-level DNS provider override (inherits from venue if null).
      */
     public function up(): void

@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Services\Infrastructure\DnsmasqService;
 
 class DelDnsmasqCommand extends Command
@@ -19,27 +19,30 @@ class DelDnsmasqCommand extends Command
         $vnodeName = $this->argument('vnode');
         $hostname = $this->argument('hostname');
 
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
 
-        if (!$vnode) {
+        if (! $vnode) {
             $this->error("VNode '{$vnodeName}' not found");
+
             return 1;
         }
 
-        if (!$vnode->sshHost) {
+        if (! $vnode->sshHost) {
             $this->error("VNode '{$vnodeName}' has no SSH host configured");
+
             return 1;
         }
 
-        $this->warn("Deleting DNS record...");
+        $this->warn('Deleting DNS record...');
         $this->line("VNode: {$vnode->name}");
         $this->line("Hostname: {$hostname}");
         $this->newLine();
 
         // Confirm deletion unless --force
-        if (!$this->option('force')) {
-            if (!$this->confirm("Are you sure you want to delete DNS record for '{$hostname}'?")) {
+        if (! $this->option('force')) {
+            if (! $this->confirm("Are you sure you want to delete DNS record for '{$hostname}'?")) {
                 $this->info('Deletion cancelled');
+
                 return 0;
             }
         }
@@ -54,17 +57,20 @@ class DelDnsmasqCommand extends Command
                 $this->info('✓ DNS record deleted successfully!');
                 $this->newLine();
                 $this->line($result['output']);
+
                 return 0;
             } else {
                 $this->error('✗ Failed to delete DNS record');
                 $this->line($result['error'] ?? 'Unknown error');
+
                 return 1;
             }
         } catch (\Exception $e) {
-            $this->error('✗ Failed to delete DNS record: ' . $e->getMessage());
+            $this->error('✗ Failed to delete DNS record: '.$e->getMessage());
             if ($this->output->isVerbose()) {
                 $this->line($e->getTraceAsString());
             }
+
             return 1;
         }
     }

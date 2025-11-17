@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Change VSite Command (NetServa 3.0 CRUD: UPDATE)
@@ -23,11 +23,11 @@ class ChvsiteCommand extends Command
     {
         $name = $this->argument('name');
 
-        $vsite = FleetVSite::where('name', $name)->first();
+        $vsite = FleetVsite::where('name', $name)->first();
 
         if (! $vsite) {
             $this->error("VSite not found: {$name}");
-            $this->info('Available vsites: '.FleetVSite::pluck('name')->implode(', '));
+            $this->info('Available vsites: '.FleetVsite::pluck('name')->implode(', '));
 
             return Command::FAILURE;
         }
@@ -38,7 +38,7 @@ class ChvsiteCommand extends Command
         if ($technology = $this->option('technology')) {
             $oldTech = $vsite->technology;
             $vsite->technology = $technology;
-            $vsite->capabilities = FleetVSite::getDefaultCapabilities($technology);
+            $vsite->capabilities = FleetVsite::getDefaultCapabilities($technology);
             $changes[] = "technology: {$oldTech} → {$technology}";
             $updated = true;
         }

@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * Add DNS provider association to FleetVNode.
+     * Add DNS provider association to FleetVnode.
      * Enables per-server DNS provider configuration for FCrDNS and zone management.
      */
     public function up(): void

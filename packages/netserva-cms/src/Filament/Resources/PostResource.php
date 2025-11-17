@@ -53,6 +53,15 @@ class PostResource extends Resource
                 // 1. Basic Information
                 Section::make('Basic Information')
                     ->schema([
+                        Forms\Components\Select::make('author_id')
+                            ->label('Author')
+                            ->relationship('author', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->default(fn () => auth()->id())
+                            ->required()
+                            ->helperText('Post author'),
+
                         Forms\Components\TextInput::make('title')
                             ->required()
                             ->maxLength(255)
@@ -214,6 +223,12 @@ class PostResource extends Resource
                     ->sortable()
                     ->description(fn (Post $record): string => $record->slug)
                     ->limit(50),
+
+                Tables\Columns\TextColumn::make('author.name')
+                    ->label('Author')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('categories.name')
                     ->badge()

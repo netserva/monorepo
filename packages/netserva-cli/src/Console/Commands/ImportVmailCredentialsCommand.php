@@ -6,8 +6,8 @@ use Exception;
 use Illuminate\Console\Command;
 use NetServa\Cli\Models\VPass;
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
@@ -48,9 +48,9 @@ class ImportVmailCredentialsCommand extends Command
         try {
             // Get vnodes to process
             if ($this->option('all')) {
-                $vnodes = FleetVNode::all();
+                $vnodes = FleetVnode::all();
             } elseif ($vnodeName = $this->argument('vnode')) {
-                $vnode = FleetVNode::where('name', $vnodeName)->first();
+                $vnode = FleetVnode::where('name', $vnodeName)->first();
                 if (! $vnode) {
                     error("VNode not found: {$vnodeName}");
 
@@ -107,7 +107,7 @@ class ImportVmailCredentialsCommand extends Command
     /**
      * Process single vnode
      */
-    private function processVNode(FleetVNode $vnode): array
+    private function processVNode(FleetVnode $vnode): array
     {
         $imported = 0;
         $skipped = 0;
@@ -171,7 +171,7 @@ class ImportVmailCredentialsCommand extends Command
     /**
      * Get vmails from remote vnode database
      */
-    private function getRemoteVmails(FleetVNode $vnode): \Illuminate\Support\Collection
+    private function getRemoteVmails(FleetVnode $vnode): \Illuminate\Support\Collection
     {
         $dbType = $vnode->database_type ?? 'sqlite';
 
@@ -212,13 +212,13 @@ class ImportVmailCredentialsCommand extends Command
     /**
      * Import single vmail into VPass
      */
-    private function importVmail(FleetVNode $vnode, array $vmail): bool
+    private function importVmail(FleetVnode $vnode, array $vmail): bool
     {
         $email = $vmail['user'];
         $domain = substr(strstr($email, '@'), 1);
 
         // Find vhost
-        $vhost = FleetVHost::where(function ($q) use ($domain) {
+        $vhost = FleetVhost::where(function ($q) use ($domain) {
             $q->where('domain', $domain)
                 ->orWhere('fqdn', $domain);
         })
@@ -227,7 +227,7 @@ class ImportVmailCredentialsCommand extends Command
 
         if (! $vhost) {
             // Try to find any vhost for this vnode as fallback
-            $vhost = FleetVHost::where('vnode_id', $vnode->id)->first();
+            $vhost = FleetVhost::where('vnode_id', $vnode->id)->first();
 
             if (! $vhost) {
                 throw new Exception("No vhost found for domain {$domain} on vnode {$vnode->name}");
@@ -246,7 +246,7 @@ class ImportVmailCredentialsCommand extends Command
 
         // Create VPass entry (without password - hashed on server)
         VPass::create([
-            'owner_type' => FleetVHost::class,
+            'owner_type' => FleetVhost::class,
             'owner_id' => $vhost->id,
             'ptype' => 'VMAIL',
             'pserv' => 'dovecot',

@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * Add DNS provider association to FleetVHost.
+     * Add DNS provider association to FleetVhost.
      * Enables per-vhost DNS provider override (inherits from vnode if null).
      */
     public function up(): void

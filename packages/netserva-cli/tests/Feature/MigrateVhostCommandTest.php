@@ -1,9 +1,9 @@
 <?php
 
 use NetServa\Cli\Services\MigrationExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Migrate VHost Command Tests
@@ -13,7 +13,7 @@ use NetServa\Fleet\Models\FleetVSite;
 describe('MigrateVhostCommand', function () {
     beforeEach(function () {
         // Create test vsite first
-        $this->vsite = FleetVSite::create([
+        $this->vsite = FleetVsite::create([
             'name' => 'test-site',
             'slug' => 'test-site',
             'environment' => 'testing',
@@ -22,7 +22,7 @@ describe('MigrateVhostCommand', function () {
         ]);
 
         // Create test vnode
-        $this->vnode = FleetVNode::create([
+        $this->vnode = FleetVnode::create([
             'name' => 'test-vnode',
             'hostname' => 'test.example.com',
             'vsite_id' => $this->vsite->id,
@@ -52,7 +52,7 @@ describe('MigrateVhostCommand', function () {
     });
 
     it('shows dry-run migration plan', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'dryrun.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -76,7 +76,7 @@ describe('MigrateVhostCommand', function () {
     });
 
     it('shows current migration status', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'status.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -91,7 +91,7 @@ describe('MigrateVhostCommand', function () {
     });
 
     it('migrates validated vhost successfully with mocked service', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'migrate.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -144,7 +144,7 @@ describe('MigrateVhostCommand', function () {
     });
 
     it('displays migration failure with error details', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'fail.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -183,7 +183,7 @@ describe('MigrateVhostCommand', function () {
 
     it('migrates all validated vhosts with --all-validated flag', function () {
         // Create multiple validated vhosts
-        $vhost1 = FleetVHost::create([
+        $vhost1 = FleetVhost::create([
             'domain' => 'batch1.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -191,7 +191,7 @@ describe('MigrateVhostCommand', function () {
             'migration_status' => 'validated',
         ]);
 
-        $vhost2 = FleetVHost::create([
+        $vhost2 = FleetVhost::create([
             'domain' => 'batch2.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -200,7 +200,7 @@ describe('MigrateVhostCommand', function () {
         ]);
 
         // Create a non-validated vhost (should be skipped)
-        FleetVHost::create([
+        FleetVhost::create([
             'domain' => 'not-validated.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -242,7 +242,7 @@ describe('MigrateVhostCommand', function () {
     });
 
     it('handles mixed success/failure in batch migration', function () {
-        $vhost1 = FleetVHost::create([
+        $vhost1 = FleetVhost::create([
             'domain' => 'success.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -250,7 +250,7 @@ describe('MigrateVhostCommand', function () {
             'migration_status' => 'validated',
         ]);
 
-        $vhost2 = FleetVHost::create([
+        $vhost2 = FleetVhost::create([
             'domain' => 'fail.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',
@@ -293,7 +293,7 @@ describe('MigrateVhostCommand', function () {
     });
 
     it('warns when using --no-backup flag', function () {
-        $vhost = FleetVHost::create([
+        $vhost = FleetVhost::create([
             'domain' => 'no-backup.test',
             'vnode_id' => $this->vnode->id,
             'provider' => 'local',

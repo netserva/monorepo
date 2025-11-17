@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Services\Infrastructure\DnsmasqService;
 
 class AddDnsmasqCommand extends Command
@@ -24,28 +24,31 @@ class AddDnsmasqCommand extends Command
         $mac = $this->option('mac');
         $dns = $this->option('dns');
 
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
 
-        if (!$vnode) {
+        if (! $vnode) {
             $this->error("VNode '{$vnodeName}' not found");
+
             return 1;
         }
 
-        if (!$vnode->sshHost) {
+        if (! $vnode->sshHost) {
             $this->error("VNode '{$vnodeName}' has no SSH host configured");
+
             return 1;
         }
 
         // Validate IP address
-        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        if (! filter_var($ip, FILTER_VALIDATE_IP)) {
             $this->error("Invalid IP address: {$ip}");
+
             return 1;
         }
 
         // Determine record type
         $recordType = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? 'AAAA' : 'A';
 
-        $this->info("Adding DNS record...");
+        $this->info('Adding DNS record...');
         $this->line("VNode: {$vnode->name}");
         $this->line("Hostname: {$hostname}");
         $this->line("IP: {$ip}");
@@ -62,17 +65,20 @@ class AddDnsmasqCommand extends Command
                 $this->info('✓ DNS record added successfully!');
                 $this->newLine();
                 $this->line($result['output']);
+
                 return 0;
             } else {
                 $this->error('✗ Failed to add DNS record');
                 $this->line($result['error'] ?? 'Unknown error');
+
                 return 1;
             }
         } catch (\Exception $e) {
-            $this->error('✗ Failed to add DNS record: ' . $e->getMessage());
+            $this->error('✗ Failed to add DNS record: '.$e->getMessage());
             if ($this->output->isVerbose()) {
                 $this->line($e->getTraceAsString());
             }
+
             return 1;
         }
     }

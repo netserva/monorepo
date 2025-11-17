@@ -5,9 +5,9 @@ namespace NetServa\Fleet\Console\Commands;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use NetServa\Core\Models\SshHost;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Change/Update Fleet Command (NetServa 3.0 CRUD: UPDATE)
@@ -196,7 +196,7 @@ class ChfleetCommand extends Command
     /**
      * Import a specific VNode with existing VSite and its VHosts
      */
-    protected function importVNodeWithVSite(string $vnodeName, string $vnodeDir, FleetVSite $vsite, array &$stats): void
+    protected function importVNodeWithVSite(string $vnodeName, string $vnodeDir, FleetVsite $vsite, array &$stats): void
     {
         // Create or get VNode
         $vnode = $this->createOrGetVNode($vnodeName, $vsite, $stats);
@@ -262,20 +262,20 @@ class ChfleetCommand extends Command
     /**
      * Create or get VSite
      */
-    protected function createOrGetVSite(array $vsiteData, array &$stats): FleetVSite
+    protected function createOrGetVSite(array $vsiteData, array &$stats): FleetVsite
     {
         $name = $vsiteData['name'];
 
         if ($this->dryRun) {
             $this->line("    📦 Would create/update VSite: {$name}");
             // Return mock object for dry run
-            $vsite = new FleetVSite($vsiteData);
+            $vsite = new FleetVsite($vsiteData);
             $vsite->id = 999;
 
             return $vsite;
         }
 
-        $vsite = FleetVSite::where('name', $name)->first();
+        $vsite = FleetVsite::where('name', $name)->first();
 
         if ($vsite) {
             if ($this->force) {
@@ -285,10 +285,10 @@ class ChfleetCommand extends Command
                 $this->line("    📦 Using existing VSite: {$name}");
             }
         } else {
-            $capabilities = FleetVSite::getDefaultCapabilities($vsiteData['technology']);
+            $capabilities = FleetVsite::getDefaultCapabilities($vsiteData['technology']);
             $vsiteData['capabilities'] = $capabilities;
 
-            $vsite = FleetVSite::create($vsiteData);
+            $vsite = FleetVsite::create($vsiteData);
             $stats['vsites']++;
             $this->line("    📦 Created VSite: {$name}");
         }
@@ -299,19 +299,19 @@ class ChfleetCommand extends Command
     /**
      * Create or get VNode
      */
-    protected function createOrGetVNode(string $vnodeName, FleetVSite $vsite, array &$stats): FleetVNode
+    protected function createOrGetVNode(string $vnodeName, FleetVsite $vsite, array &$stats): FleetVnode
     {
         if ($this->dryRun) {
             $this->line("      🖥️  Would create/update VNode: {$vnodeName}");
             // Return mock object for dry run
-            $vnode = new FleetVNode(['name' => $vnodeName, 'vsite_id' => $vsite->id]);
+            $vnode = new FleetVnode(['name' => $vnodeName, 'vsite_id' => $vsite->id]);
             $vnode->id = 999;
             $vnode->vsite = $vsite;
 
             return $vnode;
         }
 
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
 
         $vnodeData = [
             'name' => $vnodeName,
@@ -328,7 +328,7 @@ class ChfleetCommand extends Command
                 $this->line("      🖥️  Using existing VNode: {$vnodeName}");
             }
         } else {
-            $vnode = FleetVNode::create($vnodeData);
+            $vnode = FleetVnode::create($vnodeData);
             $stats['vnodes']++;
             $this->line("      🖥️  Created VNode: {$vnodeName}");
         }
@@ -375,7 +375,7 @@ class ChfleetCommand extends Command
     /**
      * Import VHosts from vnode directory
      */
-    protected function importVHosts(FleetVNode $vnode, string $vnodeDir, array &$stats): void
+    protected function importVHosts(FleetVnode $vnode, string $vnodeDir, array &$stats): void
     {
         $vhostFiles = glob("{$vnodeDir}/*");
         $excludePatterns = config('fleet.import.exclude_patterns', []);
@@ -413,7 +413,7 @@ class ChfleetCommand extends Command
     /**
      * Import a specific VHost
      */
-    protected function importVHost(FleetVNode $vnode, string $domain, string $vhostFile, array &$stats): void
+    protected function importVHost(FleetVnode $vnode, string $domain, string $vhostFile, array &$stats): void
     {
         if ($this->dryRun) {
             $this->line("        💻 Would import VHost: {$domain}");
@@ -421,7 +421,7 @@ class ChfleetCommand extends Command
             return;
         }
 
-        $vhost = FleetVHost::where('vnode_id', $vnode->id)
+        $vhost = FleetVhost::where('vnode_id', $vnode->id)
             ->where('domain', $domain)
             ->first();
 
@@ -442,7 +442,7 @@ class ChfleetCommand extends Command
                 $this->line("        💻 Skipped VHost (up to date): {$domain}");
             }
         } else {
-            $vhost = FleetVHost::create($vhostData);
+            $vhost = FleetVhost::create($vhostData);
             $vhost->loadEnvironmentVars();
             $stats['vhosts']++;
             $this->line("        💻 Created VHost: {$domain}");
@@ -473,7 +473,7 @@ class ChfleetCommand extends Command
         $linkedCount = 0;
 
         foreach ($sshHosts as $sshHost) {
-            $vnode = FleetVNode::where('name', $sshHost->host)->first();
+            $vnode = FleetVnode::where('name', $sshHost->host)->first();
 
             if ($vnode && ! $vnode->ssh_host_id) {
                 if (! $this->dryRun) {

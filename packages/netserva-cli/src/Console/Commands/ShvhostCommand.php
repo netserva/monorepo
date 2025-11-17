@@ -2,8 +2,8 @@
 
 namespace NetServa\Cli\Console\Commands;
 
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 use Symfony\Component\Console\Helper\Table;
 
 /**
@@ -16,7 +16,7 @@ use Symfony\Component\Console\Helper\Table;
  *   shvhost markc --list                 # List all vhosts on markc server
  *   shvhost markc markc.goldcoast.org    # Show specific vhost details
  *
- * DATABASE-FIRST: Uses FleetVHost model (environment_vars JSON column)
+ * DATABASE-FIRST: Uses FleetVhost model (environment_vars JSON column)
  */
 class ShvhostCommand extends BaseNetServaCommand
 {
@@ -59,7 +59,7 @@ class ShvhostCommand extends BaseNetServaCommand
         }
 
         // Query database for vhosts on this vnode
-        $vhosts = FleetVHost::whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
+        $vhosts = FleetVhost::whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
             ->orderBy('domain')
             ->get();
 
@@ -97,7 +97,7 @@ class ShvhostCommand extends BaseNetServaCommand
     {
         try {
             // Find VHost in database
-            $vhost = FleetVHost::where('domain', $VHOST)
+            $vhost = FleetVhost::where('domain', $VHOST)
                 ->whereHas('vnode', fn ($q) => $q->where('name', $VNODE))
                 ->first();
 
@@ -195,7 +195,7 @@ class ShvhostCommand extends BaseNetServaCommand
     protected function showAllVhosts(): int
     {
         // Get all vnodes with vhosts from database
-        $vnodes = FleetVNode::has('vhosts')->with('vhosts')->get();
+        $vnodes = FleetVnode::has('vhosts')->with('vhosts')->get();
 
         if ($vnodes->isEmpty()) {
             $this->line('<fg=gray>No VHosts found in database</>');

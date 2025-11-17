@@ -4,8 +4,8 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Core\Models\SshHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 use NetServa\Fleet\Services\FleetDiscoveryService;
 
 /**
@@ -43,10 +43,10 @@ class AddvnodeCommand extends Command
         $discover = $this->option('discover');
 
         // Validate vsite exists
-        $vsite = FleetVSite::where('name', $vsiteName)->first();
+        $vsite = FleetVsite::where('name', $vsiteName)->first();
         if (! $vsite) {
             $this->error("VSite not found: {$vsiteName}");
-            $this->info('Available vsites: '.FleetVSite::pluck('name')->implode(', '));
+            $this->info('Available vsites: '.FleetVsite::pluck('name')->implode(', '));
             $this->warn("Create vsite first: addvsite <venue> {$vsiteName} <technology>");
 
             return Command::FAILURE;
@@ -63,7 +63,7 @@ class AddvnodeCommand extends Command
         }
 
         // Check if vnode already exists
-        $existing = FleetVNode::where('name', $name)->first();
+        $existing = FleetVnode::where('name', $name)->first();
         if ($existing) {
             $this->error("VNode '{$name}' already exists.");
 
@@ -80,7 +80,7 @@ class AddvnodeCommand extends Command
         $this->info("Creating vnode: {$name} on vsite {$vsiteName}");
 
         // Create vnode
-        $vnode = FleetVNode::create([
+        $vnode = FleetVnode::create([
             'vsite_id' => $vsite->id,
             'ssh_host_id' => $sshHost->id,
             'name' => $name,

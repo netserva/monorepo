@@ -185,13 +185,13 @@ Action::make('rollback')
     ->label('Rollback')
     ->icon('heroicon-o-arrow-uturn-left')
     ->color('warning')
-    ->visible(fn (FleetVHost $record) => $record->rollback_available)
+    ->visible(fn (FleetVhost $record) => $record->rollback_available)
     ->requiresConfirmation()
     ->modalHeading('Rollback Migration')
     ->form([
         Select::make('archive')
             ->label('Rollback Point')
-            ->options(function (FleetVHost $record) {
+            ->options(function (FleetVhost $record) {
                 $service = app(MigrationExecutionService::class);
                 $result = $service->listRollbackPoints($record);
 
@@ -203,7 +203,7 @@ Action::make('rollback')
             })
             ->required()
     ])
-    ->action(function (FleetVHost $record, array $data) {
+    ->action(function (FleetVhost $record, array $data) {
         $service = app(MigrationExecutionService::class);
         $result = $service->rollbackVhost($record, $data['archive']);
 
@@ -222,7 +222,7 @@ Action::make('rollback')
 ## Component Hierarchy
 
 ```
-FleetVHostResource (existing)
+FleetVhostResource (existing)
 ├── Widgets/
 │   └── MigrationDashboardWidget (NEW)
 │       ├── Stats overview

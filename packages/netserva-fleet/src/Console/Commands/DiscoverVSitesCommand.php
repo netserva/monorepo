@@ -4,7 +4,7 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Fleet\Models\FleetVenue;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
@@ -64,7 +64,7 @@ class DiscoverVSitesCommand extends Command
         );
 
         // Check if already exists
-        if (FleetVSite::where('name', $name)->exists()) {
+        if (FleetVsite::where('name', $name)->exists()) {
             error("VSite '{$name}' already exists!");
 
             return self::FAILURE;
@@ -153,7 +153,7 @@ class DiscoverVSitesCommand extends Command
         }
 
         try {
-            $vsite = FleetVSite::create([
+            $vsite = FleetVsite::create([
                 'venue_id' => $venue->id,
                 'name' => $name,
                 'slug' => str($name)->slug(),

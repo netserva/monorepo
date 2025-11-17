@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Manages dynamic credentials for VHosts (email accounts, admin logins, etc.)
  * This is separate from the static environment variables in fleet_vhosts.environment_vars
  */
-class FleetVHostCredential extends Model
+class FleetVhostCredential extends Model
 {
     use HasFactory;
 
@@ -56,7 +56,7 @@ class FleetVHostCredential extends Model
      */
     public function vhost(): BelongsTo
     {
-        return $this->belongsTo(FleetVHost::class, 'vhost_id');
+        return $this->belongsTo(FleetVhost::class, 'vhost_id');
     }
 
     /**

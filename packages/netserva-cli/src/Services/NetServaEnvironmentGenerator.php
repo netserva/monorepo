@@ -2,8 +2,8 @@
 
 namespace NetServa\Cli\Services;
 
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * NetServa Environment Variable Generator
@@ -19,13 +19,13 @@ class NetServaEnvironmentGenerator
     /**
      * Generate all environment variables for a vhost
      *
-     * @param  FleetVNode  $vnode  The VNode (server)
+     * @param  FleetVnode  $vnode  The VNode (server)
      * @param  string  $domain  The domain/vhost name
      * @param  array  $overrides  Optional values to override defaults
      * @param  array|null  $detectedOs  OS info from detectRemoteOs() (OSTYP, OSREL, OSMIR)
      * @return array All 53+ environment variables
      */
-    public function generate(FleetVNode $vnode, string $domain, array $overrides = [], ?array $detectedOs = null): array
+    public function generate(FleetVnode $vnode, string $domain, array $overrides = [], ?array $detectedOs = null): array
     {
         // Step 1: Static defaults (can be overridden)
         $vars = $this->getStaticDefaults($vnode);
@@ -55,7 +55,7 @@ class NetServaEnvironmentGenerator
     /**
      * Static environment variable defaults
      */
-    protected function getStaticDefaults(FleetVNode $vnode): array
+    protected function getStaticDefaults(FleetVnode $vnode): array
     {
         $fqdn = $vnode->name.'.'.($vnode->domain ?? 'local');
 
@@ -111,7 +111,7 @@ class NetServaEnvironmentGenerator
     /**
      * Dynamic variables calculated from domain and static vars
      */
-    protected function getDynamicVariables(FleetVNode $vnode, string $domain, array $vars): array
+    protected function getDynamicVariables(FleetVnode $vnode, string $domain, array $vars): array
     {
         // AHOST = Server's FQDN (from hostname -f on remote, stored in vnode->fqdn)
         // This is the administrative hostname of the server itself
@@ -233,7 +233,7 @@ class NetServaEnvironmentGenerator
     /**
      * OS-specific overrides
      */
-    protected function getOsOverrides(FleetVNode $vnode, array $vars): array
+    protected function getOsOverrides(FleetVnode $vnode, array $vars): array
     {
         $osType = $vars['OSTYP'];
 
@@ -281,9 +281,9 @@ class NetServaEnvironmentGenerator
     }
 
     /**
-     * Detect OS type from FleetVNode
+     * Detect OS type from FleetVnode
      */
-    protected function detectOsType(FleetVNode $vnode): string
+    protected function detectOsType(FleetVnode $vnode): string
     {
         // Try to get from vnode metadata
         if (isset($vnode->metadata['os_type'])) {
@@ -343,10 +343,10 @@ class NetServaEnvironmentGenerator
     /**
      * Generate new UID for non-admin users
      */
-    protected function generateNewUid(FleetVNode $vnode): int
+    protected function generateNewUid(FleetVnode $vnode): int
     {
         // Get highest existing UID from database
-        $maxUid = FleetVHost::where('vnode_id', $vnode->id)
+        $maxUid = FleetVhost::where('vnode_id', $vnode->id)
             ->whereNotNull('environment_vars->U_UID')
             ->get()
             ->map(fn ($vhost) => (int) ($vhost->environment_vars['U_UID'] ?? 0))
@@ -359,7 +359,7 @@ class NetServaEnvironmentGenerator
     /**
      * Get minimal variable set (subset for testing/simple configs)
      */
-    public function getMinimalVariables(FleetVNode $vnode, string $domain, ?array $detectedOs = null): array
+    public function getMinimalVariables(FleetVnode $vnode, string $domain, ?array $detectedOs = null): array
     {
         $full = $this->generate($vnode, $domain, [], $detectedOs);
 

@@ -23,7 +23,7 @@ class PageController
             ->where('template', 'homepage')
             ->firstOrFail();
 
-        return view('netserva-cms::pages.templates.homepage', [
+        return view('pages.templates.homepage', [
             'page' => $page,
         ]);
     }
@@ -46,7 +46,7 @@ class PageController
             default => 'default',
         };
 
-        return view("netserva-cms::pages.templates.{$template}", [
+        return view("pages.templates.{$template}", [
             'page' => $page,
         ]);
     }
@@ -76,7 +76,7 @@ class PageController
             default => 'default',
         };
 
-        return view("netserva-cms::pages.templates.{$template}", [
+        return view("pages.templates.{$template}", [
             'page' => $page,
             'parent' => $parent,
         ]);

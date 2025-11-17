@@ -5,8 +5,8 @@ namespace NetServa\Cli\Console\Commands;
 use Illuminate\Console\Command;
 use NetServa\Cli\Services\VhostRepairService;
 use NetServa\Cli\Services\VhostValidationService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * Validate VHost Command
@@ -84,14 +84,14 @@ class ValidateCommand extends Command
     protected function validateVnodeVhosts(string $vnodeName): int
     {
         // Find vnode
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
         if (! $vnode) {
             $this->error("❌ VNode not found: {$vnodeName}");
 
             return 1;
         }
 
-        $vhosts = FleetVHost::where('vnode_id', $vnode->id)->get();
+        $vhosts = FleetVhost::where('vnode_id', $vnode->id)->get();
 
         if ($vhosts->isEmpty()) {
             $this->warn("No vhosts found on vnode: {$vnodeName}");
@@ -176,7 +176,7 @@ class ValidateCommand extends Command
         $this->info("🔍 Validating VHost: {$vhostDomain} on {$vnodeName}");
 
         // Find vnode
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
         if (! $vnode) {
             $this->error("❌ VNode not found: {$vnodeName}");
 
@@ -184,7 +184,7 @@ class ValidateCommand extends Command
         }
 
         // Find vhost
-        $vhost = FleetVHost::where('domain', $vhostDomain)
+        $vhost = FleetVhost::where('domain', $vhostDomain)
             ->where('vnode_id', $vnode->id)
             ->first();
 
@@ -252,7 +252,7 @@ class ValidateCommand extends Command
     {
         $this->info('🔍 Validating all discovered vhosts');
 
-        $vhosts = FleetVHost::where('migration_status', 'discovered')
+        $vhosts = FleetVhost::where('migration_status', 'discovered')
             ->with('vnode')
             ->get();
 
@@ -344,7 +344,7 @@ class ValidateCommand extends Command
     /**
      * Display detailed validation results
      */
-    protected function displayValidationResults(FleetVHost $vhost, array $result): void
+    protected function displayValidationResults(FleetVhost $vhost, array $result): void
     {
         $status = $result['status'];
         $summary = $result['summary'];
@@ -424,7 +424,7 @@ class ValidateCommand extends Command
     /**
      * Perform repair on vhost
      */
-    protected function performRepair(FleetVHost $vhost, array $validationResult): array
+    protected function performRepair(FleetVhost $vhost, array $validationResult): array
     {
         $isDryRun = $this->option('dry-run');
 

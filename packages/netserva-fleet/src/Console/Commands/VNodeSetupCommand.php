@@ -5,7 +5,7 @@ namespace NetServa\Fleet\Console\Commands;
 use Exception;
 use Illuminate\Console\Command;
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * VNode Setup Command
@@ -42,7 +42,7 @@ class VNodeSetupCommand extends Command
         $this->info("🔧 Initializing VNode: {$vnodeName}");
 
         // Find VNode
-        $vnode = FleetVNode::where('name', $vnodeName)->with('sshHost')->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->with('sshHost')->first();
 
         if (! $vnode) {
             $this->error("VNode not found: {$vnodeName}");
@@ -61,7 +61,7 @@ class VNodeSetupCommand extends Command
             // Check if already initialized
             if (! $force && $this->isAlreadyInitialized($vnode)) {
                 $this->warn("VNode {$vnodeName} appears to be already initialized.");
-                $this->line("Use --force to reinitialize");
+                $this->line('Use --force to reinitialize');
 
                 return 0;
             }
@@ -105,7 +105,7 @@ class VNodeSetupCommand extends Command
     /**
      * Check if VNode is already initialized
      */
-    protected function isAlreadyInitialized(FleetVNode $vnode): bool
+    protected function isAlreadyInitialized(FleetVnode $vnode): bool
     {
         $result = $this->remoteExecution->executeAsRoot(
             $vnode->name,
@@ -118,7 +118,7 @@ class VNodeSetupCommand extends Command
     /**
      * Install required packages
      */
-    protected function installRequiredPackages(FleetVNode $vnode): void
+    protected function installRequiredPackages(FleetVnode $vnode): void
     {
         $this->line('  → Detecting package manager...');
 
@@ -160,7 +160,7 @@ class VNodeSetupCommand extends Command
     /**
      * Create directory structure
      */
-    protected function createDirectoryStructure(FleetVNode $vnode): void
+    protected function createDirectoryStructure(FleetVnode $vnode): void
     {
         $script = <<<'BASH'
         # Create NetServa directory structure
@@ -188,7 +188,7 @@ class VNodeSetupCommand extends Command
     /**
      * Initialize SQLite database with vhosts table
      */
-    protected function initializeSqliteDatabase(FleetVNode $vnode): void
+    protected function initializeSqliteDatabase(FleetVnode $vnode): void
     {
         $script = "#!/bin/bash\n";
         $script .= "DBPATH=\"/var/lib/sqlite/sysadm/sysadm.db\"\n";
@@ -231,7 +231,7 @@ class VNodeSetupCommand extends Command
     /**
      * Set permissions on created directories
      */
-    protected function setPermissions(FleetVNode $vnode): void
+    protected function setPermissions(FleetVnode $vnode): void
     {
         $script = <<<'BASH'
         # Set ownership and permissions

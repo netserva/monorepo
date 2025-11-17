@@ -40,7 +40,7 @@ Phase 5 successfully delivered a comprehensive Filament-based web UI for NetServ
 
 ### 2. Validation Results Viewer ✅
 
-**File:** `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource/Pages/ViewValidation.php` (270+ lines)
+**File:** `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource/Pages/ViewValidation.php` (270+ lines)
 
 **Features:**
 - 7 comprehensive Infolist sections:
@@ -65,7 +65,7 @@ Phase 5 successfully delivered a comprehensive Filament-based web UI for NetServ
 
 ### 3. Bulk Migration Actions ✅
 
-**Location:** `FleetVHostResource::table()` bulk actions
+**Location:** `FleetVhostResource::table()` bulk actions
 
 **Features:**
 - Table bulk action: "Migrate Selected to NS 3.0"
@@ -94,7 +94,7 @@ Phase 5 successfully delivered a comprehensive Filament-based web UI for NetServ
 
 ### 4. Migration Logs Viewer ✅
 
-**File:** `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource/Pages/ViewMigrationLog.php` (260+ lines)
+**File:** `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource/Pages/ViewMigrationLog.php` (260+ lines)
 
 **Features:**
 - 9 detailed Infolist sections:
@@ -122,7 +122,7 @@ Phase 5 successfully delivered a comprehensive Filament-based web UI for NetServ
 
 ### 5. Rollback UI ✅
 
-**Location:** `FleetVHostResource::table()` row actions
+**Location:** `FleetVhostResource::table()` row actions
 
 **Features:**
 - Table action: "Rollback"
@@ -271,14 +271,14 @@ Admin Panel
 ### New Files (3)
 
 1. `packages/netserva-cli/PHASE_5_FILAMENT_UI.md` - Architecture document (250+ lines)
-2. `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource/Pages/ViewValidation.php` - Validation viewer (270+ lines)
-3. `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource/Pages/ViewMigrationLog.php` - Logs viewer (260+ lines)
+2. `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource/Pages/ViewValidation.php` - Validation viewer (270+ lines)
+3. `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource/Pages/ViewMigrationLog.php` - Logs viewer (260+ lines)
 
 ### Modified Files (4)
 
 4. `packages/netserva-cli/src/Filament/Widgets/MigrationDashboardWidget.php` - Dashboard widget
 5. `packages/netserva-cli/src/Filament/NetServaCliPlugin.php` - Widget registration
-6. `packages/netserva-fleet/src/Filament/Resources/FleetVHostResource.php` - Added:
+6. `packages/netserva-fleet/src/Filament/Resources/FleetVhostResource.php` - Added:
    - 2 page routes (validation, migration-log)
    - 3 table actions (Validation, Migration Log, Rollback)
    - 1 bulk action (Migrate Selected)

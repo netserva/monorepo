@@ -3,9 +3,9 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use NetServa\Cli\Models\VConf;
 use NetServa\Cli\Services\NetServaContext;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 uses(RefreshDatabase::class)
     ->group('feature', 'commands', 'netserva-cli', 'vhost-management', 'crud', 'priority-1');
@@ -14,9 +14,9 @@ beforeEach(function () {
     $this->context = $this->mock(NetServaContext::class);
 
     // Create test vsite, vnode, and vhost
-    $this->vsite = FleetVSite::factory()->create(['name' => 'test-site']);
-    $this->vnode = FleetVNode::factory()->create(['name' => 'markc', 'vsite_id' => $this->vsite->id]);
-    $this->vhost = FleetVHost::factory()->create([
+    $this->vsite = FleetVsite::factory()->create(['name' => 'test-site']);
+    $this->vnode = FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $this->vsite->id]);
+    $this->vhost = FleetVhost::factory()->create([
         'domain' => 'example.com',
         'vnode_id' => $this->vnode->id,
         'is_active' => true,
@@ -163,10 +163,10 @@ it('creates backup before changes when --backup flag is used', function () {
 it('supports dry-run mode', function () {
     $this->artisan('chvhost markc example.com --php-version=8.4 --dry-run')
         ->expectsOutput('🔧 Updating VHost: example.com on server markc')
-        ->expectsOutput("🔍 DRY RUN: Update VHost example.com on markc")
-        ->expectsOutputToContain("Load current vhost from FleetVHost model (ID: {$this->vhost->id})")
+        ->expectsOutput('🔍 DRY RUN: Update VHost example.com on markc')
+        ->expectsOutputToContain("Load current vhost from FleetVhost model (ID: {$this->vhost->id})")
         ->expectsOutputToContain('Load environment variables from vconfs table (database-first)')
-        ->expectsOutputToContain('Update vconfs table with new values via FleetVHost::setEnvVar()')
+        ->expectsOutputToContain('Update vconfs table with new values via FleetVhost::setEnvVar()')
         ->expectsOutputToContain('SSH to markc and apply changes via RemoteExecutionService heredoc')
         ->assertExitCode(0);
 
@@ -213,7 +213,7 @@ it('uses database-first architecture exclusively', function () {
     // This test verifies that we're using vconfs table, not files
     $this->artisan('chvhost markc example.com --php-version=8.4 --dry-run')
         ->expectsOutputToContain('vconfs table (database-first)')
-        ->expectsOutputToContain('FleetVHost::setEnvVar()')
+        ->expectsOutputToContain('FleetVhost::setEnvVar()')
         ->assertExitCode(0);
 });
 

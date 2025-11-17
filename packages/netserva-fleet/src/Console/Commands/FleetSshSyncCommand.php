@@ -4,8 +4,8 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Core\Models\SshHost;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\error;
 use function Laravel\Prompts\info;
@@ -49,8 +49,8 @@ class FleetSshSyncCommand extends Command
 
         // Get all SSH hosts and VHosts
         $sshHosts = SshHost::all()->keyBy('host');
-        $vhosts = FleetVHost::with('vnode')->get();
-        $vnodes = FleetVNode::with('vsite')->get();
+        $vhosts = FleetVhost::with('vnode')->get();
+        $vnodes = FleetVnode::with('vsite')->get();
 
         $linkedVHosts = 0;
         $linkedVNodes = 0;
@@ -137,7 +137,7 @@ class FleetSshSyncCommand extends Command
     {
         info('Running service discovery on SSH-linked VHosts...');
 
-        $vhosts = FleetVHost::with(['vnode.sshHost'])
+        $vhosts = FleetVhost::with(['vnode.sshHost'])
             ->whereHas('vnode.sshHost')
             ->get();
 
@@ -186,7 +186,7 @@ class FleetSshSyncCommand extends Command
         return self::SUCCESS;
     }
 
-    protected function discoverVHostServices(FleetVHost $vhost): array
+    protected function discoverVHostServices(FleetVhost $vhost): array
     {
         $sshHost = $vhost->vnode->sshHost;
         if (! $sshHost) {
@@ -245,8 +245,8 @@ class FleetSshSyncCommand extends Command
     {
         info('Current SSH host to fleet mappings:');
 
-        $vnodes = FleetVNode::with(['sshHost', 'vsite'])->whereNotNull('ssh_host_id')->get();
-        $vhosts = FleetVHost::with(['vnode.sshHost', 'vnode.vsite'])->whereHas('vnode', fn ($q) => $q->whereNotNull('ssh_host_id'))->get();
+        $vnodes = FleetVnode::with(['sshHost', 'vsite'])->whereNotNull('ssh_host_id')->get();
+        $vhosts = FleetVhost::with(['vnode.sshHost', 'vnode.vsite'])->whereHas('vnode', fn ($q) => $q->whereNotNull('ssh_host_id'))->get();
 
         if ($vnodes->isNotEmpty()) {
             info("\nVNodes with SSH access:");
@@ -289,14 +289,14 @@ class FleetSshSyncCommand extends Command
 
         // Get all SSH hosts and existing VHosts
         $sshHosts = SshHost::all();
-        $existingDomains = FleetVHost::pluck('domain')->toArray();
-        $existingIps = FleetVHost::whereNotNull('ip_addresses')->get()
+        $existingDomains = FleetVhost::pluck('domain')->toArray();
+        $existingIps = FleetVhost::whereNotNull('ip_addresses')->get()
             ->flatMap(fn ($vh) => $vh->ip_addresses ?? [])
             ->unique()
             ->toArray();
 
         // Get default VNode for new VHosts (pve2 as it's the main node)
-        $defaultVNode = FleetVNode::where('name', 'pve2')->first();
+        $defaultVNode = FleetVnode::where('name', 'pve2')->first();
         if (! $defaultVNode) {
             error("Default VNode 'pve2' not found. Please ensure VNodes are discovered first.");
 
@@ -363,7 +363,7 @@ class FleetSshSyncCommand extends Command
             $progress->advance();
 
             try {
-                $vhost = FleetVHost::create([
+                $vhost = FleetVhost::create([
                     'domain' => $candidate['domain'],
                     'slug' => str($candidate['domain'])->slug(),
                     'vnode_id' => $candidate['vnode']->id,
@@ -414,7 +414,7 @@ class FleetSshSyncCommand extends Command
         }
 
         // Skip nodes that are already VNodes
-        if (FleetVNode::where('name', $sshHost->host)->exists()) {
+        if (FleetVnode::where('name', $sshHost->host)->exists()) {
             return true;
         }
 

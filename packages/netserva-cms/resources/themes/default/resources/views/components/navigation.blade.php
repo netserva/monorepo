@@ -24,8 +24,8 @@
        class="{{ $baseClasses }} {{ request()->routeIs('cms.home') ? $activeClasses : $inactiveClasses }}">
         Home
     </a>
-    <a href="{{ route('cms.posts.index') }}"
-       class="{{ $baseClasses }} {{ request()->routeIs('cms.posts.*') ? $activeClasses : $inactiveClasses }}">
+    <a href="{{ route('cms.blog.index') }}"
+       class="{{ $baseClasses }} {{ request()->routeIs('cms.blog.*') ? $activeClasses : $inactiveClasses }}">
         Blog
     </a>
 @else

@@ -5,9 +5,9 @@ namespace NetServa\Fleet\Services;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Proxmox API Service
@@ -16,7 +16,7 @@ use NetServa\Fleet\Models\FleetVSite;
  */
 class ProxmoxApiService
 {
-    protected FleetVSite $vsite;
+    protected FleetVsite $vsite;
 
     protected array $credentials;
 
@@ -24,7 +24,7 @@ class ProxmoxApiService
 
     protected int $timeout;
 
-    public function __construct(FleetVSite $vsite)
+    public function __construct(FleetVsite $vsite)
     {
         $this->vsite = $vsite;
         $this->credentials = json_decode(decrypt($vsite->api_credentials), true);
@@ -186,7 +186,7 @@ class ProxmoxApiService
 
         foreach ($discoveredNodes as $nodeData) {
             try {
-                $vnode = FleetVNode::where('vsite_id', $this->vsite->id)
+                $vnode = FleetVnode::where('vsite_id', $this->vsite->id)
                     ->where('name', $nodeData['name'])
                     ->first();
 
@@ -201,7 +201,7 @@ class ProxmoxApiService
                     ]);
                     $results['updated']++;
                 } else {
-                    FleetVNode::create([
+                    FleetVnode::create([
                         'name' => $nodeData['name'],
                         'slug' => str($nodeData['name'])->slug(),
                         'vsite_id' => $this->vsite->id,
@@ -243,7 +243,7 @@ class ProxmoxApiService
                 }
 
                 // Find the VNode
-                $vnode = FleetVNode::where('vsite_id', $this->vsite->id)
+                $vnode = FleetVnode::where('vsite_id', $this->vsite->id)
                     ->where('name', $instanceData['node'])
                     ->first();
 
@@ -256,7 +256,7 @@ class ProxmoxApiService
                 // Generate domain from name (you can customize this logic)
                 $domain = $this->generateDomainFromName($instanceData['name']);
 
-                $vhost = FleetVHost::where('vnode_id', $vnode->id)
+                $vhost = FleetVhost::where('vnode_id', $vnode->id)
                     ->where('instance_id', $instanceData['vmid'])
                     ->first();
 
@@ -275,7 +275,7 @@ class ProxmoxApiService
                     ]);
                     $results['updated']++;
                 } else {
-                    FleetVHost::create([
+                    FleetVhost::create([
                         'domain' => $domain,
                         'slug' => str($domain)->slug(),
                         'vnode_id' => $vnode->id,

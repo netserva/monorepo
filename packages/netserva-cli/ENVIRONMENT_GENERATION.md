@@ -166,7 +166,7 @@ use NetServa\Cli\Services\DatabaseVhostConfigService;
 $configService = app(DatabaseVhostConfigService::class);
 
 // Initialize configuration for a vhost
-$vhost = FleetVHost::find($id);
+$vhost = FleetVhost::find($id);
 $vars = $configService->initialize($vhost);
 
 // Initialize with minimal variables
@@ -203,7 +203,7 @@ UIDs start at 1000 and increment:
 
 ```php
 // Get highest existing UID from database
-$maxUid = FleetVHost::where('vnode_id', $vnode->id)
+$maxUid = FleetVhost::where('vnode_id', $vnode->id)
     ->whereNotNull('environment_vars->U_UID')
     ->get()
     ->map(fn($vhost) => (int)($vhost->environment_vars['U_UID'] ?? 0))
@@ -231,10 +231,10 @@ All variables stored in `fleet_vhosts.environment_vars` JSON column:
 }
 ```
 
-Access via FleetVHost model:
+Access via FleetVhost model:
 
 ```php
-$vhost = FleetVHost::find($id);
+$vhost = FleetVhost::find($id);
 
 // Get variable
 $wpath = $vhost->getEnvVar('WPATH');
@@ -257,7 +257,7 @@ $allVars = $vhost->environment_vars;
 | Format | Bash `VAR='value'` | Same, but from database |
 | Passwords | `head /dev/urandom \| tr ...` | PHP `str_shuffle()` |
 | UID | `newuid()` bash function | `generateNewUid()` PHP method |
-| OS Detection | `$OSTYP` bash variable | FleetVNode `os_version` field |
+| OS Detection | `$OSTYP` bash variable | FleetVnode `os_version` field |
 
 ## Migration from 1.0
 
@@ -275,10 +275,10 @@ addvconf markc nc.goldcoast.org --force
 
 ```php
 use NetServa\Cli\Services\NetServaEnvironmentGenerator;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 it('generates all 53+ environment variables', function () {
-    $vnode = FleetVNode::factory()->create([
+    $vnode = FleetVnode::factory()->create([
         'name' => 'test',
         'os_version' => 'Debian 12 (bookworm)',
     ]);

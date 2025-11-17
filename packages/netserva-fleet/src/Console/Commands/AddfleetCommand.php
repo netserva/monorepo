@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Services\FleetDiscoveryService;
 
 /**
@@ -67,7 +67,7 @@ class AddfleetCommand extends Command
     {
         $this->info('🔌 Testing SSH connections to all VNodes');
 
-        $vnodes = FleetVNode::withSsh()->with(['sshHost', 'vsite'])->get();
+        $vnodes = FleetVnode::withSsh()->with(['sshHost', 'vsite'])->get();
 
         if ($vnodes->isEmpty()) {
             $this->warn('No VNodes with SSH access found');
@@ -111,7 +111,7 @@ class AddfleetCommand extends Command
      */
     protected function discoverSpecificVNode(string $vnodeName, bool $force): int
     {
-        $vnode = FleetVNode::where('name', $vnodeName)
+        $vnode = FleetVnode::where('name', $vnodeName)
             ->with(['sshHost', 'vsite'])
             ->first();
 
@@ -194,7 +194,7 @@ class AddfleetCommand extends Command
      */
     protected function discoverAll(bool $force): int
     {
-        $query = FleetVNode::withSsh()->with(['sshHost', 'vsite']);
+        $query = FleetVnode::withSsh()->with(['sshHost', 'vsite']);
 
         if (! $force) {
             $query->needsScanning();
@@ -245,7 +245,7 @@ class AddfleetCommand extends Command
     /**
      * Display VNode information after discovery
      */
-    protected function displayVNodeInfo(FleetVNode $vnode): void
+    protected function displayVNodeInfo(FleetVnode $vnode): void
     {
         $this->newLine();
         $this->line('<info>VNode Information:</info>');

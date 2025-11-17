@@ -127,7 +127,7 @@ class NetServaConfigurationService implements ConfigManagerInterface
     protected function getServerFqdn(string $VNODE): string
     {
         // Strategy 1: Load from database (fastest, most reliable)
-        $vnode = \NetServa\Fleet\Models\FleetVNode::where('name', $VNODE)->first();
+        $vnode = \NetServa\Fleet\Models\FleetVnode::where('name', $VNODE)->first();
         if ($vnode && $vnode->fqdn && $this->isValidFqdn($vnode->fqdn)) {
             return $vnode->fqdn;
         }
@@ -234,7 +234,10 @@ class NetServaConfigurationService implements ConfigManagerInterface
     }
 
     /**
-     * Get next available UID (mirrors newuid() function)
+     * Get next available UID - finds first gap in sequence
+     *
+     * NetServa 3.0: Fills gaps in UID sequence rather than always using highest + 1
+     * Example: If UIDs are 1001, 1002, 1004, 1005 → returns 1003 (fills gap)
      *
      * Returns first available UID starting from ADMIN_UID + 1 (1001)
      * If no users exist, returns 1001 (1000 is reserved for admin)
@@ -244,8 +247,9 @@ class NetServaConfigurationService implements ConfigManagerInterface
         $adminUid = NetServaConstants::ADMIN_UID->value;
         $maxUid = NetServaConstants::MAX_USER_UID->value;
 
+        // Get all UIDs in range as array
         $result = $this->remoteExecution->executeAsRoot($VNODE,
-            "getent passwd | awk -F: '\$3 > {$adminUid} && \$3 < {$maxUid} {print}' | cut -d: -f3 | sort -n | tail -n1"
+            "getent passwd | awk -F: '\$3 > {$adminUid} && \$3 < {$maxUid} {print \$3}' | sort -n"
         );
 
         if (! $result['success'] || empty(trim($result['output']))) {
@@ -253,9 +257,23 @@ class NetServaConfigurationService implements ConfigManagerInterface
             return $adminUid + 1; // 1000 + 1 = 1001
         }
 
-        $lastUid = (int) trim($result['output']);
+        // Parse all existing UIDs into array
+        $existingUids = array_map('intval', array_filter(explode("\n", trim($result['output']))));
 
-        return $lastUid + 1;
+        // Find first gap in sequence starting from 1001
+        $candidateUid = $adminUid + 1; // Start at 1001
+        foreach ($existingUids as $uid) {
+            if ($uid === $candidateUid) {
+                // This UID is taken, try next
+                $candidateUid++;
+            } elseif ($uid > $candidateUid) {
+                // Found a gap! Return the missing UID
+                return $candidateUid;
+            }
+        }
+
+        // No gaps found, return next after highest
+        return $candidateUid;
     }
 
     /**
@@ -628,6 +646,9 @@ class NetServaConfigurationService implements ConfigManagerInterface
      */
     public function extractPlatformVariables(VhostConfiguration $config): array
     {
+        // Get dynamic values from VhostConfiguration (includes database detection)
+        $configVars = $config->toEnvironmentArray();
+
         // Compute base values for expansion
         $dname = 'sysadm';
         $duser = 'sysadm';
@@ -662,36 +683,36 @@ class NetServaConfigurationService implements ConfigManagerInterface
             'DPASS' => $config->passwords->database,
             'DPATH' => $dpath,
             'DPORT' => '3306',
-            'DTYPE' => 'sqlite',
+            'DTYPE' => $configVars['DTYPE'],  // ✅ Use dynamic value (mysql or sqlite)
             'DUSER' => $duser,
             'EPASS' => $config->passwords->email,
             // ✅ FULLY EXPANDED - no $VAR references!
-            'EXMYS' => "mysql -u{$duser} -p{$config->passwords->database} {$dname}",
-            'EXSQL' => "sqlite3 {$dpath}/{$dname}.db",
-            'HDOMN' => $config->VHOST,
-            'HNAME' => $config->VNODE,
+            'EXMYS' => $configVars['EXMYS'],  // ✅ Use dynamic value (mariadb or mysql)
+            'EXSQL' => $configVars['EXSQL'],  // ✅ Use dynamic value
+            'HDOMN' => $configVars['HDOMN'],
+            'HNAME' => $configVars['HNAME'],
             'IP4_0' => $config->IP4_0,
-            'MHOST' => $config->VHOST,
+            'MHOST' => $configVars['MHOST'],
             'MPATH' => $config->paths->mpath,
             'OSMIR' => $config->osConfig->mirror,
             'OSREL' => $config->osConfig->release,
             'OSTYP' => $config->osConfig->type->value,
             // ✅ FULLY EXPANDED - no $VAR references!
-            'SQCMD' => "sqlite3 {$dpath}/{$dname}.db",
-            'SQDNS' => "sqlite3 {$dpath}/powerdns.db",
+            'SQCMD' => $configVars['SQCMD'],  // ✅ Use dynamic value (mariadb or sqlite3)
+            'SQDNS' => $configVars['SQDNS'],  // ✅ Use dynamic value
             'TAREA' => 'Australia',
             'TCITY' => 'Sydney',
             'UPASS' => $config->passwords->user,
             'UPATH' => $config->paths->upath,
             'UUSER' => $config->UUSER,
             'U_GID' => (string) $config->U_GID,
-            'U_SHL' => '/bin/bash',
+            'U_SHL' => $configVars['U_SHL'],  // ✅ Use dynamic value (/bin/bash or /bin/sh)
             'U_UID' => (string) $config->U_UID,
             'VHOST' => $config->VHOST,
             'VNODE' => $config->VNODE,
             'VPATH' => $config->paths->vpath,
             'VUSER' => 'admin',
-            'V_PHP' => '8.4',
+            'V_PHP' => $configVars['V_PHP'],  // ✅ Use dynamic value (OS-specific PHP version)
             'WPASS' => $config->passwords->web,
             'WPATH' => $config->paths->wpath,
             'WPUSR' => $config->passwords->wordpress,

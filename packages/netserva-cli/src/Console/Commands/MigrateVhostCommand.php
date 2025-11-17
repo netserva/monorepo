@@ -4,8 +4,8 @@ namespace NetServa\Cli\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Cli\Services\MigrationExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\table;
@@ -73,7 +73,7 @@ class MigrateVhostCommand extends Command
         $this->info("🔄 Migrating VHost: {$vhostDomain} on {$vnodeName}");
 
         // Find vnode
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
         if (! $vnode) {
             $this->error("❌ VNode not found: {$vnodeName}");
 
@@ -81,7 +81,7 @@ class MigrateVhostCommand extends Command
         }
 
         // Find vhost
-        $vhost = FleetVHost::where('domain', $vhostDomain)
+        $vhost = FleetVhost::where('domain', $vhostDomain)
             ->where('vnode_id', $vnode->id)
             ->first();
 
@@ -93,7 +93,7 @@ class MigrateVhostCommand extends Command
 
         // Show current status
         $this->newLine();
-        $this->line("📊 Current Status:");
+        $this->line('📊 Current Status:');
         $this->line("  • Migration Status: {$vhost->migration_status}");
         $this->line("  • VHost Status: {$vhost->status}");
         $this->newLine();
@@ -160,7 +160,7 @@ class MigrateVhostCommand extends Command
         $this->info('🔄 Migrating all validated vhosts');
         $this->newLine();
 
-        $vhosts = FleetVHost::where('migration_status', 'validated')
+        $vhosts = FleetVhost::where('migration_status', 'validated')
             ->with('vnode')
             ->get();
 
@@ -245,7 +245,7 @@ class MigrateVhostCommand extends Command
     /**
      * Show dry-run migration plan
      */
-    protected function showDryRun(FleetVHost $vhost): int
+    protected function showDryRun(FleetVhost $vhost): int
     {
         $this->info('🔍 Dry-Run Mode: Migration Plan');
         $this->newLine();
@@ -293,19 +293,19 @@ class MigrateVhostCommand extends Command
     /**
      * Display migration success
      */
-    protected function displayMigrationSuccess(FleetVHost $vhost, array $result): void
+    protected function displayMigrationSuccess(FleetVhost $vhost, array $result): void
     {
         $this->newLine();
-        $this->info("✅ Migration completed successfully!");
+        $this->info('✅ Migration completed successfully!');
         $this->newLine();
 
         $log = $result['migration_log'];
 
         $this->line('📊 Migration Summary:');
         $this->line("  • VHost: {$vhost->domain}");
-        $this->line("  • Status: migrated");
-        $this->line("  • Steps Completed: ".count($log['steps_completed']));
-        $this->line("  • Duration: ".($this->calculateDuration($log) ?? 'N/A'));
+        $this->line('  • Status: migrated');
+        $this->line('  • Steps Completed: '.count($log['steps_completed']));
+        $this->line('  • Duration: '.($this->calculateDuration($log) ?? 'N/A'));
 
         if (isset($log['backup_archive'])) {
             $this->newLine();

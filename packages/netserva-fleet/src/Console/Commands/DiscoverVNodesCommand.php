@@ -3,8 +3,8 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVNode;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVnode;
+use NetServa\Fleet\Models\FleetVsite;
 use NetServa\Fleet\Services\FleetDiscoveryService;
 use NetServa\SSH\Models\SshHost;
 
@@ -42,7 +42,7 @@ class DiscoverVNodesCommand extends Command
         // Get or select VSite
         $vsiteName = $this->option('vsite');
         if (! $vsiteName) {
-            $vsites = FleetVSite::active()->pluck('name', 'name')->toArray();
+            $vsites = FleetVsite::active()->pluck('name', 'name')->toArray();
 
             if (empty($vsites)) {
                 error('No VSites found. Run: php artisan fleet:discover-vsites first');
@@ -56,7 +56,7 @@ class DiscoverVNodesCommand extends Command
             );
         }
 
-        $vsite = FleetVSite::where('name', $vsiteName)->first();
+        $vsite = FleetVsite::where('name', $vsiteName)->first();
         if (! $vsite) {
             error("VSite '{$vsiteName}' not found!");
 
@@ -79,7 +79,7 @@ class DiscoverVNodesCommand extends Command
     /**
      * Discover Proxmox nodes
      */
-    protected function discoverProxmoxNodes(FleetVSite $vsite): int
+    protected function discoverProxmoxNodes(FleetVsite $vsite): int
     {
         info('🔍 Discovering Proxmox nodes...');
 
@@ -98,7 +98,7 @@ class DiscoverVNodesCommand extends Command
     /**
      * Discover Incus nodes
      */
-    protected function discoverIncusNodes(FleetVSite $vsite): int
+    protected function discoverIncusNodes(FleetVsite $vsite): int
     {
         info('🔍 Discovering Incus nodes...');
 
@@ -109,7 +109,7 @@ class DiscoverVNodesCommand extends Command
     /**
      * Manual node discovery with interactive prompts
      */
-    protected function manualNodeDiscovery(FleetVSite $vsite): int
+    protected function manualNodeDiscovery(FleetVsite $vsite): int
     {
         info('📝 Manual node discovery');
         info('Add infrastructure nodes one by one');
@@ -155,7 +155,7 @@ class DiscoverVNodesCommand extends Command
         $created = 0;
         foreach ($nodes as $nodeData) {
             try {
-                FleetVNode::create($nodeData);
+                FleetVnode::create($nodeData);
                 $created++;
             } catch (\Exception $e) {
                 error("Failed to create node {$nodeData['name']}: {$e->getMessage()}");
@@ -177,7 +177,7 @@ class DiscoverVNodesCommand extends Command
     /**
      * Prompt for individual node details
      */
-    protected function promptForNode(FleetVSite $vsite): ?array
+    protected function promptForNode(FleetVsite $vsite): ?array
     {
         $name = text(
             label: 'Node name',
@@ -187,7 +187,7 @@ class DiscoverVNodesCommand extends Command
         );
 
         // Check if already exists
-        if (FleetVNode::where('name', $name)->exists()) {
+        if (FleetVnode::where('name', $name)->exists()) {
             error("Node '{$name}' already exists!");
 
             return null;

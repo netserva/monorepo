@@ -2,8 +2,8 @@
 
 use Illuminate\Support\Facades\Log;
 use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 /**
  * ChpermsCommand Tests
@@ -26,8 +26,8 @@ it('requires vhost argument when not using all flag', function () {
 
 it('fixes permissions for single vhost', function () {
     // Create VNode and VHost in database
-    $vnode = FleetVNode::factory()->create(['name' => 'markc']);
-    $vhost = FleetVHost::factory()->create([
+    $vnode = FleetVnode::factory()->create(['name' => 'markc']);
+    $vhost = FleetVhost::factory()->create([
         'vnode_id' => $vnode->id,
         'domain' => 'example.com',
         'environment_vars' => [
@@ -76,8 +76,8 @@ it('fixes permissions for single vhost', function () {
 
 it('shows dry run output', function () {
     // Create VNode and VHost in database
-    $vnode = FleetVNode::factory()->create(['name' => 'markc']);
-    $vhost = FleetVHost::factory()->create([
+    $vnode = FleetVnode::factory()->create(['name' => 'markc']);
+    $vhost = FleetVhost::factory()->create([
         'vnode_id' => $vnode->id,
         'domain' => 'example.com',
         'environment_vars' => [
@@ -98,7 +98,7 @@ it('shows dry run output', function () {
 
 it('handles vhost not found', function () {
     // Create VNode but no VHost
-    FleetVNode::factory()->create(['name' => 'markc']);
+    FleetVnode::factory()->create(['name' => 'markc']);
 
     $this->artisan('chperms markc nonexistent.com')
         ->expectsOutputToContain('❌ VHost nonexistent.com not found on markc')

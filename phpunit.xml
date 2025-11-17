@@ -70,6 +70,9 @@
         <testsuite name="NetServa IPAM">
             <directory>packages/netserva-ipam/tests</directory>
         </testsuite>
+        <testsuite name="NetServa Fleet">
+            <directory>packages/netserva-fleet/tests</directory>
+        </testsuite>
     </testsuites>
     
     <!-- Code Coverage Configuration -->

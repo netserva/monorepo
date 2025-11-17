@@ -3,7 +3,7 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Process;
 use NetServa\Cli\Services\TunnelService;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Pest\Laravel\artisan;
 
@@ -12,7 +12,7 @@ uses(RefreshDatabase::class)
 
 beforeEach(function () {
     // Create test VNode
-    $this->vnode = FleetVNode::create([
+    $this->vnode = FleetVnode::create([
         'name' => 'test-server',
         'technology' => 'native',
         'ssh_host' => 'test-server',
@@ -214,14 +214,14 @@ describe('Tunnel Persistence', function () {
 describe('Real World Nameserver Scenarios', function () {
     beforeEach(function () {
         // Create nameserver VNodes
-        FleetVNode::create([
+        FleetVnode::create([
             'name' => 'ns1gc',
             'technology' => 'native',
             'ssh_host' => 'ns1gc',
             'status' => 'active',
         ]);
 
-        FleetVNode::create([
+        FleetVnode::create([
             'name' => 'ns2gc',
             'technology' => 'native',
             'ssh_host' => 'ns2gc',

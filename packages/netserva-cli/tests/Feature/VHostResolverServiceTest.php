@@ -3,13 +3,13 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use NetServa\Cli\Exceptions\VHostNotFoundException;
 use NetServa\Cli\Services\VHostResolverService;
-use NetServa\Fleet\Models\FleetVSite;
+use NetServa\Fleet\Models\FleetVsite;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Create test hierarchy in database
-    $this->vsite = FleetVSite::create([
+    $this->vsite = FleetVsite::create([
         'name' => 'local-test-workstation',
         'provider' => 'local',
         'technology' => 'lxc',

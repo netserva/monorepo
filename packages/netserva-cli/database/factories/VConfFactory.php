@@ -4,7 +4,7 @@ namespace NetServa\Cli\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use NetServa\Cli\Models\VConf;
-use NetServa\Fleet\Models\FleetVHost;
+use NetServa\Fleet\Models\FleetVhost;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\NetServa\Cli\Models\VConf>
@@ -33,7 +33,7 @@ class VConfFactory extends Factory
         };
 
         return [
-            'fleet_vhost_id' => FleetVHost::factory(),
+            'fleet_vhost_id' => FleetVhost::factory(),
             'name' => $name,
             'value' => $value,
             'category' => VConf::categorize($name),

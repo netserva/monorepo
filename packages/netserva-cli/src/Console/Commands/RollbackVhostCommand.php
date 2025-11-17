@@ -4,8 +4,8 @@ namespace NetServa\Cli\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Cli\Services\MigrationExecutionService;
-use NetServa\Fleet\Models\FleetVHost;
-use NetServa\Fleet\Models\FleetVNode;
+use NetServa\Fleet\Models\FleetVhost;
+use NetServa\Fleet\Models\FleetVnode;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
@@ -47,7 +47,7 @@ class RollbackVhostCommand extends Command
         $vhostDomain = $this->argument('vhost');
 
         // Find vnode
-        $vnode = FleetVNode::where('name', $vnodeName)->first();
+        $vnode = FleetVnode::where('name', $vnodeName)->first();
         if (! $vnode) {
             $this->error("❌ VNode not found: {$vnodeName}");
 
@@ -55,7 +55,7 @@ class RollbackVhostCommand extends Command
         }
 
         // Find vhost
-        $vhost = FleetVHost::where('domain', $vhostDomain)
+        $vhost = FleetVhost::where('domain', $vhostDomain)
             ->where('vnode_id', $vnode->id)
             ->first();
 
@@ -77,7 +77,7 @@ class RollbackVhostCommand extends Command
     /**
      * List available rollback points
      */
-    protected function listRollbackPoints(FleetVHost $vhost): int
+    protected function listRollbackPoints(FleetVhost $vhost): int
     {
         $this->info("📋 Available Rollback Points for {$vhost->domain}");
         $this->newLine();
@@ -123,7 +123,7 @@ class RollbackVhostCommand extends Command
     /**
      * Execute rollback
      */
-    protected function executeRollback(FleetVHost $vhost): int
+    protected function executeRollback(FleetVhost $vhost): int
     {
         $this->info("🔄 Rollback VHost: {$vhost->domain} on {$vhost->vnode->name}");
         $this->newLine();

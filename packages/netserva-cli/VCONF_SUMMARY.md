@@ -247,7 +247,7 @@ All write operations update both locations automatically.
 1. **Migration:** `packages/netserva-cli/database/migrations/2025_10_07_095642_create_vconfs_table.php`
 2. **Model:** `packages/netserva-cli/src/Models/VConf.php`
 3. **Generator:** `packages/netserva-cli/src/Services/NetServaEnvironmentGenerator.php`
-4. **FleetVHost:** `packages/netserva-fleet/src/Models/FleetVHost.php`
+4. **FleetVhost:** `packages/netserva-fleet/src/Models/FleetVhost.php`
 5. **Commands:** `packages/netserva-cli/src/Console/Commands/ShvconfCommand.php`
 
 ## Testing
@@ -255,7 +255,7 @@ All write operations update both locations automatically.
 ```bash
 # Test generation
 php artisan tinker
->>> $vhost = FleetVHost::first();
+>>> $vhost = FleetVhost::first();
 >>> $gen = app(\NetServa\Cli\Services\NetServaEnvironmentGenerator::class);
 >>> $vars = $gen->generate($vhost->vnode, 'test.example.com');
 >>> $vars['VPATH']  // "/srv"
