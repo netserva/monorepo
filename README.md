@@ -42,8 +42,8 @@ venue → vsite → vnode → vhost + vconf → vserv
 
 1. **venue** - Physical location/datacenter (e.g., `home-lab`, `sydney-dc`)
 2. **vsite** - Logical grouping (e.g., `production`, `staging`)
-3. **vnode** - Server/VM/container (e.g., `markc` at 192.168.1.227)
-4. **vhost** - Virtual hosting domain (e.g., `markc.goldcoast.org`)
+3. **vnode** - Server/VM/container (e.g., `webserver` at 192.0.2.10)
+4. **vhost** - Virtual hosting domain (e.g., `example.com`)
 5. **vconf** - Configuration variables (54+ vars in `vconfs` table)
 6. **vserv** - Services (nginx, php-fpm, postfix, dovecot)
 
@@ -330,6 +330,65 @@ php artisan test
 # Static analysis
 vendor/bin/phpstan analyse
 ```
+
+## 🤖 Claude Code-First Development
+
+NetServa 3.0 is developed **primarily with Claude Code** (Anthropic's AI-powered development tool), utilizing a comprehensive self-learning knowledge system that captures and compounds expertise over time.
+
+### The Self-Learning System
+
+**Three interconnected knowledge artifacts** work together to eliminate repeated problem-solving:
+
+1. **Agents** (`.claude/agents/`) - Autonomous problem solvers with domain expertise
+   - Capture "how to think" about a problem domain
+   - Make contextual decisions based on current state
+   - Handle edge cases automatically
+   - Example: `dns/zone-migrator.md` guides DNS infrastructure changes
+
+2. **Runbooks** (`.claude/runbooks/`) - Step-by-step procedures
+   - Capture "what commands to run" for known scenarios
+   - Include verification checkpoints and rollback plans
+   - Track success rates and execution times
+   - Example: `dns/fix-powerdns-zone-replication.md` (15-45 min execution)
+
+3. **Journal** (`.claude/journal/`) - Historical session records
+   - Document problem-solving sessions with timestamps
+   - Record decisions made and lessons learned
+   - Link to agents/runbooks created during session
+   - Example: `2025-11-24_dns-zone-replication-dkim-fix.md`
+
+### The Learning Cycle
+
+```
+Novel Problem → Agent (explores) → Runbook (distills) → Journal (records)
+                     ↓                     ↓                    ↓
+              Next Similar Problem → Follow Runbook (15 min vs 3 hours!)
+```
+
+**Result**: Problems get solved faster each time. First DNS replication issue took 3 hours; subsequent uses of the runbook take 15-45 minutes.
+
+### Documentation
+
+**Private** (`.claude/` - gitignored, contains infrastructure):
+- Real agents with server IPs and hostnames
+- Real runbooks with exact commands
+- Real journals with session history
+
+**Public** (`resources/docs/self-learning/` - committed):
+- **Methodology**: How the system works
+- **Templates**: Starting points for agents/runbooks/journals
+- **Examples**: Sanitized real-world cases (placeholders for sensitive data)
+- **Guides**: Best practices for creating quality artifacts
+
+📖 **Learn More**: [resources/docs/self-learning/README.md](resources/docs/self-learning/README.md)
+
+### Why This Matters
+
+This approach enables:
+- ✅ **Institutional Knowledge**: Never lose expertise when team members leave
+- ✅ **Faster Onboarding**: New developers learn from captured patterns
+- ✅ **Reduced Downtime**: Emergency runbooks execute in minutes, not hours
+- ✅ **Continuous Improvement**: Every problem solved updates the knowledge base
 
 ## 🗄️ Database
 

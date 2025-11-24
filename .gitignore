@@ -54,10 +54,16 @@ resources/docs-archive-*/
 .env.local
 .env.*.local
 
-# Claude Code Journal - Contains sensitive IPs, passwords, API keys
+# Claude Code Knowledge System - ALL PRIVATE (contains infrastructure details)
+# Agents, journals, and runbooks all contain sensitive IPs and server names
+.claude/agents/
 .claude/journal/
+.claude/runbooks/
 .claude/active-context.md
 .claude/project-timeline.md
+# Command templates (user-customizable, may contain infrastructure context)
+.claude/commands/agent.md
+.claude/commands/runbook.md
 
 # Critical Files - PowerDNS API Keys & Production Data
 /pdns_localhost_api_summary.md

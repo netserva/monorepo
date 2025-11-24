@@ -27,6 +27,7 @@ use NetServa\Cli\Console\Commands\MigrateCredentialsCommand;
 use NetServa\Cli\Console\Commands\MigratePlatformProfilesCommand;
 use NetServa\Cli\Console\Commands\MigrateVhostCommand;
 use NetServa\Cli\Console\Commands\MigrateVhostConfigsCommand;
+use NetServa\Cli\Console\Commands\RemoteExecCommand;
 use NetServa\Cli\Console\Commands\RollbackVhostCommand;
 use NetServa\Cli\Console\Commands\ShhostCommand;
 use NetServa\Cli\Console\Commands\ShpwCommand;
@@ -139,6 +140,7 @@ class NetServaCliServiceProvider extends ServiceProvider
                 UseServerCommand::class,    // Set server context
                 ClearContextCommand::class, // Clear context
                 // Infrastructure Management
+                RemoteExecCommand::class,   // Execute scripts on remote vnodes
                 TunnelCommand::class,       // SSH tunnel management
                 // VPS Management
                 BinaryLaneCommand::class,   // BinaryLane VPS management
