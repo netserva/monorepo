@@ -3,7 +3,6 @@
 namespace NetServa\Dns\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Dns\Filament\Resources\DnsProviderResource\Pages\ListDnsProviders;
 use NetServa\Dns\Filament\Resources\DnsProviderResource\Schemas\DnsProviderForm;
 use NetServa\Dns\Filament\Resources\DnsProviderResource\Tables\DnsProvidersTable;
 use NetServa\Dns\Models\DnsProvider;
+use UnitEnum;
 
 class DnsProviderResource extends Resource
 {

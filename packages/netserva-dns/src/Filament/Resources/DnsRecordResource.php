@@ -3,7 +3,6 @@
 namespace NetServa\Dns\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Dns\Filament\Resources\DnsRecordResource\Pages\ListDnsRecords;
 use NetServa\Dns\Filament\Resources\DnsRecordResource\Schemas\DnsRecordForm;
 use NetServa\Dns\Filament\Resources\DnsRecordResource\Tables\DnsRecordsTable;
 use NetServa\Dns\Models\DnsRecord;
+use UnitEnum;
 
 class DnsRecordResource extends Resource
 {

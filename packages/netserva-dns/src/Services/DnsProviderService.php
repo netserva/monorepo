@@ -34,10 +34,10 @@ class DnsProviderService
                             'name' => $remoteZone['name'],
                         ],
                         [
-                            'kind' => $remoteZone['kind'] ?? 'Primary',
+                            'kind' => $remoteZone['kind'] ?? $remoteZone['type'] ?? 'Primary',
                             'serial' => $remoteZone['serial'] ?? null,
-                            'last_check' => $remoteZone['last_check'] ? new \DateTime($remoteZone['last_check']) : null,
-                            'active' => true,
+                            'last_check' => ! empty($remoteZone['last_check']) ? new \DateTime($remoteZone['last_check']) : null,
+                            'active' => $remoteZone['status'] ?? 'active' === 'active',
                             'last_synced' => now(),
                             'provider_data' => $remoteZone,
                         ]

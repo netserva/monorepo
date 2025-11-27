@@ -22,7 +22,7 @@ class DnsProvidersTable
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
-                    ->description(fn ($record) => $record->description)
+                    ->tooltip(fn ($record) => $record->description)
                     ->weight('medium'),
 
                 Tables\Columns\TextColumn::make('type')
@@ -211,12 +211,31 @@ class DnsProvidersTable
                         ->icon('heroicon-o-signal')
                         ->color('info')
                         ->action(function ($record) {
-                            // TODO: Implement connection test
-                            \Filament\Notifications\Notification::make()
-                                ->title('Connection Test')
-                                ->body("Testing connection to {$record->name}...")
-                                ->info()
-                                ->send();
+                            // Use tunnel service for PowerDNS with SSH
+                            if ($record->type === 'powerdns' && ($record->connection_config['ssh_host'] ?? null)) {
+                                $tunnelService = app(\NetServa\Dns\Services\PowerDnsTunnelService::class);
+                                $result = $tunnelService->testConnection($record);
+                                $success = $result['success'] ?? false;
+                                $message = $result['message'] ?? 'Unknown result';
+                            } else {
+                                $service = app(\NetServa\Dns\Services\DnsProviderService::class);
+                                $success = $service->testConnection($record);
+                                $message = $success ? 'Connection successful' : 'Connection failed';
+                            }
+
+                            if ($success) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Connection Successful')
+                                    ->body($message)
+                                    ->success()
+                                    ->send();
+                            } else {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Connection Failed')
+                                    ->body($message)
+                                    ->danger()
+                                    ->send();
+                            }
                         }),
 
                     Action::make('sync_zones')
@@ -224,13 +243,71 @@ class DnsProvidersTable
                         ->icon('heroicon-o-arrow-path')
                         ->color('success')
                         ->visible(fn ($record) => $record->active)
+                        ->requiresConfirmation()
+                        ->modalHeading('Sync Zones')
+                        ->modalDescription('This will fetch all zones and records from the remote DNS provider and update the local cache.')
                         ->action(function ($record) {
-                            // TODO: Implement zone sync
-                            \Filament\Notifications\Notification::make()
-                                ->title('Zone Sync')
-                                ->body("Syncing zones from {$record->name}...")
-                                ->success()
-                                ->send();
+                            $results = ['zones' => 0, 'records' => 0, 'errors' => []];
+
+                            try {
+                                // Use tunnel service for PowerDNS with SSH
+                                if ($record->type === 'powerdns' && ($record->connection_config['ssh_host'] ?? null)) {
+                                    $tunnelService = app(\NetServa\Dns\Services\PowerDnsTunnelService::class);
+                                    $remoteZones = $tunnelService->getZones($record);
+                                } else {
+                                    $client = $record->getClient();
+                                    $remoteZones = $client->getAllZones();
+                                }
+
+                                foreach ($remoteZones as $remoteZone) {
+                                    try {
+                                        // Map PowerDNS kind values to our enum
+                                        $kind = match ($remoteZone['kind'] ?? 'Primary') {
+                                            'Master' => 'Primary',
+                                            'Slave' => 'Secondary',
+                                            'Native' => 'Native',
+                                            'Forwarded' => 'Forwarded',
+                                            default => 'Primary',
+                                        };
+
+                                        \NetServa\Dns\Models\DnsZone::updateOrCreate(
+                                            [
+                                                'dns_provider_id' => $record->id,
+                                                'name' => $remoteZone['name'] ?? $remoteZone['id'],
+                                            ],
+                                            [
+                                                'external_id' => $remoteZone['id'] ?? $remoteZone['name'],
+                                                'kind' => $kind,
+                                                'serial' => $remoteZone['serial'] ?? null,
+                                                'active' => true,
+                                                'last_synced' => now(),
+                                                'provider_data' => $remoteZone,
+                                            ]
+                                        );
+                                        $results['zones']++;
+                                    } catch (\Exception $e) {
+                                        $results['errors'][] = "Zone {$remoteZone['name']}: ".$e->getMessage();
+                                    }
+                                }
+
+                                $record->update(['last_sync' => now()]);
+                            } catch (\Exception $e) {
+                                $results['errors'][] = 'Provider sync failed: '.$e->getMessage();
+                            }
+
+                            if (empty($results['errors'])) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Sync Complete')
+                                    ->body("Synced {$results['zones']} zones from {$record->name}")
+                                    ->success()
+                                    ->send();
+                            } else {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Sync Completed with Errors')
+                                    ->body("Synced {$results['zones']} zones. Errors: ".implode(', ', $results['errors']))
+                                    ->warning()
+                                    ->send();
+                            }
                         }),
 
                     // TODO: Implement usage page before enabling this action

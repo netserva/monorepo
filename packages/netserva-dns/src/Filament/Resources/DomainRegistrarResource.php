@@ -3,7 +3,6 @@
 namespace NetServa\Dns\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Dns\Filament\Resources\DomainRegistrarResource\Pages\ListDomainRegi
 use NetServa\Dns\Filament\Resources\DomainRegistrarResource\Schemas\DomainRegistrarForm;
 use NetServa\Dns\Filament\Resources\DomainRegistrarResource\Tables\DomainRegistrarsTable;
 use NetServa\Dns\Models\DomainRegistrar;
+use UnitEnum;
 
 class DomainRegistrarResource extends Resource
 {

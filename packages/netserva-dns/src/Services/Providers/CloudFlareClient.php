@@ -13,12 +13,20 @@ class CloudFlareClient implements DnsProviderInterface
         $this->config = $config;
     }
 
+    /**
+     * Get the API token from config (supports both api_token and api_key field names)
+     */
+    private function getApiToken(): string
+    {
+        return $this->config['api_token'] ?? $this->config['api_key'] ?? '';
+    }
+
     public function testConnection(): bool
     {
         try {
             // Test connection by listing zones (token may not have user permissions)
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.($this->config['api_token'] ?? $this->config['api_key'] ?? ''),
+                'Authorization' => 'Bearer '.$this->getApiToken(),
                 'Content-Type' => 'application/json',
             ])->get('https://api.cloudflare.com/client/v4/zones?per_page=1');
 
@@ -37,7 +45,7 @@ class CloudFlareClient implements DnsProviderInterface
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.($this->config['api_token'] ?? ''),
+                'Authorization' => 'Bearer '.($this->getApiToken()),
                 'Content-Type' => 'application/json',
             ])->get('https://api.cloudflare.com/client/v4/zones');
 
@@ -65,7 +73,7 @@ class CloudFlareClient implements DnsProviderInterface
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.($this->config['api_token'] ?? ''),
+                'Authorization' => 'Bearer '.($this->getApiToken()),
                 'Content-Type' => 'application/json',
             ])->get("https://api.cloudflare.com/client/v4/zones/{$zoneId}");
 
@@ -93,7 +101,7 @@ class CloudFlareClient implements DnsProviderInterface
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.($this->config['api_token'] ?? ''),
+                'Authorization' => 'Bearer '.($this->getApiToken()),
                 'Content-Type' => 'application/json',
             ])->post('https://api.cloudflare.com/client/v4/zones', [
                 'name' => $data['name'],
@@ -136,7 +144,7 @@ class CloudFlareClient implements DnsProviderInterface
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.($this->config['api_token'] ?? ''),
+                'Authorization' => 'Bearer '.($this->getApiToken()),
                 'Content-Type' => 'application/json',
             ])->get("https://api.cloudflare.com/client/v4/zones/{$zoneId}/dns_records");
 
@@ -170,7 +178,7 @@ class CloudFlareClient implements DnsProviderInterface
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.($this->config['api_token'] ?? ''),
+                'Authorization' => 'Bearer '.($this->getApiToken()),
                 'Content-Type' => 'application/json',
             ])->post("https://api.cloudflare.com/client/v4/zones/{$zoneId}/dns_records", [
                 'type' => $data['type'],
@@ -204,7 +212,7 @@ class CloudFlareClient implements DnsProviderInterface
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.($this->config['api_token'] ?? ''),
+                'Authorization' => 'Bearer '.($this->getApiToken()),
                 'Content-Type' => 'application/json',
             ])->patch("https://api.cloudflare.com/client/v4/zones/{$zoneId}/dns_records/{$recordId}", [
                 'type' => $data['type'] ?? null,
@@ -238,7 +246,7 @@ class CloudFlareClient implements DnsProviderInterface
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.($this->config['api_token'] ?? ''),
+                'Authorization' => 'Bearer '.($this->getApiToken()),
                 'Content-Type' => 'application/json',
             ])->delete("https://api.cloudflare.com/client/v4/zones/{$zoneId}/dns_records/{$recordId}");
 

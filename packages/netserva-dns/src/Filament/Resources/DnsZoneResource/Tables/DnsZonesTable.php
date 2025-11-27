@@ -18,15 +18,15 @@ class DnsZonesTable
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Zone')
-                    ->searchable()
+                    ->searchable(query: fn (Builder $query, string $search) => $query->where('dns_zones.name', 'like', "%{$search}%"))
                     ->sortable()
                     ->formatStateUsing(fn ($state) => rtrim($state, '.'))
-                    ->description(fn ($record) => $record->description)
+                    ->tooltip(fn ($record) => $record->description)
                     ->weight('medium'),
 
                 Tables\Columns\TextColumn::make('dnsProvider.name')
                     ->label('Provider')
-                    ->searchable()
+                    ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('dnsProvider', fn ($q) => $q->where('name', 'like', "%{$search}%")))
                     ->sortable()
                     ->badge()
                     ->color('info'),

@@ -56,6 +56,17 @@ class NetServaDnsServiceProvider extends ServiceProvider
 
         // Publish assets
         $this->publishAssets();
+
+        // Register model observers
+        $this->registerObservers();
+    }
+
+    /**
+     * Register model observers
+     */
+    protected function registerObservers(): void
+    {
+        Models\DnsRecord::observe(Observers\DnsRecordObserver::class);
     }
 
     /**

@@ -27,6 +27,8 @@ class RecordsRelationManager extends RelationManager
             ->filter(fn ($column) => $column->getName() !== 'dnsZone.name')
             ->all();
 
-        return $table->columns($columns);
+        return $table
+            ->heading('')
+            ->columns($columns);
     }
 }

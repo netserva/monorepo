@@ -499,6 +499,55 @@ class PowerDnsTunnelService
     }
 
     /**
+     * Increase SOA serial for a zone via SSH
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  string  $zoneName  Zone name
+     * @return array Result
+     */
+    public function increaseSerial(DnsProvider $provider, string $zoneName): array
+    {
+        $config = $provider->connection_config ?? $provider->config ?? [];
+        $sshHost = $config['ssh_host'] ?? null;
+
+        if (! $sshHost) {
+            return [
+                'success' => false,
+                'message' => 'No SSH host configured',
+            ];
+        }
+
+        try {
+            // Run pdnsutil increase-serial via SSH
+            $command = "ssh -o BatchMode=yes -o ConnectTimeout=10 {$sshHost} 'pdnsutil increase-serial {$zoneName}' 2>&1";
+            $output = shell_exec($command);
+
+            Log::info('PowerDNS SOA serial increased', [
+                'provider' => $provider->name,
+                'zone' => $zoneName,
+                'output' => $output,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'SOA serial increased',
+                'output' => trim($output ?? ''),
+            ];
+        } catch (Exception $e) {
+            Log::error('Failed to increase SOA serial', [
+                'provider' => $provider->name,
+                'zone' => $zoneName,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Failed to increase serial: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Validate PowerDNS provider configuration
      *
      * @param  array  $config  Provider configuration
