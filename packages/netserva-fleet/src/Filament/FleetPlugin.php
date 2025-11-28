@@ -8,12 +8,17 @@ use NetServa\Fleet\Filament\Resources\FleetVenueResource;
 use NetServa\Fleet\Filament\Resources\FleetVhostResource;
 use NetServa\Fleet\Filament\Resources\FleetVnodeResource;
 use NetServa\Fleet\Filament\Resources\FleetVsiteResource;
+use NetServa\Fleet\Filament\Resources\IpAddressResource;
+use NetServa\Fleet\Filament\Resources\IpNetworkResource;
+use NetServa\Fleet\Filament\Resources\IpReservationResource;
+use NetServa\Fleet\Filament\Resources\WireguardPeerResource;
+use NetServa\Fleet\Filament\Resources\WireguardServerResource;
 
 /**
  * NetServa Fleet Plugin
  *
- * Provides fleet-wide management of Venues, VSites, VNodes, and VHosts across
- * the NetServa infrastructure.
+ * Provides fleet-wide management of Venues, VSites, VNodes, VHosts, IP address
+ * management (IPAM), and WireGuard VPN across the NetServa infrastructure.
  *
  * Features:
  * - Venue (infrastructure location) management
@@ -21,6 +26,11 @@ use NetServa\Fleet\Filament\Resources\FleetVsiteResource;
  * - VNode (server node) management
  * - VHost (virtual host) management
  * - Fleet-wide discovery and monitoring
+ * - IP Network management (merged from IPAM)
+ * - IP Address allocation and tracking (merged from IPAM)
+ * - IP Reservations (merged from IPAM)
+ * - WireGuard VPN server management (merged from WG)
+ * - WireGuard peer management (merged from WG)
  */
 class FleetPlugin extends BaseFilamentPlugin
 {
@@ -34,10 +44,18 @@ class FleetPlugin extends BaseFilamentPlugin
     protected function registerResources(Panel $panel): void
     {
         $panel->resources([
+            // Fleet core resources
             FleetVenueResource::class,
             FleetVsiteResource::class,
             FleetVnodeResource::class,
             FleetVhostResource::class,
+            // IPAM resources (merged from netserva-ipam)
+            IpNetworkResource::class,
+            IpAddressResource::class,
+            IpReservationResource::class,
+            // WireGuard resources (merged from netserva-wg)
+            WireguardServerResource::class,
+            WireguardPeerResource::class,
         ]);
     }
 
@@ -74,10 +92,22 @@ class FleetPlugin extends BaseFilamentPlugin
                 'vnode_management' => true,
                 'vhost_management' => true,
                 'fleet_discovery' => true,
+                // IPAM features (merged from netserva-ipam)
+                'ip_network_management' => true,
+                'ip_address_tracking' => true,
+                'ip_reservations' => true,
+                // WireGuard features (merged from netserva-wg)
+                'wireguard_servers' => true,
+                'wireguard_peers' => true,
             ],
             'settings' => [
                 'auto_discover_interval' => 300, // 5 minutes
                 'fleet_monitoring_enabled' => true,
+                // IPAM settings
+                'default_ip_version' => '4',
+                'auto_allocate_ips' => true,
+                // WireGuard settings
+                'wireguard_default_port' => 51820,
             ],
         ];
     }

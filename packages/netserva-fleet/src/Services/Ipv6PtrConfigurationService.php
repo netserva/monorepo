@@ -12,7 +12,7 @@ use NetServa\Dns\Models\DnsZone;
 use NetServa\Dns\Services\DnsRecordManagementService;
 use NetServa\Dns\Services\DnsZoneManagementService;
 use NetServa\Fleet\Models\FleetVnode;
-use NetServa\Ipam\Models\IpNetwork;
+use NetServa\Fleet\Models\IpNetwork;
 
 /**
  * IPv6 PTR Configuration Service
@@ -22,7 +22,7 @@ use NetServa\Ipam\Models\IpNetwork;
  *
  * Package Dependencies:
  * - netserva-core: SSH execution (RemoteConnectionService)
- * - netserva-ipam: IPv6 network tracking and utilities
+ * - netserva-fleet: IPv6 network tracking and utilities (IpNetwork model, merged from IPAM)
  * - netserva-dns: PowerDNS zone and record management
  *
  * Workflow:
