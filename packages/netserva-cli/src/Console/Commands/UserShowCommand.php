@@ -5,7 +5,7 @@ namespace NetServa\Cli\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use NetServa\Cli\Services\NetServaConfigurationService;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Mail\Models\Mailbox;
 
 use function Laravel\Prompts\search;

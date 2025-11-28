@@ -1,7 +1,7 @@
 <?php
 
 use NetServa\Cli\Services\NetServaConfigurationService;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 
 uses()
     ->group('feature', 'commands', 'netserva-cli', 'user-management', 'password', 'priority-2');

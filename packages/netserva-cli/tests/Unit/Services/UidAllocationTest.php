@@ -3,7 +3,7 @@
 use NetServa\Cli\Enums\NetServaConstants;
 use NetServa\Cli\Services\LazyConfigurationCache;
 use NetServa\Cli\Services\NetServaConfigurationService;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 
 beforeEach(function () {
     // Create real service instance with mocked dependencies

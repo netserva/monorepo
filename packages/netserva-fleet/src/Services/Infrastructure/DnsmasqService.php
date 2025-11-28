@@ -4,7 +4,7 @@ namespace NetServa\Fleet\Services\Infrastructure;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Fleet\Models\FleetDnsmasqHost;
 use NetServa\Fleet\Models\FleetVnode;
 

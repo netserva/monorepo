@@ -1,6 +1,6 @@
 <?php
 
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 
 beforeEach(function () {
     $this->service = $this->partialMock(RemoteExecutionService::class);

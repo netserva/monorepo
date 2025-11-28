@@ -3,7 +3,6 @@
 namespace NetServa\Cli\Services;
 
 use Illuminate\Support\Facades\Log;
-use NetServa\Cli\Contracts\ConfigManagerInterface;
 use NetServa\Cli\Enums\NetServaConstants;
 use NetServa\Cli\Enums\NetServaStrings;
 use NetServa\Cli\Enums\OsType;
@@ -11,6 +10,7 @@ use NetServa\Cli\ValueObjects\OsConfiguration;
 use NetServa\Cli\ValueObjects\VhostConfiguration;
 use NetServa\Cli\ValueObjects\VhostPasswords;
 use NetServa\Cli\ValueObjects\VhostPaths;
+use NetServa\Core\Contracts\ConfigManagerInterface;
 
 /**
  * NetServa Configuration Service

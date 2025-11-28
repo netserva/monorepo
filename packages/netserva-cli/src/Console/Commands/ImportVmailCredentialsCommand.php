@@ -5,7 +5,7 @@ namespace NetServa\Cli\Console\Commands;
 use Exception;
 use Illuminate\Console\Command;
 use NetServa\Cli\Models\VPass;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 

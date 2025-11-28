@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use NetServa\Cli\Models\VConf;
+use NetServa\Core\Models\VConf;
 use NetServa\Dns\Models\DnsProvider;
 use NetServa\Fleet\Database\Factories\FleetVhostFactory;
 

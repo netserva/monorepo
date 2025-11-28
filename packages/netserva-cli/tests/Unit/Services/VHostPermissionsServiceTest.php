@@ -4,10 +4,10 @@ namespace NetServa\Cli\Tests\Unit\Services;
 
 use Illuminate\Support\Facades\Log;
 use Mockery;
-use NetServa\Cli\Services\RemoteExecutionService;
-use NetServa\Cli\Services\VhostConfigService;
 use NetServa\Cli\Services\VHostPermissionsService;
 use NetServa\Core\Models\VHost;
+use NetServa\Core\Services\RemoteExecutionService;
+use NetServa\Core\Services\VhostConfigService;
 use Tests\TestCase;
 
 class VHostPermissionsServiceTest extends TestCase

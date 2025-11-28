@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Laravel\Prompts\table;
 use NetServa\Cli\Services\NetServaConfigurationService;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 
 /**
  * Show Mail Analysis Command

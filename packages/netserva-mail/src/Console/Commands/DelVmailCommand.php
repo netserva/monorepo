@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Laravel\Prompts\Progress;
 use NetServa\Cli\Services\NetServaConfigurationService;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 
 /**
  * Delete Virtual Mail User Command

@@ -1,6 +1,6 @@
 <?php
 
-namespace NetServa\Cli\Database\Factories;
+namespace NetServa\Core\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use NetServa\Core\Models\VConf;

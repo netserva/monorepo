@@ -3,11 +3,11 @@
 namespace NetServa\Cli\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Cli\Services\RemoteExecutionService;
 use NetServa\Cli\Services\SshConfigService;
 use NetServa\Cli\Services\UserManagementService;
-use NetServa\Cli\Services\VhostConfigService;
 use NetServa\Cli\Services\VhostManagementService;
+use NetServa\Core\Services\RemoteExecutionService;
+use NetServa\Core\Services\VhostConfigService;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;

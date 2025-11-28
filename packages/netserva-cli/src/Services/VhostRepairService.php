@@ -209,7 +209,7 @@ class VhostRepairService
         };
 
         // Update WUGID in vconfs (use correct column names: name, value)
-        $vconf = \NetServa\Cli\Models\VConf::where('fleet_vhost_id', $vhost->id)
+        $vconf = \NetServa\Core\Models\VConf::where('fleet_vhost_id', $vhost->id)
             ->where('name', 'WUGID')
             ->first();
 
@@ -217,7 +217,7 @@ class VhostRepairService
             $vconf->update(['value' => $expectedWugid]);
         } else {
             // Create WUGID if doesn't exist
-            \NetServa\Cli\Models\VConf::create([
+            \NetServa\Core\Models\VConf::create([
                 'fleet_vhost_id' => $vhost->id,
                 'name' => 'WUGID',
                 'value' => $expectedWugid,
@@ -276,14 +276,14 @@ class VhostRepairService
         ];
 
         foreach ($updates as $key => $value) {
-            $vconf = \NetServa\Cli\Models\VConf::where('fleet_vhost_id', $vhost->id)
+            $vconf = \NetServa\Core\Models\VConf::where('fleet_vhost_id', $vhost->id)
                 ->where('name', $key)
                 ->first();
 
             if ($vconf) {
                 $vconf->update(['value' => $value]);
             } else {
-                \NetServa\Cli\Models\VConf::create([
+                \NetServa\Core\Models\VConf::create([
                     'fleet_vhost_id' => $vhost->id,
                     'name' => $key,
                     'value' => $value,

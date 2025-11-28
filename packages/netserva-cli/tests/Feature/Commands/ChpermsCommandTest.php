@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Log;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 

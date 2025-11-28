@@ -7,7 +7,9 @@ use NetServa\Core\Services\ConfigurationService;
 use NetServa\Core\Services\LoggingService;
 use NetServa\Core\Services\NotificationService;
 use NetServa\Core\Services\RemoteConnectionService;
+use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Core\Services\SshTunnelService;
+use NetServa\Core\Services\VhostConfigService;
 
 /**
  * NetServa Core Service Provider
@@ -28,6 +30,8 @@ class NetServaCoreServiceProvider extends ServiceProvider
         $this->app->singleton(NotificationService::class);
         $this->app->singleton(RemoteConnectionService::class);
         $this->app->singleton(SshTunnelService::class);
+        $this->app->singleton(VhostConfigService::class);
+        $this->app->singleton(RemoteExecutionService::class);
 
         // Register configuration
         $this->registerConfig();

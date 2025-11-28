@@ -4,7 +4,7 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Exception;
 use Illuminate\Console\Command;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Fleet\Models\FleetVnode;
 
 /**

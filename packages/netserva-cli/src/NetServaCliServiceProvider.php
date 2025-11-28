@@ -46,15 +46,15 @@ use NetServa\Cli\Services\LazyConfigurationCache;
 use NetServa\Cli\Services\MigrationExecutionService;
 use NetServa\Cli\Services\NetServaConfigurationService;
 use NetServa\Cli\Services\NetServaContext;
-use NetServa\Cli\Services\RemoteExecutionService;
 use NetServa\Cli\Services\SshConfigService;
 use NetServa\Cli\Services\TunnelService;
 use NetServa\Cli\Services\UserManagementService;
-use NetServa\Cli\Services\VhostConfigService;
 use NetServa\Cli\Services\VhostManagementService;
 use NetServa\Cli\Services\VhostRepairService;
 use NetServa\Cli\Services\VhostValidationService;
 use NetServa\Cli\Services\VmailManagementService;
+use NetServa\Core\Services\RemoteExecutionService;
+use NetServa\Core\Services\VhostConfigService;
 
 /**
  * NetServa CLI Service Provider

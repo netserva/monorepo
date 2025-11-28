@@ -3,7 +3,7 @@
 namespace NetServa\Cli\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Fleet\Models\FleetVnode;
 
 /**

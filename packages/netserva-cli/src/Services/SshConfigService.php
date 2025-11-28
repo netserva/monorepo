@@ -5,7 +5,7 @@ namespace NetServa\Cli\Services;
 use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use NetServa\Cli\Contracts\ConfigManagerInterface;
+use NetServa\Core\Contracts\ConfigManagerInterface;
 
 /**
  * SSH Configuration Service

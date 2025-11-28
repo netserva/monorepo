@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Laravel\Prompts\password;
 use Laravel\Prompts\Progress;
 use NetServa\Cli\Services\NetServaConfigurationService;
-use NetServa\Cli\Services\RemoteExecutionService;
+use NetServa\Core\Services\RemoteExecutionService;
 
 /**
  * Add Virtual Mail User Command

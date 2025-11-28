@@ -4,8 +4,8 @@ namespace NetServa\Cli\Services;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
-use NetServa\Cli\Contracts\ConfigManagerInterface;
 use NetServa\Cli\Exceptions\VHostNotFoundException;
+use NetServa\Core\Contracts\ConfigManagerInterface;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 
