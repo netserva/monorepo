@@ -17,6 +17,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use NetServa\Fleet\Filament\Clusters\Fleet\FleetCluster;
 use NetServa\Fleet\Filament\Resources\FleetVnodeResource\Pages;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Services\FleetDiscoveryService;
@@ -38,7 +39,7 @@ class FleetVnodeResource extends Resource
 
     protected static ?string $pluralModelLabel = 'VNodes';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
+    protected static ?string $cluster = FleetCluster::class;
 
     protected static ?int $navigationSort = 2;
 

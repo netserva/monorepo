@@ -7,21 +7,21 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use NetServa\Fleet\Filament\Clusters\Network\NetworkCluster;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Pages\CreateWireguardPeer;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Pages\EditWireguardPeer;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Pages\ListWireguardPeers;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Schemas\WireguardPeerForm;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Tables\WireguardPeersTable;
 use NetServa\Fleet\Models\WireguardPeer;
-use UnitEnum;
 
 class WireguardPeerResource extends Resource
 {
     protected static ?string $model = WireguardPeer::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUser;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Network';
+    protected static ?string $cluster = NetworkCluster::class;
 
     protected static ?int $navigationSort = 50;
 

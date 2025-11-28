@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use NetServa\Fleet\Filament\Clusters\Fleet\FleetCluster;
 use NetServa\Fleet\Filament\Resources\FleetVsiteResource\Pages;
 use NetServa\Fleet\Models\FleetVsite;
 
@@ -34,7 +35,7 @@ class FleetVsiteResource extends Resource
 
     protected static ?string $pluralModelLabel = 'VSites';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
+    protected static ?string $cluster = FleetCluster::class;
 
     protected static ?int $navigationSort = 1;
 

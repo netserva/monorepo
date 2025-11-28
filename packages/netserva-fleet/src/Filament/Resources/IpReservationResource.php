@@ -7,21 +7,21 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use NetServa\Fleet\Filament\Clusters\Network\NetworkCluster;
 use NetServa\Fleet\Filament\Resources\IpReservationResource\Pages\CreateIpReservation;
 use NetServa\Fleet\Filament\Resources\IpReservationResource\Pages\EditIpReservation;
 use NetServa\Fleet\Filament\Resources\IpReservationResource\Pages\ListIpReservations;
 use NetServa\Fleet\Filament\Resources\IpReservationResource\Schemas\IpReservationForm;
 use NetServa\Fleet\Filament\Resources\IpReservationResource\Tables\IpReservationsTable;
 use NetServa\Fleet\Models\IpReservation;
-use UnitEnum;
 
 class IpReservationResource extends Resource
 {
     protected static ?string $model = IpReservation::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookmark;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Network';
+    protected static ?string $cluster = NetworkCluster::class;
 
     protected static ?int $navigationSort = 30;
 
