@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource\Pages\CreateAnalyticsDataSource;
 use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource\Pages\EditAnalyticsDataSource;
 use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource\Pages\ListAnalyticsDataSources;
 use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource\Schemas\AnalyticsDataSourceForm;
 use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource\Tables\AnalyticsDataSourcesTable;
 use NetServa\Ops\Models\AnalyticsDataSource;
-use UnitEnum;
 
 class AnalyticsDataSourceResource extends Resource
 {
@@ -21,7 +21,7 @@ class AnalyticsDataSourceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Ops';
+    protected static ?string $cluster = OperationsCluster::class;
 
     protected static ?int $navigationSort = 22;
 

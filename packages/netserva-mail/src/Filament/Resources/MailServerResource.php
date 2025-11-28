@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use NetServa\Mail\Filament\Clusters\Mail\MailCluster;
 use NetServa\Mail\Filament\Resources\MailServerResource\Pages\CreateMailServer;
 use NetServa\Mail\Filament\Resources\MailServerResource\Pages\EditMailServer;
 use NetServa\Mail\Filament\Resources\MailServerResource\Pages\ListMailServers;
 use NetServa\Mail\Filament\Resources\MailServerResource\Schemas\MailServerForm;
 use NetServa\Mail\Filament\Resources\MailServerResource\Tables\MailServersTable;
 use NetServa\Mail\Models\MailServer;
-use UnitEnum;
 
 class MailServerResource extends Resource
 {
@@ -21,7 +21,7 @@ class MailServerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Mail';
+    protected static ?string $cluster = MailCluster::class;
 
     protected static ?int $navigationSort = 40;
 

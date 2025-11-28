@@ -7,21 +7,21 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use NetServa\Mail\Filament\Clusters\Mail\MailCluster;
 use NetServa\Mail\Filament\Resources\MailDomainResource\Pages\CreateMailDomain;
 use NetServa\Mail\Filament\Resources\MailDomainResource\Pages\EditMailDomain;
 use NetServa\Mail\Filament\Resources\MailDomainResource\Pages\ListMailDomains;
 use NetServa\Mail\Filament\Resources\MailDomainResource\Schemas\MailDomainForm;
 use NetServa\Mail\Filament\Resources\MailDomainResource\Tables\MailDomainsTable;
 use NetServa\Mail\Models\MailDomain;
-use UnitEnum;
 
 class MailDomainResource extends Resource
 {
     protected static ?string $model = MailDomain::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Mail';
+    protected static ?string $cluster = MailCluster::class;
 
     protected static ?int $navigationSort = 10;
 

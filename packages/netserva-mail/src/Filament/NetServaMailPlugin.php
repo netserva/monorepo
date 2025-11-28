@@ -4,6 +4,7 @@ namespace NetServa\Mail\Filament;
 
 use Filament\Panel;
 use NetServa\Core\Foundation\BaseFilamentPlugin;
+use NetServa\Mail\Filament\Clusters\Mail\MailCluster;
 use NetServa\Mail\Filament\Resources\MailAliasResource;
 use NetServa\Mail\Filament\Resources\MailboxResource;
 use NetServa\Mail\Filament\Resources\MailDomainResource;
@@ -24,8 +25,6 @@ use NetServa\Mail\Filament\Resources\MailServerResource;
  * - Mail queue monitoring
  * - Mail log analysis
  * - Mail alias and forwarding rules
- *
- * @package NetServa\Mail\Filament
  */
 class NetServaMailPlugin extends BaseFilamentPlugin
 {
@@ -38,6 +37,11 @@ class NetServaMailPlugin extends BaseFilamentPlugin
 
     protected function registerResources(Panel $panel): void
     {
+        // Register cluster for collapsible navigation
+        $panel->clusters([
+            MailCluster::class,
+        ]);
+
         $panel->resources([
             MailDomainResource::class,
             MailboxResource::class,
