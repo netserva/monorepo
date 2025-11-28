@@ -10,6 +10,8 @@ use NetServa\Ops\Filament\Resources\AnalyticsDashboardResource;
 use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource;
 use NetServa\Ops\Filament\Resources\AnalyticsMetricResource;
 use NetServa\Ops\Filament\Resources\AnalyticsVisualizationResource;
+use NetServa\Ops\Filament\Resources\AutomationJobResource;
+use NetServa\Ops\Filament\Resources\AutomationTaskResource;
 use NetServa\Ops\Filament\Resources\BackupJobResource;
 use NetServa\Ops\Filament\Resources\BackupRepositoryResource;
 use NetServa\Ops\Filament\Resources\BackupSnapshotResource;
@@ -30,8 +32,7 @@ use NetServa\Ops\Filament\Resources\StatusPageResource;
  * - Incident tracking and status pages
  * - Analytics metrics and dashboards
  * - Data visualization and reporting
- *
- * @package NetServa\Ops\Filament
+ * - Automation tasks and job execution (merged from cron package)
  */
 class NetServaOpsPlugin extends BaseFilamentPlugin
 {
@@ -45,18 +46,24 @@ class NetServaOpsPlugin extends BaseFilamentPlugin
     protected function registerResources(Panel $panel): void
     {
         $panel->resources([
+            // Monitoring
+            MonitoringCheckResource::class,
+            AlertRuleResource::class,
+            IncidentResource::class,
+            StatusPageResource::class,
+            // Backup
             BackupJobResource::class,
             BackupRepositoryResource::class,
             BackupSnapshotResource::class,
-            MonitoringCheckResource::class,
-            AlertRuleResource::class,
-            StatusPageResource::class,
-            IncidentResource::class,
+            // Analytics
+            AnalyticsDashboardResource::class,
             AnalyticsMetricResource::class,
             AnalyticsDataSourceResource::class,
-            AnalyticsDashboardResource::class,
             AnalyticsVisualizationResource::class,
             AnalyticsAlertResource::class,
+            // Automation (merged from cron)
+            AutomationJobResource::class,
+            AutomationTaskResource::class,
         ]);
     }
 

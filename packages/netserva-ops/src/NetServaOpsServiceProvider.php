@@ -4,6 +4,7 @@ namespace NetServa\Ops;
 
 use Illuminate\Support\ServiceProvider;
 use NetServa\Ops\Services\AnalyticsService;
+use NetServa\Ops\Services\AutomationService;
 use NetServa\Ops\Services\BackupService;
 use NetServa\Ops\Services\MonitoringService;
 
@@ -17,6 +18,7 @@ class NetServaOpsServiceProvider extends ServiceProvider
         $this->app->singleton(BackupService::class);
         $this->app->singleton(MonitoringService::class);
         $this->app->singleton(AnalyticsService::class);
+        $this->app->singleton(AutomationService::class);
 
         $this->mergeConfigFrom(__DIR__.'/../config/ops-manager.php', 'ops-manager');
     }

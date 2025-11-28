@@ -262,8 +262,8 @@ class AdminPanelProvider extends PanelProvider
     protected function getDefaultNavigationGroups(): array
     {
         return [
+            NavigationGroup::make()->label('Core')->icon('heroicon-o-cog-8-tooth')->collapsed(),
             NavigationGroup::make()->label('Fleet')->icon('heroicon-o-rocket-launch')->collapsed(),
-            NavigationGroup::make()->label('Admin')->icon('heroicon-o-cog-8-tooth')->collapsed(),
             NavigationGroup::make()->label('Cms')->icon('heroicon-o-document-text')->collapsed(),
             NavigationGroup::make()->label('Dns')->icon('heroicon-o-globe-alt')->collapsed(),
             NavigationGroup::make()->label('Mail')->icon('heroicon-o-envelope')->collapsed(),
@@ -273,7 +273,7 @@ class AdminPanelProvider extends PanelProvider
             NavigationGroup::make()->label('Wg')->icon('heroicon-o-shield-check')->collapsed(),
             NavigationGroup::make()->label('Cli')->icon('heroicon-o-command-line')->collapsed(),
             NavigationGroup::make()->label('Ops')->icon('heroicon-o-chart-bar-square')->collapsed(),
-            NavigationGroup::make()->label('Cron')->icon('heroicon-o-clock')->collapsed(),
+            // Cron merged into Ops - removed from navigation groups
         ];
     }
 }

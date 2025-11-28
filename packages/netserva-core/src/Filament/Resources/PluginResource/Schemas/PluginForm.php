@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+namespace NetServa\Core\Filament\Resources\PluginResource\Schemas;
+
+use Filament\Forms;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+
+class PluginForm
+{
+    public static function make(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make('Plugin Information')
+                ->schema([
+                    Forms\Components\TextInput::make('name')
+                        ->disabled()
+                        ->label('Plugin Name'),
+
+                    Forms\Components\TextInput::make('plugin_class')
+                        ->disabled()
+                        ->label('Class'),
+
+                    Forms\Components\TextInput::make('package_name')
+                        ->disabled()
+                        ->label('Package'),
+
+                    Forms\Components\TextInput::make('version')
+                        ->disabled(),
+
+                    Forms\Components\Toggle::make('is_enabled')
+                        ->label('Enabled')
+                        ->helperText('Enable or disable this plugin'),
+
+                    Forms\Components\Textarea::make('description')
+                        ->disabled()
+                        ->rows(2),
+                ]),
+
+            Section::make('Navigation')
+                ->schema([
+                    Forms\Components\TextInput::make('navigation_sort')
+                        ->label('Sort Order')
+                        ->numeric()
+                        ->helperText('Lower numbers appear first in the sidebar'),
+
+                    Forms\Components\TextInput::make('navigation_group')
+                        ->label('Group Label')
+                        ->placeholder(fn ($record) => $record?->getNavigationGroupName())
+                        ->helperText('Override the default navigation group name'),
+
+                    Forms\Components\TextInput::make('navigation_icon')
+                        ->label('Icon')
+                        ->placeholder(fn ($record) => $record?->getNavigationIcon())
+                        ->helperText('Heroicon name (e.g., heroicon-o-rocket-launch)'),
+                ])
+                ->columns(3),
+
+            Section::make('Dependencies')
+                ->schema([
+                    Forms\Components\TagsInput::make('dependencies')
+                        ->disabled()
+                        ->helperText('Required plugins'),
+                ])
+                ->visible(fn ($record) => ! empty($record?->dependencies)),
+
+            Section::make('Metadata')
+                ->schema([
+                    Forms\Components\TextInput::make('source')
+                        ->disabled(),
+
+                    Forms\Components\TextInput::make('category')
+                        ->disabled(),
+
+                    Forms\Components\KeyValue::make('composer_data')
+                        ->disabled()
+                        ->label('Composer Data'),
+                ])
+                ->collapsible()
+                ->collapsed(),
+        ]);
+    }
+}

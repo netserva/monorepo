@@ -6,12 +6,20 @@ namespace NetServa\Core;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use NetServa\Core\Filament\Resources\AuditLogResource;
+use NetServa\Core\Filament\Resources\PluginResource;
+use NetServa\Core\Filament\Resources\SettingResource;
 
 /**
  * NetServa Core Plugin
  *
  * Provides foundation functionality for all NetServa plugins.
  * This is the base plugin that other plugins depend on.
+ *
+ * Also provides system administration resources (merged from admin plugin):
+ * - Settings management
+ * - Plugin management
+ * - Audit log viewing
  */
 class CorePlugin implements Plugin
 {
@@ -22,8 +30,12 @@ class CorePlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        // Core plugin doesn't register Filament resources directly
-        // It provides base models, services, and foundation classes for other plugins
+        // Register system administration resources (merged from admin plugin)
+        $panel->resources([
+            SettingResource::class,
+            PluginResource::class,
+            AuditLogResource::class,
+        ]);
     }
 
     public function boot(Panel $panel): void
