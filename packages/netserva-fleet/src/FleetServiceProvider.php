@@ -4,8 +4,17 @@ namespace NetServa\Fleet;
 
 use Illuminate\Support\ServiceProvider;
 use NetServa\Fleet\Console\Commands\AddfleetCommand;
+use NetServa\Fleet\Console\Commands\AddvconfCommand;
+use NetServa\Fleet\Console\Commands\AddvhostCommand;
 use NetServa\Fleet\Console\Commands\ChfleetCommand;
+use NetServa\Fleet\Console\Commands\ChvconfCommand;
+use NetServa\Fleet\Console\Commands\ChvhostCommand;
+use NetServa\Fleet\Console\Commands\DelvconfCommand;
+use NetServa\Fleet\Console\Commands\DelvhostCommand;
+use NetServa\Fleet\Console\Commands\ShvconfCommand;
+use NetServa\Fleet\Console\Commands\ShvhostCommand;
 use NetServa\Fleet\Console\Commands\VNodeSetupCommand;
+use NetServa\Fleet\Services\VhostManagementService;
 
 /**
  * NetServa Fleet Management Service Provider
@@ -25,6 +34,8 @@ class FleetServiceProvider extends ServiceProvider
         $this->app->singleton('fleet.discovery', function ($app) {
             return new Services\FleetDiscoveryService;
         });
+
+        $this->app->singleton(VhostManagementService::class);
     }
 
     public function boot(): void
@@ -57,6 +68,18 @@ class FleetServiceProvider extends ServiceProvider
                 Console\Commands\ShvnodeCommand::class,     // READ
                 Console\Commands\ChvnodeCommand::class,     // UPDATE
                 Console\Commands\DelvnodeCommand::class,    // DELETE
+
+                // VHost CRUD Commands (moved from CLI package)
+                AddvhostCommand::class,     // CREATE
+                ShvhostCommand::class,      // READ
+                ChvhostCommand::class,      // UPDATE
+                DelvhostCommand::class,     // DELETE
+
+                // VConf CRUD Commands (moved from CLI package)
+                AddvconfCommand::class,     // CREATE
+                ShvconfCommand::class,      // READ
+                ChvconfCommand::class,      // UPDATE
+                DelvconfCommand::class,     // DELETE
 
                 // VNode Configuration Commands (Non-CRUD)
                 Console\Commands\FleetIpv6PtrConfigureCommand::class,  // Configure IPv6 PTR records

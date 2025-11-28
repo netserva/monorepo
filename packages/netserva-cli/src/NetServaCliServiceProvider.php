@@ -5,17 +5,11 @@ namespace NetServa\Cli;
 use Illuminate\Support\ServiceProvider;
 use NetServa\Cli\Commands\NsCommand;
 use NetServa\Cli\Console\Commands\AddpwCommand;
-use NetServa\Cli\Console\Commands\AddvconfCommand;
-use NetServa\Cli\Console\Commands\AddVhostCommand;
 use NetServa\Cli\Console\Commands\BinaryLaneCommand;
 use NetServa\Cli\Console\Commands\ChpermsCommand;
 use NetServa\Cli\Console\Commands\ChpwCommand;
-use NetServa\Cli\Console\Commands\ChvconfCommand;
-use NetServa\Cli\Console\Commands\ChvhostCommand;
 use NetServa\Cli\Console\Commands\ClearContextCommand;
 use NetServa\Cli\Console\Commands\DelpwCommand;
-use NetServa\Cli\Console\Commands\DelvconfCommand;
-use NetServa\Cli\Console\Commands\DelvhostCommand;
 use NetServa\Cli\Console\Commands\ImportVmailCredentialsCommand;
 use NetServa\Cli\Console\Commands\MigrateCredentialsCommand;
 use NetServa\Cli\Console\Commands\MigratePlatformProfilesCommand;
@@ -25,8 +19,6 @@ use NetServa\Cli\Console\Commands\RemoteExecCommand;
 use NetServa\Cli\Console\Commands\RollbackVhostCommand;
 use NetServa\Cli\Console\Commands\ShhostCommand;
 use NetServa\Cli\Console\Commands\ShpwCommand;
-use NetServa\Cli\Console\Commands\ShvconfCommand;
-use NetServa\Cli\Console\Commands\ShvhostCommand;
 use NetServa\Cli\Console\Commands\TunnelCommand;
 use NetServa\Cli\Console\Commands\UserPasswordCommand;
 use NetServa\Cli\Console\Commands\UserPasswordShowCommand;
@@ -41,7 +33,6 @@ use NetServa\Cli\Services\NetServaContext;
 use NetServa\Cli\Services\SshConfigService;
 use NetServa\Cli\Services\TunnelService;
 use NetServa\Cli\Services\UserManagementService;
-use NetServa\Cli\Services\VhostManagementService;
 use NetServa\Cli\Services\VhostRepairService;
 use NetServa\Cli\Services\VhostValidationService;
 use NetServa\Core\Services\RemoteExecutionService;
@@ -72,7 +63,7 @@ class NetServaCliServiceProvider extends ServiceProvider
         $this->app->singleton(RemoteExecutionService::class);
         $this->app->singleton(TunnelService::class);
         $this->app->singleton(UserManagementService::class);
-        $this->app->singleton(VhostManagementService::class);
+        // VhostManagementService moved to NetServa\Fleet package
         $this->app->singleton(VhostValidationService::class);
         $this->app->singleton(VhostRepairService::class);
         $this->app->singleton(MigrationExecutionService::class);
@@ -100,11 +91,9 @@ class NetServaCliServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 NsCommand::class,
-                // VHost CRUD Commands
-                AddVhostCommand::class,     // CREATE
-                ShvhostCommand::class,      // READ
-                ChvhostCommand::class,      // UPDATE
-                DelvhostCommand::class,     // DELETE
+                // VHost/VConf CRUD commands moved to NetServa\Fleet package:
+                // addvhost, shvhost, chvhost, delvhost
+                // addvconf, shvconf, chvconf, delvconf
                 // Virtual Mail commands moved to NetServa\Mail package:
                 // addvmail, shvmail, chvmail, delvmail
                 // addvalias, shvalias, chvalias, delvalias
@@ -133,11 +122,6 @@ class NetServaCliServiceProvider extends ServiceProvider
                 ImportVmailCredentialsCommand::class, // Import vmails from remote databases
                 MigrateVhostConfigsCommand::class, // Migrate vhost configs to database
                 MigratePlatformProfilesCommand::class, // Migrate platform profiles to database
-                // VHost Configuration Management
-                ShvconfCommand::class,      // Show vhost config variables
-                AddvconfCommand::class,     // Add/initialize vhost config
-                ChvconfCommand::class,      // Change vhost config variable
-                DelvconfCommand::class,     // Delete vhost config variables
                 // VHost Validation & Migration (Phase 3-4)
                 ValidateCommand::class,      // Validate vhost compliance (NetServa CRUD pattern)
                 MigrateVhostCommand::class,  // Migrate vhost to NS 3.0
