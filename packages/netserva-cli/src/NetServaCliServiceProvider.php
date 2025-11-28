@@ -5,23 +5,17 @@ namespace NetServa\Cli;
 use Illuminate\Support\ServiceProvider;
 use NetServa\Cli\Commands\NsCommand;
 use NetServa\Cli\Console\Commands\AddpwCommand;
-use NetServa\Cli\Console\Commands\AddvaliasCommand;
 use NetServa\Cli\Console\Commands\AddvconfCommand;
 use NetServa\Cli\Console\Commands\AddVhostCommand;
-use NetServa\Cli\Console\Commands\AddvmailCommand;
 use NetServa\Cli\Console\Commands\BinaryLaneCommand;
 use NetServa\Cli\Console\Commands\ChpermsCommand;
 use NetServa\Cli\Console\Commands\ChpwCommand;
-use NetServa\Cli\Console\Commands\ChvaliasCommand;
 use NetServa\Cli\Console\Commands\ChvconfCommand;
 use NetServa\Cli\Console\Commands\ChvhostCommand;
-use NetServa\Cli\Console\Commands\ChvmailCommand;
 use NetServa\Cli\Console\Commands\ClearContextCommand;
 use NetServa\Cli\Console\Commands\DelpwCommand;
-use NetServa\Cli\Console\Commands\DelvaliasCommand;
 use NetServa\Cli\Console\Commands\DelvconfCommand;
 use NetServa\Cli\Console\Commands\DelvhostCommand;
-use NetServa\Cli\Console\Commands\DelvmailCommand;
 use NetServa\Cli\Console\Commands\ImportVmailCredentialsCommand;
 use NetServa\Cli\Console\Commands\MigrateCredentialsCommand;
 use NetServa\Cli\Console\Commands\MigratePlatformProfilesCommand;
@@ -31,10 +25,8 @@ use NetServa\Cli\Console\Commands\RemoteExecCommand;
 use NetServa\Cli\Console\Commands\RollbackVhostCommand;
 use NetServa\Cli\Console\Commands\ShhostCommand;
 use NetServa\Cli\Console\Commands\ShpwCommand;
-use NetServa\Cli\Console\Commands\ShvaliasCommand;
 use NetServa\Cli\Console\Commands\ShvconfCommand;
 use NetServa\Cli\Console\Commands\ShvhostCommand;
-use NetServa\Cli\Console\Commands\ShvmailCommand;
 use NetServa\Cli\Console\Commands\TunnelCommand;
 use NetServa\Cli\Console\Commands\UserPasswordCommand;
 use NetServa\Cli\Console\Commands\UserPasswordShowCommand;
@@ -52,7 +44,6 @@ use NetServa\Cli\Services\UserManagementService;
 use NetServa\Cli\Services\VhostManagementService;
 use NetServa\Cli\Services\VhostRepairService;
 use NetServa\Cli\Services\VhostValidationService;
-use NetServa\Cli\Services\VmailManagementService;
 use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Core\Services\VhostConfigService;
 
@@ -85,7 +76,7 @@ class NetServaCliServiceProvider extends ServiceProvider
         $this->app->singleton(VhostValidationService::class);
         $this->app->singleton(VhostRepairService::class);
         $this->app->singleton(MigrationExecutionService::class);
-        $this->app->singleton(VmailManagementService::class);
+        // VmailManagementService moved to NetServa\Mail package
         $this->app->singleton(NetServaConfigurationService::class);
         $this->app->singleton(LazyConfigurationCache::class);
         $this->app->singleton(NetServaContext::class);
@@ -109,21 +100,14 @@ class NetServaCliServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 NsCommand::class,
-                // NetServa CRUD Pattern Commands
+                // VHost CRUD Commands
                 AddVhostCommand::class,     // CREATE
                 ShvhostCommand::class,      // READ
                 ChvhostCommand::class,      // UPDATE
                 DelvhostCommand::class,     // DELETE
-                // Virtual Mail Management (CRUD)
-                AddvmailCommand::class,     // CREATE
-                ShvmailCommand::class,      // READ
-                ChvmailCommand::class,      // UPDATE
-                DelvmailCommand::class,     // DELETE
-                // Virtual Alias Management (CRUD)
-                AddvaliasCommand::class,    // CREATE
-                ShvaliasCommand::class,     // READ
-                ChvaliasCommand::class,     // UPDATE
-                DelvaliasCommand::class,    // DELETE
+                // Virtual Mail commands moved to NetServa\Mail package:
+                // addvmail, shvmail, chvmail, delvmail
+                // addvalias, shvalias, chvalias, delvalias
                 // Unified Password/Credential Vault (CRUD - VPass)
                 AddpwCommand::class,        // CREATE
                 ShpwCommand::class,         // READ
@@ -144,7 +128,6 @@ class NetServaCliServiceProvider extends ServiceProvider
                 TunnelCommand::class,       // SSH tunnel management
                 // VPS Management
                 BinaryLaneCommand::class,   // BinaryLane VPS management
-                // Monitoring & Analytics
                 // Migration Commands
                 MigrateCredentialsCommand::class,  // Migrate mail_credentials to VPass
                 ImportVmailCredentialsCommand::class, // Import vmails from remote databases
