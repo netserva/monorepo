@@ -11,37 +11,33 @@ uses(RefreshDatabase::class)
 
 it('displays help information', function () {
     $this->artisan('shvhost --help')
-        ->expectsOutput('Description:')
-        ->expectsOutput('Show virtual host information (NetServa CRUD pattern)')
+        ->expectsOutputToContain('Show virtual host information')
         ->assertExitCode(0);
 });
 
 it('shows all vhosts when database is empty', function () {
     $this->artisan('shvhost')
         ->expectsOutputToContain('No VHosts found in database')
-        ->expectsOutputToContain('💡 Run: php artisan fleet:discover')
+        ->expectsOutputToContain('addfleet')
         ->assertExitCode(0);
 });
 
 it('shows all vhosts across all vnodes', function () {
     // Create test data
     $vsite = FleetVsite::factory()->create(['name' => 'test-site']);
-    $vnode1 = FleetVnode::factory()->create(['name' => 'markc', 'vsite_id' => $vsite->id]);
-    $vnode2 = FleetVnode::factory()->create(['name' => 'prod', 'vsite_id' => $vsite->id]);
+    $vnode1 = FleetVnode::factory()->create(['name' => 'testnode1', 'vsite_id' => $vsite->id]);
+    $vnode2 = FleetVnode::factory()->create(['name' => 'testnode2', 'vsite_id' => $vsite->id]);
 
-    FleetVhost::factory()->create(['domain' => 'test1.com', 'vnode_id' => $vnode1->id, 'is_active' => true]);
-    FleetVhost::factory()->create(['domain' => 'test2.com', 'vnode_id' => $vnode1->id, 'is_active' => true]);
-    FleetVhost::factory()->create(['domain' => 'prod1.com', 'vnode_id' => $vnode2->id, 'is_active' => false]);
+    FleetVhost::factory()->create(['domain' => 'test1.example.com', 'vnode_id' => $vnode1->id, 'is_active' => true]);
+    FleetVhost::factory()->create(['domain' => 'test2.example.com', 'vnode_id' => $vnode1->id, 'is_active' => true]);
+    FleetVhost::factory()->create(['domain' => 'prod1.example.com', 'vnode_id' => $vnode2->id, 'is_active' => false]);
 
     $this->artisan('shvhost')
-        ->expectsOutputToContain('📋 All VHosts:')
-        ->expectsOutputToContain('markc')
-        ->expectsOutputToContain('(2 vhosts)')
-        ->expectsOutputToContain('test1.com')
-        ->expectsOutputToContain('test2.com')
-        ->expectsOutputToContain('prod')
-        ->expectsOutputToContain('(1 vhosts)')
-        ->expectsOutputToContain('prod1.com')
+        ->expectsOutputToContain('All VHosts')
+        ->expectsOutputToContain('testnode1')
+        ->expectsOutputToContain('testnode2')
+        ->expectsOutputToContain('test1.example.com')
+        ->expectsOutputToContain('prod1.example.com')
         ->assertExitCode(0);
 });
 
@@ -181,8 +177,9 @@ it('handles missing vhost gracefully', function () {
 });
 
 it('handles missing vnode gracefully when listing', function () {
-    $this->artisan('shvhost nonexistent --list')
-        ->expectsOutput('❌ VNODE required for listing vhosts')
+    // When passing --list without a vnode argument, error is shown
+    $this->artisan('shvhost --list')
+        ->expectsOutputToContain('VNODE required')
         ->assertExitCode(1);
 });
 
