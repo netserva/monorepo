@@ -3,7 +3,6 @@
 namespace NetServa\Mail\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Mail\Filament\Resources\MailboxResource\Pages\ListMailboxes;
 use NetServa\Mail\Filament\Resources\MailboxResource\Schemas\MailboxForm;
 use NetServa\Mail\Filament\Resources\MailboxResource\Tables\MailboxesTable;
 use NetServa\Mail\Models\Mailbox;
+use UnitEnum;
 
 class MailboxResource extends Resource
 {
@@ -21,7 +21,7 @@ class MailboxResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Mail Services';
+    protected static UnitEnum|string|null $navigationGroup = 'Mail';
 
     protected static ?int $navigationSort = 20;
 

@@ -3,7 +3,6 @@
 namespace NetServa\Ops\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Ops\Filament\Resources\MonitoringCheckResource\Pages\ListMonitoring
 use NetServa\Ops\Filament\Resources\MonitoringCheckResource\Schemas\MonitoringCheckForm;
 use NetServa\Ops\Filament\Resources\MonitoringCheckResource\Tables\MonitoringChecksTable;
 use NetServa\Ops\Models\MonitoringCheck;
+use UnitEnum;
 
 class MonitoringCheckResource extends Resource
 {
@@ -21,7 +21,7 @@ class MonitoringCheckResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Monitoring';
+    protected static UnitEnum|string|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 10;
 

@@ -3,7 +3,6 @@
 namespace NetServa\Cli\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -16,6 +15,7 @@ use NetServa\Cli\Filament\Resources\MigrationJobResource\Pages\ListMigrationJobs
 use NetServa\Cli\Filament\Resources\MigrationJobResource\Schemas\MigrationJobForm;
 use NetServa\Cli\Filament\Resources\MigrationJobResource\Tables\MigrationJobsTable;
 use NetServa\Core\Models\MigrationJob;
+use UnitEnum;
 
 class MigrationJobResource extends Resource
 {
@@ -23,7 +23,7 @@ class MigrationJobResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'CLI Management';
+    protected static UnitEnum|string|null $navigationGroup = 'Cli';
 
     protected static ?int $navigationSort = 10;
 

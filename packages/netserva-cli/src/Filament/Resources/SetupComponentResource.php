@@ -3,7 +3,6 @@
 namespace NetServa\Cli\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Cli\Filament\Resources\SetupComponentResource\Pages\ListSetupCompon
 use NetServa\Cli\Filament\Resources\SetupComponentResource\Schemas\SetupComponentForm;
 use NetServa\Cli\Filament\Resources\SetupComponentResource\Tables\SetupComponentsTable;
 use NetServa\Cli\Models\SetupComponent;
+use UnitEnum;
 
 class SetupComponentResource extends Resource
 {
@@ -21,7 +21,7 @@ class SetupComponentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'CLI Management';
+    protected static UnitEnum|string|null $navigationGroup = 'Cli';
 
     protected static ?int $navigationSort = 30;
 

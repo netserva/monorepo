@@ -3,7 +3,6 @@
 namespace NetServa\Mail\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Mail\Filament\Resources\MailLogResource\Pages\ListMailLogs;
 use NetServa\Mail\Filament\Resources\MailLogResource\Schemas\MailLogForm;
 use NetServa\Mail\Filament\Resources\MailLogResource\Tables\MailLogsTable;
 use NetServa\Mail\Models\MailLog;
+use UnitEnum;
 
 class MailLogResource extends Resource
 {
@@ -21,7 +21,7 @@ class MailLogResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Mail Services';
+    protected static UnitEnum|string|null $navigationGroup = 'Mail';
 
     protected static ?int $navigationSort = 60;
 

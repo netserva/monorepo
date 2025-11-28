@@ -3,7 +3,6 @@
 namespace NetServa\Ops\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Ops\Filament\Resources\AnalyticsAlertResource\Pages\ListAnalyticsAl
 use NetServa\Ops\Filament\Resources\AnalyticsAlertResource\Schemas\AnalyticsAlertForm;
 use NetServa\Ops\Filament\Resources\AnalyticsAlertResource\Tables\AnalyticsAlertsTable;
 use NetServa\Ops\Models\AnalyticsAlert;
+use UnitEnum;
 
 class AnalyticsAlertResource extends Resource
 {
@@ -21,9 +21,9 @@ class AnalyticsAlertResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Analytics';
+    protected static UnitEnum|string|null $navigationGroup = 'Ops';
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 24;
 
     public static function form(Schema $schema): Schema
     {

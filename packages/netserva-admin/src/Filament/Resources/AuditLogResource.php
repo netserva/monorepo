@@ -19,12 +19,9 @@ class AuditLogResource extends Resource
 
     protected static ?string $navigationLabel = 'Audit Logs';
 
-    protected static ?int $navigationSort = 3;
+    protected static string|\UnitEnum|null $navigationGroup = 'Admin';
 
-    public static function getNavigationGroup(): ?string
-    {
-        return config('netserva-admin.navigation_group', 'Administration');
-    }
+    protected static ?int $navigationSort = 3;
 
     public static function table(Table $table): Table
     {

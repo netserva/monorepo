@@ -3,7 +3,6 @@
 namespace NetServa\Ipam\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Ipam\Filament\Resources\IpNetworkResource\Pages\ListIpNetworks;
 use NetServa\Ipam\Filament\Resources\IpNetworkResource\Schemas\IpNetworkForm;
 use NetServa\Ipam\Filament\Resources\IpNetworkResource\Tables\IpNetworksTable;
 use NetServa\Ipam\Models\IpNetwork;
+use UnitEnum;
 
 class IpNetworkResource extends Resource
 {
@@ -21,7 +21,7 @@ class IpNetworkResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'IP Address Management';
+    protected static UnitEnum|string|null $navigationGroup = 'Ipam';
 
     protected static ?int $navigationSort = 10;
 

@@ -3,7 +3,6 @@
 namespace NetServa\Config\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Config\Filament\Resources\ConfigTemplateResource\Pages\ListConfigTe
 use NetServa\Config\Filament\Resources\ConfigTemplateResource\Schemas\ConfigTemplateForm;
 use NetServa\Config\Filament\Resources\ConfigTemplateResource\Tables\ConfigTemplatesTable;
 use NetServa\Config\Models\ConfigTemplate;
+use UnitEnum;
 
 class ConfigTemplateResource extends Resource
 {
@@ -21,7 +21,7 @@ class ConfigTemplateResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Configuration';
+    protected static UnitEnum|string|null $navigationGroup = 'Config';
 
     protected static ?int $navigationSort = 10;
 

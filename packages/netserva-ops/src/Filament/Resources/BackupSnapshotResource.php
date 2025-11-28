@@ -3,7 +3,6 @@
 namespace NetServa\Ops\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Ops\Filament\Resources\BackupSnapshotResource\Pages\ListBackupSnaps
 use NetServa\Ops\Filament\Resources\BackupSnapshotResource\Schemas\BackupSnapshotForm;
 use NetServa\Ops\Filament\Resources\BackupSnapshotResource\Tables\BackupSnapshotsTable;
 use NetServa\Ops\Models\BackupSnapshot;
+use UnitEnum;
 
 class BackupSnapshotResource extends Resource
 {
@@ -21,9 +21,9 @@ class BackupSnapshotResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Backups';
+    protected static UnitEnum|string|null $navigationGroup = 'Ops';
 
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 32;
 
     public static function form(Schema $schema): Schema
     {

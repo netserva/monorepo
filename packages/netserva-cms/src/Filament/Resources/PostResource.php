@@ -34,7 +34,7 @@ class PostResource extends Resource
 
     protected static ?string $navigationLabel = 'Posts';
 
-    protected static string|UnitEnum|null $navigationGroup = 'CMS';
+    protected static string|UnitEnum|null $navigationGroup = 'Cms';
 
     protected static ?int $navigationSort = 2;
 

@@ -3,7 +3,6 @@
 namespace NetServa\Config\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Config\Filament\Resources\DatabaseResource\Pages\ListDatabases;
 use NetServa\Config\Filament\Resources\DatabaseResource\Schemas\DatabaseForm;
 use NetServa\Config\Filament\Resources\DatabaseResource\Tables\DatabasesTable;
 use NetServa\Config\Models\Database;
+use UnitEnum;
 
 class DatabaseResource extends Resource
 {
@@ -21,9 +21,9 @@ class DatabaseResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Databases';
+    protected static UnitEnum|string|null $navigationGroup = 'Config';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 20;
 
     public static function form(Schema $schema): Schema
     {

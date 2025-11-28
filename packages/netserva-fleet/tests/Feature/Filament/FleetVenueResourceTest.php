@@ -38,5 +38,5 @@ it('has correct navigation configuration', function () {
     $group = FleetVenueResource::getNavigationGroup();
 
     expect($label)->toBe('Venues');
-    expect($group)->toBe('🚀 Fleet Management');
+    expect($group)->toBe('Fleet');
 });

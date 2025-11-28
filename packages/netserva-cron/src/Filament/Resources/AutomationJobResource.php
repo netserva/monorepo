@@ -3,7 +3,6 @@
 namespace NetServa\Cron\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Cron\Filament\Resources\AutomationJobResource\Pages\ListAutomationJ
 use NetServa\Cron\Filament\Resources\AutomationJobResource\Schemas\AutomationJobForm;
 use NetServa\Cron\Filament\Resources\AutomationJobResource\Tables\AutomationJobsTable;
 use NetServa\Cron\Models\AutomationJob;
+use UnitEnum;
 
 class AutomationJobResource extends Resource
 {
@@ -21,7 +21,7 @@ class AutomationJobResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Automation';
+    protected static UnitEnum|string|null $navigationGroup = 'Cron';
 
     protected static ?int $navigationSort = 10;
 

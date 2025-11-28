@@ -39,6 +39,25 @@ class PluginForm
                         ->rows(2),
                 ]),
 
+            Section::make('Navigation')
+                ->schema([
+                    Forms\Components\TextInput::make('navigation_sort')
+                        ->label('Sort Order')
+                        ->numeric()
+                        ->helperText('Lower numbers appear first in the sidebar'),
+
+                    Forms\Components\TextInput::make('navigation_group')
+                        ->label('Group Label')
+                        ->placeholder(fn ($record) => $record?->getNavigationGroupName())
+                        ->helperText('Override the default navigation group name'),
+
+                    Forms\Components\TextInput::make('navigation_icon')
+                        ->label('Icon')
+                        ->placeholder(fn ($record) => $record?->getNavigationIcon())
+                        ->helperText('Heroicon name (e.g., heroicon-o-rocket-launch)'),
+                ])
+                ->columns(3),
+
             Section::make('Dependencies')
                 ->schema([
                     Forms\Components\TagsInput::make('dependencies')

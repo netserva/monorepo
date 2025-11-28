@@ -3,7 +3,6 @@
 namespace NetServa\Cli\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Cli\Filament\Resources\SetupJobResource\Pages\ListSetupJobs;
 use NetServa\Cli\Filament\Resources\SetupJobResource\Schemas\SetupJobForm;
 use NetServa\Cli\Filament\Resources\SetupJobResource\Tables\SetupJobsTable;
 use NetServa\Cli\Models\SetupJob;
+use UnitEnum;
 
 class SetupJobResource extends Resource
 {
@@ -21,7 +21,7 @@ class SetupJobResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'CLI Management';
+    protected static UnitEnum|string|null $navigationGroup = 'Cli';
 
     protected static ?int $navigationSort = 40;
 

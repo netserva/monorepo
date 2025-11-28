@@ -3,7 +3,6 @@
 namespace NetServa\Config\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Config\Filament\Resources\DatabaseConnectionResource\Pages\ListData
 use NetServa\Config\Filament\Resources\DatabaseConnectionResource\Schemas\DatabaseConnectionForm;
 use NetServa\Config\Filament\Resources\DatabaseConnectionResource\Tables\DatabaseConnectionsTable;
 use NetServa\Config\Models\DatabaseConnection;
+use UnitEnum;
 
 class DatabaseConnectionResource extends Resource
 {
@@ -21,9 +21,9 @@ class DatabaseConnectionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Databases';
+    protected static UnitEnum|string|null $navigationGroup = 'Config';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 21;
 
     public static function form(Schema $schema): Schema
     {

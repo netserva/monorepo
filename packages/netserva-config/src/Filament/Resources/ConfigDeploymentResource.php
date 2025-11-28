@@ -3,7 +3,6 @@
 namespace NetServa\Config\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Config\Filament\Resources\ConfigDeploymentResource\Pages\ListConfig
 use NetServa\Config\Filament\Resources\ConfigDeploymentResource\Schemas\ConfigDeploymentForm;
 use NetServa\Config\Filament\Resources\ConfigDeploymentResource\Tables\ConfigDeploymentsTable;
 use NetServa\Config\Models\ConfigDeployment;
+use UnitEnum;
 
 class ConfigDeploymentResource extends Resource
 {
@@ -21,9 +21,9 @@ class ConfigDeploymentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Configuration';
+    protected static UnitEnum|string|null $navigationGroup = 'Config';
 
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort = 13;
 
     public static function form(Schema $schema): Schema
     {

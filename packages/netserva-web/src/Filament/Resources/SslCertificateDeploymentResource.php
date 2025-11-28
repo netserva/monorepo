@@ -3,7 +3,6 @@
 namespace NetServa\Web\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Web\Filament\Resources\SslCertificateDeploymentResource\Pages\ListS
 use NetServa\Web\Filament\Resources\SslCertificateDeploymentResource\Schemas\SslCertificateDeploymentForm;
 use NetServa\Web\Filament\Resources\SslCertificateDeploymentResource\Tables\SslCertificateDeploymentsTable;
 use NetServa\Web\Models\SslCertificateDeployment;
+use UnitEnum;
 
 class SslCertificateDeploymentResource extends Resource
 {
@@ -21,7 +21,7 @@ class SslCertificateDeploymentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Web Services';
+    protected static UnitEnum|string|null $navigationGroup = 'Web';
 
     protected static ?int $navigationSort = 50;
 

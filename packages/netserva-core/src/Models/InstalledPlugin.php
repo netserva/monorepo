@@ -26,6 +26,9 @@ class InstalledPlugin extends Model
         'namespace',
         'is_enabled',
         'enabled', // Keep for backward compatibility
+        'navigation_sort',
+        'navigation_group',
+        'navigation_icon',
         'version',
         'description',
         'author',
@@ -43,6 +46,7 @@ class InstalledPlugin extends Model
     protected $casts = [
         'is_enabled' => 'boolean',
         'enabled' => 'boolean', // Keep for backward compatibility
+        'navigation_sort' => 'integer',
         'config' => 'array',
         'dependencies' => 'array',
         'composer_data' => 'array',
@@ -163,5 +167,60 @@ class InstalledPlugin extends Model
         return Attribute::make(
             get: fn () => $this->installation_method !== 'manual'
         );
+    }
+
+    /**
+     * Scope to order by navigation sort
+     */
+    public function scopeNavigationOrder($query)
+    {
+        return $query->orderBy('navigation_sort')->orderBy('name');
+    }
+
+    /**
+     * Get the navigation group name for this plugin
+     * Uses custom navigation_group if set, otherwise derives from plugin name
+     */
+    public function getNavigationGroupName(): string
+    {
+        if ($this->navigation_group) {
+            return $this->navigation_group;
+        }
+
+        // Default: derive from plugin name (netserva-fleet -> Fleet)
+        $name = str_replace('netserva-', '', $this->name);
+
+        return ucfirst($name);
+    }
+
+    /**
+     * Get the navigation icon for this plugin
+     */
+    public function getNavigationIcon(): string
+    {
+        return $this->navigation_icon ?? $this->getDefaultNavigationIcon();
+    }
+
+    /**
+     * Get default icon based on plugin name
+     */
+    protected function getDefaultNavigationIcon(): string
+    {
+        return match ($this->name) {
+            'netserva-fleet' => 'heroicon-o-rocket-launch',
+            'netserva-admin' => 'heroicon-o-cog-8-tooth',
+            'netserva-cms' => 'heroicon-o-document-text',
+            'netserva-dns' => 'heroicon-o-globe-alt',
+            'netserva-mail' => 'heroicon-o-envelope',
+            'netserva-web' => 'heroicon-o-server',
+            'netserva-config' => 'heroicon-o-wrench-screwdriver',
+            'netserva-ipam' => 'heroicon-o-computer-desktop',
+            'netserva-wg' => 'heroicon-o-shield-check',
+            'netserva-cli' => 'heroicon-o-command-line',
+            'netserva-ops' => 'heroicon-o-chart-bar-square',
+            'netserva-cron' => 'heroicon-o-clock',
+            'netserva-core' => 'heroicon-o-cube',
+            default => 'heroicon-o-puzzle-piece',
+        };
     }
 }

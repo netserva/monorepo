@@ -21,12 +21,9 @@ class PluginResource extends Resource
 
     protected static ?string $navigationLabel = 'Plugins';
 
-    protected static ?int $navigationSort = 2;
+    protected static string|\UnitEnum|null $navigationGroup = 'Admin';
 
-    public static function getNavigationGroup(): ?string
-    {
-        return config('netserva-admin.navigation_group', 'Administration');
-    }
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

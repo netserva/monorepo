@@ -3,7 +3,6 @@
 namespace NetServa\Ops\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Ops\Filament\Resources\StatusPageResource\Pages\ListStatusPages;
 use NetServa\Ops\Filament\Resources\StatusPageResource\Schemas\StatusPageForm;
 use NetServa\Ops\Filament\Resources\StatusPageResource\Tables\StatusPagesTable;
 use NetServa\Ops\Models\StatusPage;
+use UnitEnum;
 
 class StatusPageResource extends Resource
 {
@@ -21,9 +21,9 @@ class StatusPageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Monitoring';
+    protected static UnitEnum|string|null $navigationGroup = 'Ops';
 
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort = 14;
 
     public static function form(Schema $schema): Schema
     {

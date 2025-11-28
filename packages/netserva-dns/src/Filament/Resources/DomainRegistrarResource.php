@@ -21,7 +21,7 @@ class DomainRegistrarResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'DNS & Domains';
+    protected static UnitEnum|string|null $navigationGroup = 'Dns';
 
     protected static ?int $navigationSort = 40;
 

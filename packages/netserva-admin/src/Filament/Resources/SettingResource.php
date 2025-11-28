@@ -21,12 +21,9 @@ class SettingResource extends Resource
 
     protected static ?string $navigationLabel = 'Settings';
 
-    protected static ?int $navigationSort = 1;
+    protected static string|\UnitEnum|null $navigationGroup = 'Admin';
 
-    public static function getNavigationGroup(): ?string
-    {
-        return config('netserva-admin.navigation_group', 'Administration');
-    }
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

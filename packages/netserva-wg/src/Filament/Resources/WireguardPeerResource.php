@@ -3,7 +3,6 @@
 namespace NetServa\Wg\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Wg\Filament\Resources\WireguardPeerResource\Pages\ListWireguardPeer
 use NetServa\Wg\Filament\Resources\WireguardPeerResource\Schemas\WireguardPeerForm;
 use NetServa\Wg\Filament\Resources\WireguardPeerResource\Tables\WireguardPeersTable;
 use NetServa\Wg\Models\WireguardPeer;
+use UnitEnum;
 
 class WireguardPeerResource extends Resource
 {
@@ -21,7 +21,7 @@ class WireguardPeerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'VPN Services';
+    protected static UnitEnum|string|null $navigationGroup = 'Wg';
 
     protected static ?int $navigationSort = 20;
 

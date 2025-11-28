@@ -3,7 +3,6 @@
 namespace NetServa\Ipam\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Ipam\Filament\Resources\IpReservationResource\Pages\ListIpReservati
 use NetServa\Ipam\Filament\Resources\IpReservationResource\Schemas\IpReservationForm;
 use NetServa\Ipam\Filament\Resources\IpReservationResource\Tables\IpReservationsTable;
 use NetServa\Ipam\Models\IpReservation;
+use UnitEnum;
 
 class IpReservationResource extends Resource
 {
@@ -21,7 +21,7 @@ class IpReservationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'IP Address Management';
+    protected static UnitEnum|string|null $navigationGroup = 'Ipam';
 
     protected static ?int $navigationSort = 30;
 

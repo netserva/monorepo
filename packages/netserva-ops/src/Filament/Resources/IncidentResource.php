@@ -3,7 +3,6 @@
 namespace NetServa\Ops\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Ops\Filament\Resources\IncidentResource\Pages\ListIncidents;
 use NetServa\Ops\Filament\Resources\IncidentResource\Schemas\IncidentForm;
 use NetServa\Ops\Filament\Resources\IncidentResource\Tables\IncidentsTable;
 use NetServa\Ops\Models\Incident;
+use UnitEnum;
 
 class IncidentResource extends Resource
 {
@@ -21,9 +21,9 @@ class IncidentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Monitoring';
+    protected static UnitEnum|string|null $navigationGroup = 'Ops';
 
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 13;
 
     public static function form(Schema $schema): Schema
     {

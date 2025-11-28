@@ -21,6 +21,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use NetServa\Core\Foundation\PluginRegistry;
+use NetServa\Core\Models\InstalledPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -65,69 +66,9 @@ class AdminPanelProvider extends PanelProvider
             ->topbar(false)  // Disable topbar entirely (Filament v4 method)
             ->sidebarCollapsibleOnDesktop(true)  // Enable sidebar collapse (required for brand name to show)
             ->userMenu(position: UserMenuPosition::Sidebar)  // Force user menu to sidebar footer
-            // Navigation groups with icons for collapsed sidebar dropdown menus
-            ->navigationGroups([
-                NavigationGroup::make()
-                    ->label('🚀 Fleet Management')
-                    ->icon('heroicon-o-rocket-launch')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('CMS')
-                    ->icon('heroicon-o-document-text')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('DNS & Domains')
-                    ->icon('heroicon-o-globe-alt')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Mail Services')
-                    ->icon('heroicon-o-envelope')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Web Services')
-                    ->icon('heroicon-o-server')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Databases')
-                    ->icon('heroicon-o-circle-stack')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Configuration')
-                    ->icon('heroicon-o-cog-6-tooth')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Secrets')
-                    ->icon('heroicon-o-key')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('IP Address Management')
-                    ->icon('heroicon-o-computer-desktop')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('VPN Services')
-                    ->icon('heroicon-o-shield-check')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('CLI Management')
-                    ->icon('heroicon-o-command-line')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Monitoring')
-                    ->icon('heroicon-o-eye')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Analytics')
-                    ->icon('heroicon-o-chart-bar')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Backups')
-                    ->icon('heroicon-o-cloud-arrow-up')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Automation')
-                    ->icon('heroicon-o-bolt')
-                    ->collapsed(false),
-            ])
+            // Navigation groups are dynamically generated from enabled plugins
+            // Each plugin maps 1:1 to a navigation group
+            ->navigationGroups($this->buildDynamicNavigationGroups())
             // Resources are registered via Plugin system (see registerEnabledPlugins)
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -262,5 +203,77 @@ class AdminPanelProvider extends PanelProvider
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Build navigation groups dynamically from enabled plugins
+     *
+     * Each enabled plugin creates one navigation group.
+     * Groups are ordered by navigation_sort, then by name.
+     * Core plugin is excluded (no UI navigation).
+     *
+     * @return array<NavigationGroup>
+     */
+    protected function buildDynamicNavigationGroups(): array
+    {
+        try {
+            // Skip database lookup during testing
+            if (app()->environment('testing')) {
+                return $this->getDefaultNavigationGroups();
+            }
+
+            // Check if table exists
+            if (! $this->tableExists('installed_plugins')) {
+                return $this->getDefaultNavigationGroups();
+            }
+
+            // Get enabled plugins ordered by navigation_sort
+            $plugins = InstalledPlugin::enabled()
+                ->where('name', '!=', 'netserva-core') // Core has no UI
+                ->navigationOrder()
+                ->get();
+
+            if ($plugins->isEmpty()) {
+                return $this->getDefaultNavigationGroups();
+            }
+
+            $groups = [];
+            foreach ($plugins as $plugin) {
+                $groups[] = NavigationGroup::make()
+                    ->label($plugin->getNavigationGroupName())
+                    ->icon($plugin->getNavigationIcon())
+                    ->collapsed();
+            }
+
+            return $groups;
+
+        } catch (\Exception $e) {
+            Log::warning('Failed to build dynamic navigation groups: '.$e->getMessage());
+
+            return $this->getDefaultNavigationGroups();
+        }
+    }
+
+    /**
+     * Fallback navigation groups when database is unavailable
+     *
+     * @return array<NavigationGroup>
+     */
+    protected function getDefaultNavigationGroups(): array
+    {
+        return [
+            NavigationGroup::make()->label('Fleet')->icon('heroicon-o-rocket-launch')->collapsed(),
+            NavigationGroup::make()->label('Admin')->icon('heroicon-o-cog-8-tooth')->collapsed(),
+            NavigationGroup::make()->label('Cms')->icon('heroicon-o-document-text')->collapsed(),
+            NavigationGroup::make()->label('Dns')->icon('heroicon-o-globe-alt')->collapsed(),
+            NavigationGroup::make()->label('Mail')->icon('heroicon-o-envelope')->collapsed(),
+            NavigationGroup::make()->label('Web')->icon('heroicon-o-server')->collapsed(),
+            NavigationGroup::make()->label('Config')->icon('heroicon-o-wrench-screwdriver')->collapsed(),
+            NavigationGroup::make()->label('Ipam')->icon('heroicon-o-computer-desktop')->collapsed(),
+            NavigationGroup::make()->label('Wg')->icon('heroicon-o-shield-check')->collapsed(),
+            NavigationGroup::make()->label('Cli')->icon('heroicon-o-command-line')->collapsed(),
+            NavigationGroup::make()->label('Ops')->icon('heroicon-o-chart-bar-square')->collapsed(),
+            NavigationGroup::make()->label('Cron')->icon('heroicon-o-clock')->collapsed(),
+        ];
     }
 }

@@ -3,7 +3,6 @@
 namespace NetServa\Config\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Config\Filament\Resources\SecretResource\Pages\ListSecrets;
 use NetServa\Config\Filament\Resources\SecretResource\Schemas\SecretForm;
 use NetServa\Config\Filament\Resources\SecretResource\Tables\SecretsTable;
 use NetServa\Config\Models\Secret;
+use UnitEnum;
 
 class SecretResource extends Resource
 {
@@ -21,9 +21,9 @@ class SecretResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Secrets';
+    protected static UnitEnum|string|null $navigationGroup = 'Config';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 30;
 
     public static function form(Schema $schema): Schema
     {

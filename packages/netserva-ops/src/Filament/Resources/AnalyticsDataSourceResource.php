@@ -3,7 +3,6 @@
 namespace NetServa\Ops\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource\Pages\ListAnalyt
 use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource\Schemas\AnalyticsDataSourceForm;
 use NetServa\Ops\Filament\Resources\AnalyticsDataSourceResource\Tables\AnalyticsDataSourcesTable;
 use NetServa\Ops\Models\AnalyticsDataSource;
+use UnitEnum;
 
 class AnalyticsDataSourceResource extends Resource
 {
@@ -21,9 +21,9 @@ class AnalyticsDataSourceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Analytics';
+    protected static UnitEnum|string|null $navigationGroup = 'Ops';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 22;
 
     public static function form(Schema $schema): Schema
     {

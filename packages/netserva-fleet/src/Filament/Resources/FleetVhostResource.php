@@ -36,7 +36,7 @@ class FleetVhostResource extends Resource
 
     protected static ?string $pluralModelLabel = 'VHosts';
 
-    protected static string|\UnitEnum|null $navigationGroup = '🚀 Fleet Management';
+    protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
 
     protected static ?int $navigationSort = 3;
 

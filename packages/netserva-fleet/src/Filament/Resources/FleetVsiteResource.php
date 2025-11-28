@@ -34,7 +34,7 @@ class FleetVsiteResource extends Resource
 
     protected static ?string $pluralModelLabel = 'VSites';
 
-    protected static string|\UnitEnum|null $navigationGroup = '🚀 Fleet Management';
+    protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
 
     protected static ?int $navigationSort = 1;
 

@@ -3,7 +3,6 @@
 namespace NetServa\Web\Filament\Resources;
 
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +13,7 @@ use NetServa\Web\Filament\Resources\WebServerResource\Pages\ListWebServers;
 use NetServa\Web\Filament\Resources\WebServerResource\Schemas\WebServerForm;
 use NetServa\Web\Filament\Resources\WebServerResource\Tables\WebServersTable;
 use NetServa\Web\Models\WebServer;
+use UnitEnum;
 
 class WebServerResource extends Resource
 {
@@ -21,7 +21,7 @@ class WebServerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Web Services';
+    protected static UnitEnum|string|null $navigationGroup = 'Web';
 
     protected static ?int $navigationSort = 20;
 
