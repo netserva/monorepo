@@ -332,19 +332,25 @@ class PluginRegistry
     protected function loadAvailablePlugins(): void
     {
         // Only include plugins that actually implement the Plugin interface
+        // NOTE: After package consolidation (Phase 3-4), merged packages are:
+        // - netserva-admin → merged into netserva-core
+        // - netserva-cron → merged into netserva-ops
+        // - netserva-ipam → merged into netserva-fleet
+        // - netserva-wg → merged into netserva-fleet
         $potentialPlugins = [
+            // Core foundation
             'netserva-core' => \NetServa\Core\CorePlugin::class,
-            'netserva-admin' => \NetServa\Admin\AdminPlugin::class,
+            // CLI and UI
             'netserva-cli' => \NetServa\Cli\Filament\NetServaCliPlugin::class,
             'netserva-cms' => \NetServa\Cms\NetServaCmsPlugin::class,
-            'netserva-cron' => \NetServa\Cron\Filament\NetServaCronPlugin::class,
-            'netserva-wg' => \NetServa\Wg\Filament\NetServaWgPlugin::class,
+            // Infrastructure (Fleet now includes IPAM + WireGuard)
             'netserva-fleet' => \NetServa\Fleet\Filament\FleetPlugin::class,
-            'netserva-ipam' => \NetServa\Ipam\Filament\NetServaIpamPlugin::class,
+            // Services
             'netserva-dns' => \NetServa\Dns\Filament\NetServaDnsPlugin::class,
             'netserva-web' => \NetServa\Web\Filament\NetServaWebPlugin::class,
             'netserva-mail' => \NetServa\Mail\Filament\NetServaMailPlugin::class,
             'netserva-config' => \NetServa\Config\Filament\NetServaConfigPlugin::class,
+            // Operations (now includes Cron/Automation)
             'netserva-ops' => \NetServa\Ops\Filament\NetServaOpsPlugin::class,
         ];
 
