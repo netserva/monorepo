@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NetServa\Cli\Exceptions\VHostNotFoundException;
+use NetServa\Core\Exceptions\VHostNotFoundException;
 use NetServa\Cli\Services\VHostResolverService;
 use NetServa\Fleet\Models\FleetVsite;
 

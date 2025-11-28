@@ -1,6 +1,6 @@
 <?php
 
-namespace NetServa\Cli\ValueObjects;
+namespace NetServa\Core\ValueObjects;
 
 use NetServa\Core\Enums\OsType;
 

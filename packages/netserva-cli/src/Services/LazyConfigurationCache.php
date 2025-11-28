@@ -4,7 +4,7 @@ namespace NetServa\Cli\Services;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use NetServa\Cli\ValueObjects\OsConfiguration;
+use NetServa\Core\ValueObjects\OsConfiguration;
 use NetServa\Cli\ValueObjects\VhostConfiguration;
 
 /**

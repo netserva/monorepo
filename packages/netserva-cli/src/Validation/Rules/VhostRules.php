@@ -2,7 +2,7 @@
 
 namespace NetServa\Cli\Validation\Rules;
 
-use NetServa\Cli\Enums\OsType;
+use NetServa\Core\Enums\OsType;
 
 /**
  * Shared VHost Validation Rules

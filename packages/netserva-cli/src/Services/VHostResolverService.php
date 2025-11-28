@@ -5,8 +5,8 @@ namespace NetServa\Cli\Services;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use NetServa\Cli\Exceptions\AmbiguousVHostException;
-use NetServa\Cli\Exceptions\VHostNotFoundException;
+use NetServa\Core\Exceptions\AmbiguousVHostException;
+use NetServa\Core\Exceptions\VHostNotFoundException;
 use NetServa\Fleet\Models\FleetVhost;
 
 /**

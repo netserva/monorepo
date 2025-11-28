@@ -1,6 +1,6 @@
 <?php
 
-use NetServa\Cli\Enums\NetServaConstants;
+use NetServa\Core\Enums\NetServaConstants;
 use NetServa\Cli\Services\LazyConfigurationCache;
 use NetServa\Cli\Services\NetServaConfigurationService;
 use NetServa\Core\Services\RemoteExecutionService;
