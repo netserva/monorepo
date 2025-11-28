@@ -19,7 +19,7 @@ class WireguardServerResource extends Resource
 {
     protected static ?string $model = WireguardServer::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 
     protected static UnitEnum|string|null $navigationGroup = 'Wg';
 

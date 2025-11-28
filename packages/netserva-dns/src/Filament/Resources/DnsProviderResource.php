@@ -19,7 +19,7 @@ class DnsProviderResource extends Resource
 {
     protected static ?string $model = DnsProvider::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCloud;
 
     protected static UnitEnum|string|null $navigationGroup = 'Dns';
 

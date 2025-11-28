@@ -19,7 +19,7 @@ class WebApplicationResource extends Resource
 {
     protected static ?string $model = WebApplication::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWindow;
 
     protected static ?string $cluster = WebCluster::class;
 

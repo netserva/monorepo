@@ -13,6 +13,7 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Cms\Filament\Resources\MenuResource\Pages;
@@ -28,7 +29,7 @@ class MenuResource extends Resource
 {
     protected static ?string $model = Menu::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bars-3';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBars3;
 
     protected static ?string $navigationLabel = 'Menus';
 

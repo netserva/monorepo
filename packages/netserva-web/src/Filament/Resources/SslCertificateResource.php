@@ -19,7 +19,7 @@ class SslCertificateResource extends Resource
 {
     protected static ?string $model = SslCertificate::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLockClosed;
 
     protected static ?string $cluster = WebCluster::class;
 

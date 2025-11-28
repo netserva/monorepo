@@ -19,7 +19,7 @@ class DomainRegistrationResource extends Resource
 {
     protected static ?string $model = DomainRegistration::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
 
     protected static UnitEnum|string|null $navigationGroup = 'Dns';
 

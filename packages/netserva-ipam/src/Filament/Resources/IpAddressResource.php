@@ -19,7 +19,7 @@ class IpAddressResource extends Resource
 {
     protected static ?string $model = IpAddress::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHashtag;
 
     protected static UnitEnum|string|null $navigationGroup = 'Ipam';
 

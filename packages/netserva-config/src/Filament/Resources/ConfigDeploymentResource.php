@@ -19,7 +19,7 @@ class ConfigDeploymentResource extends Resource
 {
     protected static ?string $model = ConfigDeployment::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRocketLaunch;
 
     protected static ?string $cluster = ConfigCluster::class;
 

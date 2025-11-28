@@ -19,7 +19,7 @@ class IpReservationResource extends Resource
 {
     protected static ?string $model = IpReservation::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookmark;
 
     protected static UnitEnum|string|null $navigationGroup = 'Ipam';
 

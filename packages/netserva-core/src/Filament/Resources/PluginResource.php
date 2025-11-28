@@ -7,6 +7,7 @@ namespace NetServa\Core\Filament\Resources;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use NetServa\Core\Filament\Resources\PluginResource\Pages;
 use NetServa\Core\Filament\Resources\PluginResource\Schemas\PluginForm;
@@ -17,7 +18,7 @@ class PluginResource extends Resource
 {
     protected static ?string $model = InstalledPlugin::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-puzzle-piece';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPuzzlePiece;
 
     protected static ?string $navigationLabel = 'Plugins';
 

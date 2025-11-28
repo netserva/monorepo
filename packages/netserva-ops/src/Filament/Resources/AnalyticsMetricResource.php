@@ -19,7 +19,7 @@ class AnalyticsMetricResource extends Resource
 {
     protected static ?string $model = AnalyticsMetric::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     protected static ?string $cluster = OperationsCluster::class;
 

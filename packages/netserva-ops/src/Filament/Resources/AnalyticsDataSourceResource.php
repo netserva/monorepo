@@ -19,7 +19,7 @@ class AnalyticsDataSourceResource extends Resource
 {
     protected static ?string $model = AnalyticsDataSource::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;
 
     protected static ?string $cluster = OperationsCluster::class;
 

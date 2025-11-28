@@ -19,7 +19,7 @@ class StatusPageResource extends Resource
 {
     protected static ?string $model = StatusPage::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSignal;
 
     protected static ?string $cluster = OperationsCluster::class;
 

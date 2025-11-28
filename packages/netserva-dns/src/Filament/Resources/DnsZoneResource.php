@@ -19,7 +19,7 @@ class DnsZoneResource extends Resource
 {
     protected static ?string $model = DnsZone::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
 
     protected static UnitEnum|string|null $navigationGroup = 'Dns';
 

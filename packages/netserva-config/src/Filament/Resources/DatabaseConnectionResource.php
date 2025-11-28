@@ -19,7 +19,7 @@ class DatabaseConnectionResource extends Resource
 {
     protected static ?string $model = DatabaseConnection::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLink;
 
     protected static ?string $cluster = ConfigCluster::class;
 

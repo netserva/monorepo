@@ -2,6 +2,7 @@
 
 namespace NetServa\Fleet\Filament\Resources;
 
+use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -12,6 +13,7 @@ use Filament\Infolists;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Fleet\Filament\Clusters\Fleet\FleetCluster;
@@ -27,7 +29,7 @@ class FleetVenueResource extends Resource
 {
     protected static ?string $model = FleetVenue::class;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-map-pin';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
 
     protected static ?string $navigationLabel = 'Venues';
 

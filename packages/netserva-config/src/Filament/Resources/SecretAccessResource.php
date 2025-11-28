@@ -19,7 +19,7 @@ class SecretAccessResource extends Resource
 {
     protected static ?string $model = SecretAccess::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFingerPrint;
 
     protected static ?string $cluster = ConfigCluster::class;
 

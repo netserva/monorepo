@@ -19,7 +19,7 @@ class MailLogResource extends Resource
 {
     protected static ?string $model = MailLog::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentMagnifyingGlass;
 
     protected static ?string $cluster = MailCluster::class;
 

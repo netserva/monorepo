@@ -19,7 +19,7 @@ class MonitoringCheckResource extends Resource
 {
     protected static ?string $model = MonitoringCheck::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
     protected static ?string $cluster = OperationsCluster::class;
 

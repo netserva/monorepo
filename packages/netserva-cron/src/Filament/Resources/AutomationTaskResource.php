@@ -19,7 +19,7 @@ class AutomationTaskResource extends Resource
 {
     protected static ?string $model = AutomationTask::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCheckCircle;
 
     protected static UnitEnum|string|null $navigationGroup = 'Cron';
 

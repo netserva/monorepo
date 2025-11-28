@@ -19,7 +19,7 @@ class AnalyticsDashboardResource extends Resource
 {
     protected static ?string $model = AnalyticsDashboard::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBarSquare;
 
     protected static ?string $cluster = OperationsCluster::class;
 

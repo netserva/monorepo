@@ -19,7 +19,7 @@ class WebServerResource extends Resource
 {
     protected static ?string $model = WebServer::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServer;
 
     protected static ?string $cluster = WebCluster::class;
 

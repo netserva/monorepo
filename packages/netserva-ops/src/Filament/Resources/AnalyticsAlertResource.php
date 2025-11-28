@@ -19,7 +19,7 @@ class AnalyticsAlertResource extends Resource
 {
     protected static ?string $model = AnalyticsAlert::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;
 
     protected static ?string $cluster = OperationsCluster::class;
 

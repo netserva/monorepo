@@ -2,6 +2,7 @@
 
 namespace NetServa\Fleet\Filament\Resources;
 
+use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -14,6 +15,7 @@ use Filament\Infolists;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Fleet\Filament\Clusters\Fleet\FleetCluster;
@@ -29,7 +31,7 @@ class FleetVhostResource extends Resource
 {
     protected static ?string $model = FleetVhost::class;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-computer-desktop';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedComputerDesktop;
 
     protected static ?string $navigationLabel = 'VHosts';
 

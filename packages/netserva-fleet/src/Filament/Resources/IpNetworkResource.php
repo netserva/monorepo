@@ -19,7 +19,7 @@ class IpNetworkResource extends Resource
 {
     protected static ?string $model = IpNetwork::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
 
     protected static ?string $cluster = NetworkCluster::class;
 

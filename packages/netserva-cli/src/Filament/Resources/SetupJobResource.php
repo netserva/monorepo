@@ -19,7 +19,7 @@ class SetupJobResource extends Resource
 {
     protected static ?string $model = SetupJob::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPlayCircle;
 
     protected static UnitEnum|string|null $navigationGroup = 'Cli';
 

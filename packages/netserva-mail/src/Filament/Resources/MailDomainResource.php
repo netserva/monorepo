@@ -19,7 +19,7 @@ class MailDomainResource extends Resource
 {
     protected static ?string $model = MailDomain::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAtSymbol;
 
     protected static ?string $cluster = MailCluster::class;
 

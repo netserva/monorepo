@@ -19,7 +19,7 @@ class ConfigVariableResource extends Resource
 {
     protected static ?string $model = ConfigVariable::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedVariable;
 
     protected static ?string $cluster = ConfigCluster::class;
 

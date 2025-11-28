@@ -19,7 +19,7 @@ class SetupComponentResource extends Resource
 {
     protected static ?string $model = SetupComponent::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
 
     protected static UnitEnum|string|null $navigationGroup = 'Cli';
 

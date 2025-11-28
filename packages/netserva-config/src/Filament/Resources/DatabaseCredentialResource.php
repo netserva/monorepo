@@ -19,7 +19,7 @@ class DatabaseCredentialResource extends Resource
 {
     protected static ?string $model = DatabaseCredential::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
     protected static ?string $cluster = ConfigCluster::class;
 

@@ -7,6 +7,7 @@ namespace NetServa\Core\Filament\Resources;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use NetServa\Core\Filament\Resources\SettingResource\Pages;
 use NetServa\Core\Filament\Resources\SettingResource\Schemas\SettingForm;
@@ -17,7 +18,7 @@ class SettingResource extends Resource
 {
     protected static ?string $model = Setting::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static ?string $navigationLabel = 'Settings';
 

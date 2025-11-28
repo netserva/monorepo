@@ -19,7 +19,7 @@ class AlertRuleResource extends Resource
 {
     protected static ?string $model = AlertRule::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBell;
 
     protected static ?string $cluster = OperationsCluster::class;
 

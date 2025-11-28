@@ -19,7 +19,7 @@ class MailServerResource extends Resource
 {
     protected static ?string $model = MailServer::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServerStack;
 
     protected static ?string $cluster = MailCluster::class;
 

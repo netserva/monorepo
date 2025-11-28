@@ -19,7 +19,7 @@ class VirtualHostResource extends Resource
 {
     protected static ?string $model = VirtualHost::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
 
     protected static ?string $cluster = WebCluster::class;
 

@@ -19,7 +19,7 @@ class AnalyticsVisualizationResource extends Resource
 {
     protected static ?string $model = AnalyticsVisualization::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
     protected static ?string $cluster = OperationsCluster::class;
 

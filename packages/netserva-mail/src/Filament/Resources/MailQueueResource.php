@@ -19,7 +19,7 @@ class MailQueueResource extends Resource
 {
     protected static ?string $model = MailQueue::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;
 
     protected static ?string $cluster = MailCluster::class;
 

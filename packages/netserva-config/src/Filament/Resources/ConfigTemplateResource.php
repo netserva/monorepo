@@ -19,7 +19,7 @@ class ConfigTemplateResource extends Resource
 {
     protected static ?string $model = ConfigTemplate::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentDuplicate;
 
     protected static ?string $cluster = ConfigCluster::class;
 

@@ -19,7 +19,7 @@ class WireguardPeerResource extends Resource
 {
     protected static ?string $model = WireguardPeer::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUser;
 
     protected static UnitEnum|string|null $navigationGroup = 'Wg';
 
