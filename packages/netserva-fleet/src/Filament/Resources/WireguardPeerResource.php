@@ -23,7 +23,7 @@ class WireguardPeerResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 8;  // Alphabetical: Wireguard Peers
 
     public static function form(Schema $schema): Schema
     {

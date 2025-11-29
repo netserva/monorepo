@@ -16,9 +16,9 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use NetServa\Fleet\Filament\Clusters\Fleet\FleetCluster;
 use NetServa\Fleet\Filament\Resources\FleetVsiteResource\Pages;
 use NetServa\Fleet\Models\FleetVsite;
+use UnitEnum;
 
 /**
  * Fleet VSite Resource
@@ -37,9 +37,9 @@ class FleetVsiteResource extends Resource
 
     protected static ?string $pluralModelLabel = 'VSites';
 
-    protected static ?string $cluster = FleetCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 7;  // Alphabetical: VSites
 
     public static function form(Schema $schema): Schema
     {

@@ -18,9 +18,9 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use NetServa\Fleet\Filament\Clusters\Fleet\FleetCluster;
 use NetServa\Fleet\Filament\Resources\FleetVhostResource\Pages;
 use NetServa\Fleet\Models\FleetVhost;
+use UnitEnum;
 
 /**
  * Fleet VHost Resource
@@ -39,9 +39,9 @@ class FleetVhostResource extends Resource
 
     protected static ?string $pluralModelLabel = 'VHosts';
 
-    protected static ?string $cluster = FleetCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;  // Alphabetical: VHosts
 
     public static function form(Schema $schema): Schema
     {
@@ -281,19 +281,8 @@ class FleetVhostResource extends Resource
                     ->label('Has Var File'),
             ])
             ->actions([
-                Action::make('view_validation')
-                    ->label('Validation')
-                    ->icon('heroicon-o-clipboard-document-check')
-                    ->color('warning')
-                    ->url(fn (FleetVhost $record): string => static::getUrl('view-validation', ['record' => $record]))
-                    ->visible(fn (FleetVhost $record) => in_array($record->migration_status, ['discovered', 'validated', 'failed'])),
-
-                Action::make('view_migration_log')
-                    ->label('Migration Log')
-                    ->icon('heroicon-o-document-text')
-                    ->color('info')
-                    ->url(fn (FleetVhost $record): string => static::getUrl('view-migration-log', ['record' => $record]))
-                    ->visible(fn (FleetVhost $record) => in_array($record->migration_status, ['migrated', 'failed'])),
+                // NOTE: view_validation and view_migration_log actions disabled
+                // until ViewValidation.php and ViewMigrationLog.php are re-enabled
 
                 Action::make('rollback')
                     ->label('Rollback')
@@ -303,7 +292,7 @@ class FleetVhostResource extends Resource
                     ->modalHeading('Rollback Migration')
                     ->modalDescription(fn (FleetVhost $record): string => "This will restore {$record->domain} to its pre-migration state. The vhost will be marked as 'validated' after rollback.")
                     ->form(function (FleetVhost $record) {
-                        $migrationService = app(\NetServa\Cli\Services\MigrationExecutionService::class);
+                        $migrationService = app(\NetServa\Core\Services\MigrationExecutionService::class);
                         $result = $migrationService->listRollbackPoints($record);
 
                         $options = [];
@@ -323,7 +312,7 @@ class FleetVhostResource extends Resource
                         ];
                     })
                     ->action(function (FleetVhost $record, array $data) {
-                        $migrationService = app(\NetServa\Cli\Services\MigrationExecutionService::class);
+                        $migrationService = app(\NetServa\Core\Services\MigrationExecutionService::class);
                         $result = $migrationService->rollbackVhost($record, $data['archive']);
 
                         if ($result['success']) {
@@ -379,7 +368,7 @@ class FleetVhostResource extends Resource
                         ->modalDescription(fn ($records) => "This will migrate {$records->count()} vhost(s) to NS 3.0 structure. Backups will be created automatically for each vhost.")
                         ->modalSubmitActionLabel('Migrate All')
                         ->action(function ($records) {
-                            $migrationService = app(\NetServa\Cli\Services\MigrationExecutionService::class);
+                            $migrationService = app(\NetServa\Core\Services\MigrationExecutionService::class);
                             $results = ['success' => 0, 'failed' => 0, 'errors' => []];
 
                             foreach ($records as $vhost) {

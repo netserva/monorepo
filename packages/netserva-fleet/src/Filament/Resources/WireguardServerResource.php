@@ -23,7 +23,7 @@ class WireguardServerResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 9;  // Alphabetical: Wireguard Servers
 
     public static function form(Schema $schema): Schema
     {

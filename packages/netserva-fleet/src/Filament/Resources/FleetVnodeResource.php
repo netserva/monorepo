@@ -19,10 +19,10 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use NetServa\Fleet\Filament\Clusters\Fleet\FleetCluster;
 use NetServa\Fleet\Filament\Resources\FleetVnodeResource\Pages;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Services\FleetDiscoveryService;
+use UnitEnum;
 
 /**
  * Fleet VNode Resource
@@ -41,9 +41,9 @@ class FleetVnodeResource extends Resource
 
     protected static ?string $pluralModelLabel = 'VNodes';
 
-    protected static ?string $cluster = FleetCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 6;  // Alphabetical: VNodes
 
     public static function form(Schema $schema): Schema
     {

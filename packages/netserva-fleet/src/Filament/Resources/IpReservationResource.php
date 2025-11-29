@@ -23,7 +23,7 @@ class IpReservationResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 3;  // Alphabetical: Ip Reservations
 
     public static function form(Schema $schema): Schema
     {
