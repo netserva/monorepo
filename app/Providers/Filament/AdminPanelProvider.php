@@ -63,6 +63,7 @@ class AdminPanelProvider extends PanelProvider
             ->profile(\App\Filament\Pages\Auth\EditProfile::class)
             ->brandName(fn () => config('app.name'))  // Dynamic brand from config (overridden by CMS if available)
             ->topbar(false)  // Disable topbar entirely (Filament v4 method)
+            ->globalSearch(false)  // Disable global search (not configured)
             ->sidebarCollapsibleOnDesktop(true)  // Enable sidebar collapse (required for brand name to show)
             ->userMenu(position: UserMenuPosition::Sidebar)  // Force user menu to sidebar footer
             // Navigation groups are dynamically generated from enabled plugins
