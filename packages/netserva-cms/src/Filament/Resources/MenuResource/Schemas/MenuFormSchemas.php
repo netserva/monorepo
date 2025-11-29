@@ -90,27 +90,39 @@ class MenuFormSchemas
                         ->icon(Heroicon::DocumentPlus)
                         ->color('gray')
                         ->tooltip('Create placeholder page')
-                        ->visible(fn (array $arguments, Repeater $component): bool => self::canCreatePage($component->getRawItemState($arguments['item'])['url'] ?? ''))
+                        ->visible(fn (array $arguments, Repeater $component): bool => str_starts_with($component->getRawItemState($arguments['item'])['url'] ?? '', '/'))
                         ->requiresConfirmation()
                         ->modalHeading('Create Placeholder Page')
                         ->modalDescription(fn (array $arguments, Repeater $component): string => 'Create a placeholder page for "'.($component->getRawItemState($arguments['item'])['label'] ?? 'Item').'" at '.($component->getRawItemState($arguments['item'])['url'] ?? '/path').'?')
                         ->modalSubmitActionLabel('Create Page')
                         ->action(function (array $arguments, Repeater $component): void {
                             $item = $component->getRawItemState($arguments['item']);
-                            self::createPlaceholderPage($item['url'] ?? '', $item['label'] ?? 'Untitled');
-                        }),
-                    Action::make('deletePage')
-                        ->icon(Heroicon::DocumentMinus)
-                        ->color('danger')
-                        ->tooltip('Delete associated page')
-                        ->visible(fn (array $arguments, Repeater $component): bool => self::canDeletePage($component->getRawItemState($arguments['item'])['url'] ?? ''))
-                        ->requiresConfirmation()
-                        ->modalHeading('Delete Associated Page')
-                        ->modalDescription(fn (array $arguments, Repeater $component): string => 'Delete the page at "'.($component->getRawItemState($arguments['item'])['url'] ?? '/path').'"? This will also remove the menu item.')
-                        ->modalSubmitActionLabel('Delete Page')
-                        ->action(function (array $arguments, Repeater $component): void {
-                            $item = $component->getRawItemState($arguments['item']);
-                            self::deletePlaceholderPage($item['url'] ?? '');
+                            $url = $item['url'] ?? '';
+                            $label = $item['label'] ?? 'Untitled';
+                            $slug = ltrim($url, '/');
+
+                            if (Page::where('slug', $slug)->exists()) {
+                                Notification::make()
+                                    ->title('Page already exists')
+                                    ->body("A page with slug '{$slug}' already exists.")
+                                    ->warning()
+                                    ->send();
+
+                                return;
+                            }
+
+                            Page::create([
+                                'title' => $label,
+                                'slug' => $slug,
+                                'content' => "<h2>Coming Soon</h2>\n<p>This page is under construction. Please check back later.</p>",
+                                'is_published' => true,
+                            ]);
+
+                            Notification::make()
+                                ->title('Page created')
+                                ->body("Placeholder page '{$label}' created successfully.")
+                                ->success()
+                                ->send();
                         }),
                     Action::make('editSubmenu')
                         ->icon(Heroicon::QueueList)
@@ -143,27 +155,41 @@ class MenuFormSchemas
                                         ->icon(Heroicon::DocumentPlus)
                                         ->color('gray')
                                         ->tooltip('Create placeholder page')
-                                        ->visible(fn (array $arguments, Repeater $component): bool => self::canCreatePage($component->getRawItemState($arguments['item'])['url'] ?? ''))
+                                        ->visible(fn (array $arguments, Repeater $component): bool => str_starts_with($component->getRawItemState($arguments['item'])['url'] ?? '', '/'))
                                         ->requiresConfirmation()
                                         ->modalHeading('Create Placeholder Page')
                                         ->modalDescription(fn (array $arguments, Repeater $component): string => 'Create a placeholder page for "'.($component->getRawItemState($arguments['item'])['label'] ?? 'Item').'" at '.($component->getRawItemState($arguments['item'])['url'] ?? '/path').'?')
                                         ->modalSubmitActionLabel('Create Page')
                                         ->action(function (array $arguments, Repeater $component): void {
                                             $item = $component->getRawItemState($arguments['item']);
-                                            self::createPlaceholderPage($item['url'] ?? '', $item['label'] ?? 'Untitled');
-                                        }),
-                                    Action::make('deletePage')
-                                        ->icon(Heroicon::DocumentMinus)
-                                        ->color('danger')
-                                        ->tooltip('Delete associated page')
-                                        ->visible(fn (array $arguments, Repeater $component): bool => self::canDeletePage($component->getRawItemState($arguments['item'])['url'] ?? ''))
-                                        ->requiresConfirmation()
-                                        ->modalHeading('Delete Associated Page')
-                                        ->modalDescription(fn (array $arguments, Repeater $component): string => 'Delete the page at "'.($component->getRawItemState($arguments['item'])['url'] ?? '/path').'"?')
-                                        ->modalSubmitActionLabel('Delete Page')
-                                        ->action(function (array $arguments, Repeater $component): void {
-                                            $item = $component->getRawItemState($arguments['item']);
-                                            self::deletePlaceholderPage($item['url'] ?? '');
+                                            $url = $item['url'] ?? '';
+                                            $label = $item['label'] ?? 'Untitled';
+                                            $slug = ltrim($url, '/');
+
+                                            // Check if page already exists
+                                            if (Page::where('slug', $slug)->exists()) {
+                                                Notification::make()
+                                                    ->title('Page already exists')
+                                                    ->body("A page with slug '{$slug}' already exists.")
+                                                    ->warning()
+                                                    ->send();
+
+                                                return;
+                                            }
+
+                                            // Create placeholder page
+                                            Page::create([
+                                                'title' => $label,
+                                                'slug' => $slug,
+                                                'content' => "<h2>Coming Soon</h2>\n<p>This page is under construction. Please check back later.</p>",
+                                                'is_published' => true,
+                                            ]);
+
+                                            Notification::make()
+                                                ->title('Page created')
+                                                ->body("Placeholder page '{$label}' created successfully.")
+                                                ->success()
+                                                ->send();
                                         }),
                                 ])
                                 ->defaultItems(0)
@@ -184,92 +210,5 @@ class MenuFormSchemas
                 ->addActionLabel('Add Item')
                 ->columnSpanFull(),
         ];
-    }
-
-    /**
-     * Check if a page can be created for this URL (internal URL without existing page)
-     */
-    private static function canCreatePage(string $url): bool
-    {
-        if (! str_starts_with($url, '/') || $url === '/') {
-            return false;
-        }
-
-        $slug = ltrim($url, '/');
-
-        return ! Page::where('slug', $slug)->exists();
-    }
-
-    /**
-     * Check if there's a page to delete for this URL
-     */
-    private static function canDeletePage(string $url): bool
-    {
-        if (! str_starts_with($url, '/') || $url === '/') {
-            return false;
-        }
-
-        $slug = ltrim($url, '/');
-
-        return Page::where('slug', $slug)->exists();
-    }
-
-    /**
-     * Create a placeholder page for the given URL
-     */
-    private static function createPlaceholderPage(string $url, string $label): void
-    {
-        $slug = ltrim($url, '/');
-
-        if (Page::where('slug', $slug)->exists()) {
-            Notification::make()
-                ->title('Page already exists')
-                ->body("A page with slug '{$slug}' already exists.")
-                ->warning()
-                ->send();
-
-            return;
-        }
-
-        Page::create([
-            'title' => $label,
-            'slug' => $slug,
-            'content' => "<h2>Coming Soon</h2>\n<p>This page is under construction. Please check back later.</p>",
-            'is_published' => true,
-        ]);
-
-        Notification::make()
-            ->title('Page created')
-            ->body("Placeholder page '{$label}' created successfully.")
-            ->success()
-            ->send();
-    }
-
-    /**
-     * Delete the page associated with this URL
-     */
-    private static function deletePlaceholderPage(string $url): void
-    {
-        $slug = ltrim($url, '/');
-        $page = Page::where('slug', $slug)->first();
-
-        if (! $page) {
-            Notification::make()
-                ->title('Page not found')
-                ->body("No page with slug '{$slug}' exists.")
-                ->warning()
-                ->send();
-
-            return;
-        }
-
-        $title = $page->title;
-        $page->delete();
-
-        Notification::make()
-            ->title('Page deleted')
-            ->body("Page '{$title}' has been deleted.")
-            ->success()
-            ->send();
     }
 }
