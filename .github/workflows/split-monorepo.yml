@@ -41,7 +41,13 @@ jobs:
       - name: Check if tag matches this package
         id: check_tag
         run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
+          # Handle both push (tag) and workflow_dispatch triggers
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG_NAME="${{ github.event.inputs.tag }}"
+          else
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+          fi
+
           PACKAGE_PREFIX="${{ matrix.package.name }}-v"
 
           echo "Tag: $TAG_NAME"
