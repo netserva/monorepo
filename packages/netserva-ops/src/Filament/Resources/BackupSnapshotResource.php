@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\BackupSnapshotResource\Pages\CreateBackupSnapshot;
 use NetServa\Ops\Filament\Resources\BackupSnapshotResource\Pages\EditBackupSnapshot;
 use NetServa\Ops\Filament\Resources\BackupSnapshotResource\Pages\ListBackupSnapshots;
 use NetServa\Ops\Filament\Resources\BackupSnapshotResource\Schemas\BackupSnapshotForm;
 use NetServa\Ops\Filament\Resources\BackupSnapshotResource\Tables\BackupSnapshotsTable;
 use NetServa\Ops\Models\BackupSnapshot;
+use UnitEnum;
 
 class BackupSnapshotResource extends Resource
 {
@@ -21,7 +21,7 @@ class BackupSnapshotResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCamera;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 32;
 

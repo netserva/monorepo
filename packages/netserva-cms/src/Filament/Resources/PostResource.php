@@ -11,14 +11,13 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Forms;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Cms\Filament\Resources\PostResource\Pages;
+use NetServa\Cms\Filament\Resources\PostResource\Schemas\PostFormSchemas;
 use NetServa\Cms\Models\Post;
 use UnitEnum;
 
@@ -41,170 +40,8 @@ class PostResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                // Content Editor - Full width at top, no wrapper, no label
-                Forms\Components\RichEditor::make('content')
-                    ->required()
-                    ->hiddenLabel()
-                    ->fileAttachmentsDisk('public')
-                    ->fileAttachmentsDirectory('attachments')
-                    ->columnSpanFull(),
-
-                // 1. Basic Information
-                Section::make('Basic Information')
-                    ->schema([
-                        Forms\Components\Select::make('author_id')
-                            ->label('Author')
-                            ->relationship('author', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->default(fn () => auth()->id())
-                            ->required()
-                            ->helperText('Post author'),
-
-                        Forms\Components\TextInput::make('title')
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
-
-                        Forms\Components\TextInput::make('slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(Post::class, 'slug', ignoreRecord: true)
-                            ->helperText('URL-friendly version of the title'),
-
-                        Forms\Components\Textarea::make('excerpt')
-                            ->rows(3)
-                            ->maxLength(500)
-                            ->helperText('Short description for listings and SEO')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-
-                // 2. SEO & Metadata
-                Section::make('SEO & Metadata')
-                    ->schema([
-                        Forms\Components\TextInput::make('meta_title')
-                            ->label('Meta Title')
-                            ->maxLength(255)
-                            ->helperText('SEO title (leave empty to use post title)'),
-
-                        Forms\Components\TextInput::make('meta_keywords')
-                            ->label('Meta Keywords')
-                            ->helperText('Comma-separated keywords'),
-
-                        Forms\Components\TextInput::make('og_image')
-                            ->label('Open Graph Image URL')
-                            ->helperText('URL for social media sharing image'),
-
-                        Forms\Components\Select::make('twitter_card')
-                            ->label('Twitter Card Type')
-                            ->options([
-                                'summary' => 'Summary',
-                                'summary_large_image' => 'Summary Large Image',
-                                'app' => 'App',
-                                'player' => 'Player',
-                            ])
-                            ->default('summary_large_image')
-                            ->helperText('Twitter card display type'),
-
-                        Forms\Components\Textarea::make('meta_description')
-                            ->label('Meta Description')
-                            ->rows(2)
-                            ->maxLength(500)
-                            ->helperText('SEO description (leave empty to use excerpt)')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-
-                // 3. Categorization
-                Section::make('Categorization')
-                    ->schema([
-                        Forms\Components\Select::make('categories')
-                            ->relationship('categories', 'name', fn ($query) => $query->where('type', 'post'))
-                            ->multiple()
-                            ->searchable()
-                            ->preload()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('name')
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('slug')
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\Textarea::make('description')
-                                    ->rows(2),
-                                Forms\Components\Hidden::make('type')
-                                    ->default('post'),
-                            ])
-                            ->helperText('Select or create categories'),
-
-                        Forms\Components\Select::make('tags')
-                            ->relationship('tags', 'name')
-                            ->multiple()
-                            ->searchable()
-                            ->preload()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('name')
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('slug')
-                                    ->required()
-                                    ->maxLength(255),
-                            ])
-                            ->helperText('Select or create tags'),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-
-                // 4. Publishing
-                Section::make('Publishing')
-                    ->schema([
-                        Forms\Components\DateTimePicker::make('published_at')
-                            ->label('Publish Date')
-                            ->default(now()),
-
-                        Forms\Components\Placeholder::make('word_count')
-                            ->label('Word Count')
-                            ->content(fn (?Post $record): string => $record ? number_format($record->word_count) : '0'),
-
-                        Forms\Components\Placeholder::make('reading_time')
-                            ->label('Reading Time')
-                            ->content(fn (?Post $record): string => $record ? $record->getReadingTime().' min' : '0 min'),
-
-                        Forms\Components\Toggle::make('is_published')
-                            ->label('Published')
-                            ->default(false)
-                            ->helperText('Make this post visible on the website'),
-                    ])
-                    ->columns(4)
-                    ->columnSpanFull(),
-
-                // 5. Media
-                Section::make('Media')
-                    ->schema([
-                        Forms\Components\FileUpload::make('featured_image')
-                            ->image()
-                            ->disk('public')
-                            ->directory('posts/featured')
-                            ->visibility('public')
-                            ->helperText('Main image for this post'),
-
-                        Forms\Components\FileUpload::make('gallery')
-                            ->multiple()
-                            ->image()
-                            ->disk('public')
-                            ->directory('posts/gallery')
-                            ->visibility('public')
-                            ->helperText('Additional images'),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-            ]);
+        // Editor-only form - metadata accessed via modal buttons in page header
+        return $schema->components(PostFormSchemas::getEditorSchema());
     }
 
     public static function table(Table $table): Table
@@ -212,18 +49,17 @@ class PostResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('featured_image')
+                    ->label('Image')
                     ->circular()
                     ->defaultImageUrl(url('/images/placeholders/post-placeholder.webp'))
-                    ->toggleable()
-                    ->getStateUsing(function (Post $record) {
-                        return $record->getFirstMediaUrl('featured_image') ?: null;
-                    }),
+                    ->getStateUsing(fn (Post $record) => $record->getFirstMediaUrl('featured_image') ?: null)
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
-                    ->description(fn (Post $record): string => $record->slug)
-                    ->limit(50),
+                    ->limit(50)
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('author.name')
                     ->label('Author')
@@ -232,26 +68,21 @@ class PostResource extends Resource
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('categories.name')
+                    ->label('Categories')
                     ->badge()
                     ->color('info')
                     ->separator(',')
+                    ->searchable()
                     ->toggleable(),
-
-                Tables\Columns\TextColumn::make('tags.name')
-                    ->badge()
-                    ->color('success')
-                    ->separator(',')
-                    ->toggleable(),
-
-                Tables\Columns\IconColumn::make('is_published')
-                    ->label('Published')
-                    ->boolean()
-                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('published_at')
-                    ->label('Publish Date')
-                    ->dateTime('M d, Y')
-                    ->sortable(),
+                    ->label('Published')
+                    ->sortable()
+                    ->date('M d, Y')
+                    ->placeholder('-')
+                    ->icon(fn (Post $record) => $record->is_published ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->iconColor(fn (Post $record) => $record->is_published ? 'success' : 'danger')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('word_count')
                     ->label('Words')
@@ -259,12 +90,21 @@ class PostResource extends Resource
                     ->sortable()
                     ->toggleable(),
 
+                // Hidden by default - toggle via column picker
+                Tables\Columns\TextColumn::make('tags.name')
+                    ->label('Tags')
+                    ->badge()
+                    ->color('success')
+                    ->separator(',')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime('M d, Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('published_at', 'desc')
+            ->defaultSort('updated_at', 'desc')
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_published')
                     ->label('Published')
@@ -276,11 +116,19 @@ class PostResource extends Resource
                     ->relationship('categories', 'name')
                     ->multiple(),
 
+                Tables\Filters\SelectFilter::make('tags')
+                    ->relationship('tags', 'name')
+                    ->multiple(),
+
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Edit post'),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete post'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -288,7 +136,9 @@ class PostResource extends Resource
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped()
+            ->paginated([25, 50, 100]);
     }
 
     public static function getPages(): array

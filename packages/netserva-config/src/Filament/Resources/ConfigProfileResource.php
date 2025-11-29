@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Config\Filament\Clusters\Config\ConfigCluster;
 use NetServa\Config\Filament\Resources\ConfigProfileResource\Pages\CreateConfigProfile;
 use NetServa\Config\Filament\Resources\ConfigProfileResource\Pages\EditConfigProfile;
 use NetServa\Config\Filament\Resources\ConfigProfileResource\Pages\ListConfigProfiles;
 use NetServa\Config\Filament\Resources\ConfigProfileResource\Schemas\ConfigProfileForm;
 use NetServa\Config\Filament\Resources\ConfigProfileResource\Tables\ConfigProfilesTable;
 use NetServa\Config\Models\ConfigProfile;
+use UnitEnum;
 
 class ConfigProfileResource extends Resource
 {
@@ -21,7 +21,7 @@ class ConfigProfileResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserCircle;
 
-    protected static ?string $cluster = ConfigCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Config';
 
     protected static ?int $navigationSort = 11;
 

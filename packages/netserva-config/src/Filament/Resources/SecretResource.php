@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Config\Filament\Clusters\Config\ConfigCluster;
 use NetServa\Config\Filament\Resources\SecretResource\Pages\CreateSecret;
 use NetServa\Config\Filament\Resources\SecretResource\Pages\EditSecret;
 use NetServa\Config\Filament\Resources\SecretResource\Pages\ListSecrets;
 use NetServa\Config\Filament\Resources\SecretResource\Schemas\SecretForm;
 use NetServa\Config\Filament\Resources\SecretResource\Tables\SecretsTable;
 use NetServa\Config\Models\Secret;
+use UnitEnum;
 
 class SecretResource extends Resource
 {
@@ -21,7 +21,7 @@ class SecretResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLockClosed;
 
-    protected static ?string $cluster = ConfigCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Config';
 
     protected static ?int $navigationSort = 30;
 

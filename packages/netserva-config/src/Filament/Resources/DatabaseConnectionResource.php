@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Config\Filament\Clusters\Config\ConfigCluster;
 use NetServa\Config\Filament\Resources\DatabaseConnectionResource\Pages\CreateDatabaseConnection;
 use NetServa\Config\Filament\Resources\DatabaseConnectionResource\Pages\EditDatabaseConnection;
 use NetServa\Config\Filament\Resources\DatabaseConnectionResource\Pages\ListDatabaseConnections;
 use NetServa\Config\Filament\Resources\DatabaseConnectionResource\Schemas\DatabaseConnectionForm;
 use NetServa\Config\Filament\Resources\DatabaseConnectionResource\Tables\DatabaseConnectionsTable;
 use NetServa\Config\Models\DatabaseConnection;
+use UnitEnum;
 
 class DatabaseConnectionResource extends Resource
 {
@@ -21,7 +21,7 @@ class DatabaseConnectionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLink;
 
-    protected static ?string $cluster = ConfigCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Config';
 
     protected static ?int $navigationSort = 21;
 

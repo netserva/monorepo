@@ -6,12 +6,16 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use NetServa\Dns\Filament\Resources\DnsProviderResource\Schemas\DnsProviderForm;
 
 class DnsProvidersTable
 {
@@ -202,9 +206,18 @@ class DnsProvidersTable
                             : $query->whereNull('connection_config->ssh_host');
                     }),
             ])
+            ->headerActions([
+                CreateAction::make()
+                    ->modalWidth(Width::ExtraLarge)
+                    ->modalFooterActionsAlignment(Alignment::End)
+                    ->schema(fn () => DnsProviderForm::getFormSchema()),
+            ])
             ->recordActions([
                 ActionGroup::make([
-                    EditAction::make(),
+                    EditAction::make()
+                        ->modalWidth(Width::ExtraLarge)
+                        ->modalFooterActionsAlignment(Alignment::End)
+                        ->schema(fn () => DnsProviderForm::getFormSchema()),
 
                     Action::make('test_connection')
                         ->label('Test Connection')
@@ -340,7 +353,8 @@ class DnsProvidersTable
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('sort_order', 'asc')
-            ->poll('30s');
+            ->defaultSort('updated_at', 'desc')
+            ->striped()
+            ->paginated([25, 50, 100]);
     }
 }

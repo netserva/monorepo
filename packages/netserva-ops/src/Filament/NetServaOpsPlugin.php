@@ -4,7 +4,6 @@ namespace NetServa\Ops\Filament;
 
 use Filament\Panel;
 use NetServa\Core\Foundation\BaseFilamentPlugin;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\AlertRuleResource;
 use NetServa\Ops\Filament\Resources\AnalyticsAlertResource;
 use NetServa\Ops\Filament\Resources\AnalyticsDashboardResource;
@@ -46,11 +45,6 @@ class NetServaOpsPlugin extends BaseFilamentPlugin
 
     protected function registerResources(Panel $panel): void
     {
-        // Register cluster for collapsible navigation
-        $panel->clusters([
-            OperationsCluster::class,
-        ]);
-
         $panel->resources([
             // Monitoring
             MonitoringCheckResource::class,

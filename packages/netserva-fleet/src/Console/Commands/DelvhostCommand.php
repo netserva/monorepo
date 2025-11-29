@@ -3,7 +3,7 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Support\Facades\Artisan;
-use NetServa\Cli\Console\Commands\BaseNetServaCommand;
+use NetServa\Core\Console\Commands\BaseNetServaCommand;
 use NetServa\Fleet\Services\VhostManagementService;
 
 /**

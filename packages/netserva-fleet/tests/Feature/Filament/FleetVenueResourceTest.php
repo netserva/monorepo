@@ -35,8 +35,9 @@ it('generates navigation badge with venue count', function () {
 
 it('has correct navigation configuration', function () {
     $label = FleetVenueResource::getNavigationLabel();
-    $group = FleetVenueResource::getNavigationGroup();
+    // Fleet resources use navigation groups for sidebar organization
+    $navigationGroup = FleetVenueResource::getNavigationGroup();
 
     expect($label)->toBe('Venues');
-    expect($group)->toBe('Fleet');
+    expect($navigationGroup)->toBe('Fleet');
 });

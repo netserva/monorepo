@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Laravel\Prompts\table;
-use NetServa\Cli\Services\NetServaConfigurationService;
+use NetServa\Core\Services\NetServaConfigurationService;
 use NetServa\Core\Services\RemoteExecutionService;
 
 /**

@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Web\Filament\Clusters\Web\WebCluster;
 use NetServa\Web\Filament\Resources\WebServerResource\Pages\CreateWebServer;
 use NetServa\Web\Filament\Resources\WebServerResource\Pages\EditWebServer;
 use NetServa\Web\Filament\Resources\WebServerResource\Pages\ListWebServers;
 use NetServa\Web\Filament\Resources\WebServerResource\Schemas\WebServerForm;
 use NetServa\Web\Filament\Resources\WebServerResource\Tables\WebServersTable;
 use NetServa\Web\Models\WebServer;
+use UnitEnum;
 
 class WebServerResource extends Resource
 {
@@ -21,9 +21,9 @@ class WebServerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServer;
 
-    protected static ?string $cluster = WebCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Web';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\AutomationTaskResource\Pages\CreateAutomationTask;
 use NetServa\Ops\Filament\Resources\AutomationTaskResource\Pages\EditAutomationTask;
 use NetServa\Ops\Filament\Resources\AutomationTaskResource\Pages\ListAutomationTasks;
 use NetServa\Ops\Filament\Resources\AutomationTaskResource\Schemas\AutomationTaskForm;
 use NetServa\Ops\Filament\Resources\AutomationTaskResource\Tables\AutomationTasksTable;
 use NetServa\Ops\Models\AutomationTask;
+use UnitEnum;
 
 class AutomationTaskResource extends Resource
 {
@@ -21,7 +21,7 @@ class AutomationTaskResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCheckCircle;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 71;
 

@@ -1,6 +1,6 @@
 <?php
 
-use NetServa\Cli\Services\NetServaContext;
+use NetServa\Core\Services\NetServaContext;
 use NetServa\Fleet\Services\VhostManagementService;
 
 uses()

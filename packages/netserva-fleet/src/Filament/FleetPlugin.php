@@ -4,8 +4,6 @@ namespace NetServa\Fleet\Filament;
 
 use Filament\Panel;
 use NetServa\Core\Foundation\BaseFilamentPlugin;
-use NetServa\Fleet\Filament\Clusters\Fleet\FleetCluster;
-use NetServa\Fleet\Filament\Clusters\Network\NetworkCluster;
 use NetServa\Fleet\Filament\Resources\FleetVenueResource;
 use NetServa\Fleet\Filament\Resources\FleetVhostResource;
 use NetServa\Fleet\Filament\Resources\FleetVnodeResource;
@@ -45,19 +43,13 @@ class FleetPlugin extends BaseFilamentPlugin
 
     protected function registerResources(Panel $panel): void
     {
-        // Register clusters for collapsible navigation
-        $panel->clusters([
-            FleetCluster::class,
-            NetworkCluster::class,
-        ]);
-
         $panel->resources([
-            // Fleet core resources (under FleetCluster)
+            // Fleet resources (navigation group: Fleet)
             FleetVenueResource::class,
             FleetVsiteResource::class,
             FleetVnodeResource::class,
             FleetVhostResource::class,
-            // Network resources (under NetworkCluster)
+            // Network resources (navigation group: Network)
             IpNetworkResource::class,
             IpAddressResource::class,
             IpReservationResource::class,

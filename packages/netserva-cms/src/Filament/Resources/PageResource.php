@@ -9,18 +9,15 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Forms;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NetServa\Cms\Filament\Resources\PageResource\Pages;
+use NetServa\Cms\Filament\Resources\PageResource\Schemas\PageFormSchemas;
 use NetServa\Cms\Models\Page;
 use UnitEnum;
 
@@ -43,140 +40,8 @@ class PageResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                // Content Editor - Full width at top, no wrapper, no label
-                Forms\Components\RichEditor::make('content')
-                    ->hiddenLabel()
-                    ->fileAttachmentsDisk('public')
-                    ->fileAttachmentsDirectory('attachments')
-                    ->columnSpanFull(),
-
-                // 1. Basic Information
-                Section::make('Basic Information')
-                    ->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
-
-                        Forms\Components\TextInput::make('slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(Page::class, 'slug', ignoreRecord: true)
-                            ->helperText('URL-friendly version of the title'),
-
-                        Forms\Components\Select::make('template')
-                            ->required()
-                            ->options(config('netserva-cms.templates', [
-                                'default' => 'Default',
-                                'homepage' => 'Homepage',
-                                'service' => 'Service Page',
-                                'pricing' => 'Pricing',
-                                'blank' => 'Blank',
-                            ]))
-                            ->default('default'),
-
-                        Forms\Components\Textarea::make('excerpt')
-                            ->rows(3)
-                            ->maxLength(500)
-                            ->columnSpanFull()
-                            ->helperText('Short description for listings and SEO'),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-
-                // 2. SEO & Metadata
-                Section::make('SEO & Metadata')
-                    ->schema([
-                        Forms\Components\TextInput::make('meta_title')
-                            ->label('Meta Title')
-                            ->maxLength(255)
-                            ->helperText('SEO title (leave empty to use page title)'),
-
-                        Forms\Components\TextInput::make('meta_keywords')
-                            ->label('Meta Keywords')
-                            ->helperText('Comma-separated keywords'),
-
-                        Forms\Components\TextInput::make('og_image')
-                            ->label('Open Graph Image URL')
-                            ->helperText('URL for social media sharing image'),
-
-                        Forms\Components\Select::make('twitter_card')
-                            ->label('Twitter Card Type')
-                            ->options([
-                                'summary' => 'Summary',
-                                'summary_large_image' => 'Summary Large Image',
-                                'app' => 'App',
-                                'player' => 'Player',
-                            ])
-                            ->default('summary_large_image')
-                            ->helperText('Twitter card display type'),
-
-                        Forms\Components\Textarea::make('meta_description')
-                            ->label('Meta Description')
-                            ->rows(2)
-                            ->maxLength(500)
-                            ->helperText('SEO description (leave empty to use excerpt)')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-
-                // 3. Hierarchy
-                Section::make('Hierarchy')
-                    ->schema([
-                        Forms\Components\Select::make('parent_id')
-                            ->label('Parent Page')
-                            ->relationship('parent', 'title')
-                            ->searchable()
-                            ->preload()
-                            ->helperText('Leave empty for top-level pages'),
-
-                        Forms\Components\TextInput::make('order')
-                            ->numeric()
-                            ->default(0)
-                            ->helperText('Order in navigation (lower numbers first)'),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-
-                // 4. Publishing
-                Section::make('Publishing')
-                    ->schema([
-                        Forms\Components\DateTimePicker::make('published_at')
-                            ->label('Publish Date'),
-
-                        Forms\Components\Toggle::make('is_published')
-                            ->label('Published')
-                            ->default(false)
-                            ->helperText('Make this page visible on the website'),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-
-                // 5. Media
-                Section::make('Media')
-                    ->schema([
-                        Forms\Components\FileUpload::make('featured_image')
-                            ->image()
-                            ->disk('public')
-                            ->directory('pages/featured')
-                            ->visibility('public')
-                            ->helperText('Main image for this page'),
-
-                        Forms\Components\FileUpload::make('gallery')
-                            ->multiple()
-                            ->image()
-                            ->disk('public')
-                            ->directory('pages/gallery')
-                            ->visibility('public')
-                            ->helperText('Additional images'),
-                    ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-            ]);
+        // Editor-only form - metadata accessed via modal buttons in page header
+        return $schema->components(PageFormSchemas::getEditorSchema());
     }
 
     public static function table(Table $table): Table
@@ -186,7 +51,8 @@ class PageResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
-                    ->description(fn (Page $record): string => $record->slug),
+                    ->limit(50)
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('template')
                     ->badge()
@@ -195,27 +61,26 @@ class PageResource extends Resource
                         'service' => 'info',
                         'pricing' => 'warning',
                         default => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('parent.title')
                     ->label('Parent')
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\IconColumn::make('is_published')
-                    ->label('Published')
-                    ->boolean()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('published_at')
-                    ->label('Publish Date')
-                    ->dateTime('M d, Y')
+                    ->label('Published')
                     ->sortable()
+                    ->date('M d, Y')
+                    ->placeholder('-')
+                    ->icon(fn (Page $record) => $record->is_published ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->iconColor(fn (Page $record) => $record->is_published ? 'success' : 'danger')
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('order')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime('M d, Y H:i')
@@ -231,15 +96,23 @@ class PageResource extends Resource
                     ->falseLabel('Drafts only'),
 
                 Tables\Filters\SelectFilter::make('template')
-                    ->options(config('netserva-cms.templates')),
+                    ->options(config('netserva-cms.templates', [
+                        'default' => 'Default',
+                        'homepage' => 'Homepage',
+                        'service' => 'Service Page',
+                        'pricing' => 'Pricing',
+                        'blank' => 'Blank',
+                    ])),
 
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-                ForceDeleteAction::make(),
-                RestoreAction::make(),
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Edit page'),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete page'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -247,7 +120,9 @@ class PageResource extends Resource
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped()
+            ->paginated([25, 50, 100]);
     }
 
     public static function getPages(): array

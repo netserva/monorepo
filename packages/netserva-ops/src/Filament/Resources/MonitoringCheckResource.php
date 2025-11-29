@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\MonitoringCheckResource\Pages\CreateMonitoringCheck;
 use NetServa\Ops\Filament\Resources\MonitoringCheckResource\Pages\EditMonitoringCheck;
 use NetServa\Ops\Filament\Resources\MonitoringCheckResource\Pages\ListMonitoringChecks;
 use NetServa\Ops\Filament\Resources\MonitoringCheckResource\Schemas\MonitoringCheckForm;
 use NetServa\Ops\Filament\Resources\MonitoringCheckResource\Tables\MonitoringChecksTable;
 use NetServa\Ops\Models\MonitoringCheck;
+use UnitEnum;
 
 class MonitoringCheckResource extends Resource
 {
@@ -21,7 +21,7 @@ class MonitoringCheckResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 10;
 

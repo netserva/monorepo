@@ -360,6 +360,14 @@ class SshHost extends Model
     }
 
     /**
+     * Get the SSH key associated with this host
+     */
+    public function sshKey(): BelongsTo
+    {
+        return $this->belongsTo(SshKey::class, 'identity_file', 'name');
+    }
+
+    /**
      * Regenerate configs after host changes
      */
     protected static function boot()
@@ -367,11 +375,13 @@ class SshHost extends Model
         parent::boot();
 
         static::saved(function ($model) {
-            self::regenerateRuntimeConfig();
+            // Sync individual host to ~/.ssh/hosts/{name}
+            app(\NetServa\Core\Services\SshHostSyncService::class)->syncHost($model);
         });
 
         static::deleted(function ($model) {
-            self::regenerateRuntimeConfig();
+            // Remove config file from ~/.ssh/hosts/{name}
+            app(\NetServa\Core\Services\SshHostSyncService::class)->deleteHostConfig($model->host);
         });
     }
 }

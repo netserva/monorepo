@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Config\Filament\Clusters\Config\ConfigCluster;
 use NetServa\Config\Filament\Resources\DatabaseCredentialResource\Pages\CreateDatabaseCredential;
 use NetServa\Config\Filament\Resources\DatabaseCredentialResource\Pages\EditDatabaseCredential;
 use NetServa\Config\Filament\Resources\DatabaseCredentialResource\Pages\ListDatabaseCredentials;
 use NetServa\Config\Filament\Resources\DatabaseCredentialResource\Schemas\DatabaseCredentialForm;
 use NetServa\Config\Filament\Resources\DatabaseCredentialResource\Tables\DatabaseCredentialsTable;
 use NetServa\Config\Models\DatabaseCredential;
+use UnitEnum;
 
 class DatabaseCredentialResource extends Resource
 {
@@ -21,7 +21,7 @@ class DatabaseCredentialResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
-    protected static ?string $cluster = ConfigCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Config';
 
     protected static ?int $navigationSort = 22;
 

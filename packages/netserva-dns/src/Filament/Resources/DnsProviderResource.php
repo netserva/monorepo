@@ -7,8 +7,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Dns\Filament\Resources\DnsProviderResource\Pages\CreateDnsProvider;
-use NetServa\Dns\Filament\Resources\DnsProviderResource\Pages\EditDnsProvider;
 use NetServa\Dns\Filament\Resources\DnsProviderResource\Pages\ListDnsProviders;
 use NetServa\Dns\Filament\Resources\DnsProviderResource\Schemas\DnsProviderForm;
 use NetServa\Dns\Filament\Resources\DnsProviderResource\Tables\DnsProvidersTable;
@@ -46,8 +44,6 @@ class DnsProviderResource extends Resource
     {
         return [
             'index' => ListDnsProviders::route('/'),
-            'create' => CreateDnsProvider::route('/create'),
-            'edit' => EditDnsProvider::route('/{record}/edit'),
         ];
     }
 }

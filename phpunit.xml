@@ -43,9 +43,6 @@
         <testsuite name="NetServa Core">
             <directory>packages/netserva-core/tests</directory>
         </testsuite>
-        <testsuite name="NetServa CLI">
-            <directory>packages/netserva-cli/tests</directory>
-        </testsuite>
         <testsuite name="NetServa DNS">
             <directory>packages/netserva-dns/tests</directory>
         </testsuite>
@@ -55,20 +52,11 @@
         <testsuite name="NetServa Web">
             <directory>packages/netserva-web/tests</directory>
         </testsuite>
-        <testsuite name="NetServa WireGuard">
-            <directory>packages/netserva-wg/tests</directory>
-        </testsuite>
         <testsuite name="NetServa Operations">
             <directory>packages/netserva-ops/tests</directory>
         </testsuite>
         <testsuite name="NetServa Configuration">
             <directory>packages/netserva-config/tests</directory>
-        </testsuite>
-        <testsuite name="NetServa Automation">
-            <directory>packages/netserva-cron/tests</directory>
-        </testsuite>
-        <testsuite name="NetServa IPAM">
-            <directory>packages/netserva-ipam/tests</directory>
         </testsuite>
         <testsuite name="NetServa Fleet">
             <directory>packages/netserva-fleet/tests</directory>

@@ -153,7 +153,7 @@ class AddfleetCommand extends Command
                 $this->newLine();
                 $this->info('📦 Importing legacy NetServa 1.0 vhosts...');
 
-                $importService = app(\NetServa\Cli\Services\LegacyImportService::class);
+                $importService = app(\NetServa\Core\Services\LegacyImportService::class);
                 $result = $importService->discoverLegacyVhosts($vnode);
 
                 if ($result['success']) {

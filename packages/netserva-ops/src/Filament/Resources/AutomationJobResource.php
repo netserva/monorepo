@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\AutomationJobResource\Pages\CreateAutomationJob;
 use NetServa\Ops\Filament\Resources\AutomationJobResource\Pages\EditAutomationJob;
 use NetServa\Ops\Filament\Resources\AutomationJobResource\Pages\ListAutomationJobs;
 use NetServa\Ops\Filament\Resources\AutomationJobResource\Schemas\AutomationJobForm;
 use NetServa\Ops\Filament\Resources\AutomationJobResource\Tables\AutomationJobsTable;
 use NetServa\Ops\Models\AutomationJob;
+use UnitEnum;
 
 class AutomationJobResource extends Resource
 {
@@ -21,7 +21,7 @@ class AutomationJobResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClock;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 70;
 

@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\BackupJobResource\Pages\CreateBackupJob;
 use NetServa\Ops\Filament\Resources\BackupJobResource\Pages\EditBackupJob;
 use NetServa\Ops\Filament\Resources\BackupJobResource\Pages\ListBackupJobs;
 use NetServa\Ops\Filament\Resources\BackupJobResource\Schemas\BackupJobForm;
 use NetServa\Ops\Filament\Resources\BackupJobResource\Tables\BackupJobsTable;
 use NetServa\Ops\Models\BackupJob;
+use UnitEnum;
 
 class BackupJobResource extends Resource
 {
@@ -21,7 +21,7 @@ class BackupJobResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCloudArrowUp;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 30;
 

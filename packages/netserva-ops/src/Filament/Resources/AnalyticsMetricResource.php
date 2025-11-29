@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\AnalyticsMetricResource\Pages\CreateAnalyticsMetric;
 use NetServa\Ops\Filament\Resources\AnalyticsMetricResource\Pages\EditAnalyticsMetric;
 use NetServa\Ops\Filament\Resources\AnalyticsMetricResource\Pages\ListAnalyticsMetrics;
 use NetServa\Ops\Filament\Resources\AnalyticsMetricResource\Schemas\AnalyticsMetricForm;
 use NetServa\Ops\Filament\Resources\AnalyticsMetricResource\Tables\AnalyticsMetricsTable;
 use NetServa\Ops\Models\AnalyticsMetric;
+use UnitEnum;
 
 class AnalyticsMetricResource extends Resource
 {
@@ -21,7 +21,7 @@ class AnalyticsMetricResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 21;
 

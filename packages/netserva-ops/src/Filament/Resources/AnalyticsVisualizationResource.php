@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\AnalyticsVisualizationResource\Pages\CreateAnalyticsVisualization;
 use NetServa\Ops\Filament\Resources\AnalyticsVisualizationResource\Pages\EditAnalyticsVisualization;
 use NetServa\Ops\Filament\Resources\AnalyticsVisualizationResource\Pages\ListAnalyticsVisualizations;
 use NetServa\Ops\Filament\Resources\AnalyticsVisualizationResource\Schemas\AnalyticsVisualizationForm;
 use NetServa\Ops\Filament\Resources\AnalyticsVisualizationResource\Tables\AnalyticsVisualizationsTable;
 use NetServa\Ops\Models\AnalyticsVisualization;
+use UnitEnum;
 
 class AnalyticsVisualizationResource extends Resource
 {
@@ -21,7 +21,7 @@ class AnalyticsVisualizationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 23;
 

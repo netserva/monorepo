@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Mail\Filament\Clusters\Mail\MailCluster;
 use NetServa\Mail\Filament\Resources\MailQueueResource\Pages\CreateMailQueue;
 use NetServa\Mail\Filament\Resources\MailQueueResource\Pages\EditMailQueue;
 use NetServa\Mail\Filament\Resources\MailQueueResource\Pages\ListMailQueues;
 use NetServa\Mail\Filament\Resources\MailQueueResource\Schemas\MailQueueForm;
 use NetServa\Mail\Filament\Resources\MailQueueResource\Tables\MailQueuesTable;
 use NetServa\Mail\Models\MailQueue;
+use UnitEnum;
 
 class MailQueueResource extends Resource
 {
@@ -21,9 +21,9 @@ class MailQueueResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;
 
-    protected static ?string $cluster = MailCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Mail';
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {

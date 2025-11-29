@@ -5,7 +5,7 @@ namespace NetServa\Fleet\Services;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
-use NetServa\Cli\Services\NetServaConfigurationService;
+use NetServa\Core\Services\NetServaConfigurationService;
 use NetServa\Dns\Exceptions\DnsValidationException;
 use NetServa\Dns\Models\DnsProvider;
 use NetServa\Dns\Services\FcrDnsValidationService;

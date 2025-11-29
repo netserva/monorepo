@@ -15,20 +15,15 @@
         "filament/spatie-laravel-media-library-plugin": "^4.2.1",
         "laravel/framework": "^12.37.0",
         "laravel/tinker": "^2.10.1",
-        "netserva/admin": "@dev",
-        "netserva/cli": "@dev",
         "netserva/cms": "@dev",
         "netserva/config": "@dev",
         "netserva/core": "@dev",
-        "netserva/cron": "@dev",
         "netserva/dns": "@dev",
         "netserva/fleet": "@dev",
-        "netserva/ipam": "@dev",
         "netserva/mail": "@dev",
         "netserva/ops": "@dev",
         "netserva/platform": "@dev",
         "netserva/web": "@dev",
-        "netserva/wg": "@dev",
         "phpseclib/phpseclib": "^3.0.47",
         "spatie/laravel-settings": "^3.5"
     },
@@ -49,18 +44,14 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "NetServa\\Core\\Database\\Factories\\": "packages/netserva-core/database/factories/",
-            "NetServa\\Cli\\Database\\Factories\\": "packages/netserva-cli/database/factories/",
             "NetServa\\Cms\\Database\\Factories\\": "packages/netserva-cms/database/factories/",
-            "NetServa\\Dns\\Database\\Factories\\": "packages/netserva-dns/database/factories/",
-            "NetServa\\Mail\\Database\\Factories\\": "packages/netserva-mail/database/factories/",
-            "NetServa\\Wg\\Database\\Factories\\": "packages/netserva-wg/database/factories/",
-            "NetServa\\Web\\Database\\Factories\\": "packages/netserva-web/database/factories/",
-            "NetServa\\Ops\\Database\\Factories\\": "packages/netserva-ops/database/factories/",
             "NetServa\\Config\\Database\\Factories\\": "packages/netserva-config/database/factories/",
-            "NetServa\\Cron\\Database\\Factories\\": "packages/netserva-cron/database/factories/",
-            "NetServa\\Ipam\\Database\\Factories\\": "packages/netserva-ipam/database/factories/",
-            "NetServa\\Fleet\\Database\\Factories\\": "packages/netserva-fleet/database/factories/"
+            "NetServa\\Core\\Database\\Factories\\": "packages/netserva-core/database/factories/",
+            "NetServa\\Dns\\Database\\Factories\\": "packages/netserva-dns/database/factories/",
+            "NetServa\\Fleet\\Database\\Factories\\": "packages/netserva-fleet/database/factories/",
+            "NetServa\\Mail\\Database\\Factories\\": "packages/netserva-mail/database/factories/",
+            "NetServa\\Ops\\Database\\Factories\\": "packages/netserva-ops/database/factories/",
+            "NetServa\\Web\\Database\\Factories\\": "packages/netserva-web/database/factories/"
         }
     },
     "autoload-dev": {
@@ -125,15 +116,6 @@
             "type": "vcs",
             "url": "https://github.com/pestphp/pest.git"
         },
-        "netserva/admin": {
-            "type": "path",
-            "url": "./packages/netserva-admin",
-            "options": {
-                "versions": {
-                    "netserva/admin": "0.0.3"
-                }
-            }
-        },
         "netserva/cms": {
             "type": "path",
             "url": "./packages/netserva-cms",
@@ -158,15 +140,6 @@
             "options": {
                 "versions": {
                     "netserva/mail": "0.0.3"
-                }
-            }
-        },
-        "netserva/wg": {
-            "type": "path",
-            "url": "./packages/netserva-wg",
-            "options": {
-                "versions": {
-                    "netserva/wg": "0.0.3"
                 }
             }
         },
@@ -197,39 +170,12 @@
                 }
             }
         },
-        "netserva/cron": {
-            "type": "path",
-            "url": "./packages/netserva-cron",
-            "options": {
-                "versions": {
-                    "netserva/cron": "0.0.3"
-                }
-            }
-        },
-        "netserva/ipam": {
-            "type": "path",
-            "url": "./packages/netserva-ipam",
-            "options": {
-                "versions": {
-                    "netserva/ipam": "0.0.3"
-                }
-            }
-        },
         "netserva/core": {
             "type": "path",
             "url": "./packages/netserva-core",
             "options": {
                 "versions": {
                     "netserva/core": "0.0.3"
-                }
-            }
-        },
-        "netserva/cli": {
-            "type": "path",
-            "url": "./packages/netserva-cli",
-            "options": {
-                "versions": {
-                    "netserva/cli": "0.0.3"
                 }
             }
         },

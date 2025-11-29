@@ -31,7 +31,7 @@ class VhostConfigService implements ConfigManagerInterface
 
     public function __construct()
     {
-        $this->basePath = config('netserva-core.paths.ns', env('HOME').'/.ns').'/var';
+        $this->basePath = config('netserva-cli.paths.ns').'/var';
 
         // Ensure base directory exists
         if (! File::exists($this->basePath)) {
@@ -252,7 +252,7 @@ class VhostConfigService implements ConfigManagerInterface
         }
 
         // Validate variable count (should be around 53)
-        $expectedCount = config('netserva-core.vhost.env_file_variables', 53);
+        $expectedCount = config('netserva-cli.vhost.env_file_variables', 53);
         $actualCount = count($config);
 
         // Allow some flexibility in variable count

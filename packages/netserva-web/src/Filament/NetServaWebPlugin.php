@@ -4,7 +4,6 @@ namespace NetServa\Web\Filament;
 
 use Filament\Panel;
 use NetServa\Core\Foundation\BaseFilamentPlugin;
-use NetServa\Web\Filament\Clusters\Web\WebCluster;
 use NetServa\Web\Filament\Resources\SslCertificateDeploymentResource;
 use NetServa\Web\Filament\Resources\SslCertificateResource;
 use NetServa\Web\Filament\Resources\VirtualHostResource;
@@ -35,11 +34,6 @@ class NetServaWebPlugin extends BaseFilamentPlugin
 
     protected function registerResources(Panel $panel): void
     {
-        // Register cluster for collapsible navigation
-        $panel->clusters([
-            WebCluster::class,
-        ]);
-
         $panel->resources([
             VirtualHostResource::class,
             WebServerResource::class,

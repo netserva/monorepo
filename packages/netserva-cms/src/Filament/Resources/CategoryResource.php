@@ -11,10 +11,14 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 use NetServa\Cms\Filament\Resources\CategoryResource\Pages;
 use NetServa\Cms\Models\Category;
 use UnitEnum;
@@ -36,24 +40,29 @@ class CategoryResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
-    public static function form(Schema $schema): Schema
+    public static function getFormSchema(): array
     {
-        return $schema
-            ->components([
-                // Row 1: Name, Slug, Type, Order (25% each)
+        return [
+            Grid::make(2)->schema([
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn ($state, $set) => $set('slug', \Illuminate\Support\Str::slug($state)))
-                    ->columnSpan(1),
+                    ->afterStateUpdated(fn ($state, $set) => $set('slug', Str::slug($state)))
+                    ->placeholder('e.g., News')
+                    ->hintIcon('heroicon-o-question-mark-circle')
+                    ->hintIconTooltip('Display name for this category'),
 
                 Forms\Components\TextInput::make('slug')
                     ->required()
                     ->maxLength(255)
                     ->unique(Category::class, 'slug', ignoreRecord: true)
-                    ->columnSpan(1),
+                    ->placeholder('e.g., news')
+                    ->hintIcon('heroicon-o-question-mark-circle')
+                    ->hintIconTooltip('URL-friendly identifier (auto-generated from name)'),
+            ]),
 
+            Grid::make(2)->schema([
                 Forms\Components\Select::make('type')
                     ->required()
                     ->options([
@@ -63,19 +72,26 @@ class CategoryResource extends Resource
                         'docs' => 'Documentation',
                     ])
                     ->default('post')
-                    ->columnSpan(1),
+                    ->hintIcon('heroicon-o-question-mark-circle')
+                    ->hintIconTooltip('Content type this category applies to'),
 
                 Forms\Components\TextInput::make('order')
                     ->numeric()
                     ->default(0)
-                    ->columnSpan(1),
+                    ->placeholder('0')
+                    ->hintIcon('heroicon-o-question-mark-circle')
+                    ->hintIconTooltip('Display order (lower numbers appear first)'),
+            ]),
 
-                // Row 2: Description (full width)
-                Forms\Components\Textarea::make('description')
-                    ->rows(3)
-                    ->columnSpanFull(),
-            ])
-            ->columns(4);
+            Forms\Components\Textarea::make('description')
+                ->rows(2)
+                ->placeholder('Optional description for this category'),
+        ];
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table
@@ -85,7 +101,12 @@ class CategoryResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
-                    ->description(fn (Category $record): string => $record->slug),
+                    ->weight('medium'),
+
+                Tables\Columns\TextColumn::make('slug')
+                    ->searchable()
+                    ->sortable()
+                    ->color('gray'),
 
                 Tables\Columns\TextColumn::make('type')
                     ->badge()
@@ -106,12 +127,13 @@ class CategoryResource extends Resource
                 Tables\Columns\TextColumn::make('order')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime('M d, Y')
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated')
+                    ->since()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('order')
+            ->defaultSort('updated_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
                     ->options([
@@ -121,23 +143,31 @@ class CategoryResource extends Resource
                         'docs' => 'Documentation',
                     ]),
             ])
+            ->searchable(false)
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Edit category')
+                    ->modalWidth(Width::Medium)
+                    ->modalFooterActionsAlignment(Alignment::End)
+                    ->schema(fn () => self::getFormSchema()),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete category'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped()
+            ->paginated([25, 50, 100]);
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListCategories::route('/'),
-            'create' => Pages\CreateCategory::route('/create'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
 }

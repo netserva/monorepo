@@ -332,16 +332,16 @@ class PluginRegistry
     protected function loadAvailablePlugins(): void
     {
         // Only include plugins that actually implement the Plugin interface
-        // NOTE: After package consolidation (Phase 3-4), merged packages are:
+        // NOTE: After package consolidation (Phase 9), merged packages are:
         // - netserva-admin → merged into netserva-core
+        // - netserva-cli → merged into netserva-core
         // - netserva-cron → merged into netserva-ops
         // - netserva-ipam → merged into netserva-fleet
         // - netserva-wg → merged into netserva-fleet
         $potentialPlugins = [
-            // Core foundation
+            // Core foundation (includes CLI resources)
             'netserva-core' => \NetServa\Core\CorePlugin::class,
-            // CLI and UI
-            'netserva-cli' => \NetServa\Cli\Filament\NetServaCliPlugin::class,
+            // Content Management
             'netserva-cms' => \NetServa\Cms\NetServaCmsPlugin::class,
             // Infrastructure (Fleet now includes IPAM + WireGuard)
             'netserva-fleet' => \NetServa\Fleet\Filament\FleetPlugin::class,

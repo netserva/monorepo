@@ -3,13 +3,25 @@
 namespace NetServa\Core;
 
 use Illuminate\Support\ServiceProvider;
+use NetServa\Core\Services\BinaryLaneService;
 use NetServa\Core\Services\ConfigurationService;
+use NetServa\Core\Services\LazyConfigurationCache;
 use NetServa\Core\Services\LoggingService;
+use NetServa\Core\Services\MigrationExecutionService;
+use NetServa\Core\Services\NetServaConfigurationService;
+use NetServa\Core\Services\NetServaContext;
 use NetServa\Core\Services\NotificationService;
 use NetServa\Core\Services\RemoteConnectionService;
 use NetServa\Core\Services\RemoteExecutionService;
+use NetServa\Core\Services\SshConfigService;
+use NetServa\Core\Services\SshHostSyncService;
+use NetServa\Core\Services\SshKeySyncService;
 use NetServa\Core\Services\SshTunnelService;
+use NetServa\Core\Services\TunnelService;
+use NetServa\Core\Services\UserManagementService;
 use NetServa\Core\Services\VhostConfigService;
+use NetServa\Core\Services\VhostRepairService;
+use NetServa\Core\Services\VhostValidationService;
 
 /**
  * NetServa Core Service Provider
@@ -32,6 +44,22 @@ class NetServaCoreServiceProvider extends ServiceProvider
         $this->app->singleton(SshTunnelService::class);
         $this->app->singleton(VhostConfigService::class);
         $this->app->singleton(RemoteExecutionService::class);
+
+        // SSH management services
+        $this->app->singleton(SshHostSyncService::class);
+        $this->app->singleton(SshKeySyncService::class);
+
+        // CLI services (merged from netserva-cli)
+        $this->app->singleton(SshConfigService::class);
+        $this->app->singleton(TunnelService::class);
+        $this->app->singleton(UserManagementService::class);
+        $this->app->singleton(VhostValidationService::class);
+        $this->app->singleton(VhostRepairService::class);
+        $this->app->singleton(MigrationExecutionService::class);
+        $this->app->singleton(NetServaConfigurationService::class);
+        $this->app->singleton(LazyConfigurationCache::class);
+        $this->app->singleton(NetServaContext::class);
+        $this->app->singleton(BinaryLaneService::class);
 
         // Register configuration
         $this->registerConfig();
@@ -155,6 +183,38 @@ class NetServaCoreServiceProvider extends ServiceProvider
             \NetServa\Core\Console\Commands\PluginDisableCommand::class,
             \NetServa\Core\Console\Commands\PluginInfoCommand::class,
             \NetServa\Core\Console\Commands\PluginListCommand::class,
+
+            // CLI Commands (merged from netserva-cli)
+            \NetServa\Core\Commands\NsCommand::class,
+            // Password/Credential Vault CRUD
+            \NetServa\Core\Console\Commands\AddpwCommand::class,
+            \NetServa\Core\Console\Commands\ShpwCommand::class,
+            \NetServa\Core\Console\Commands\ChpwCommand::class,
+            \NetServa\Core\Console\Commands\DelpwCommand::class,
+            // User Management
+            \NetServa\Core\Console\Commands\UserShowCommand::class,
+            \NetServa\Core\Console\Commands\UserPasswordCommand::class,
+            \NetServa\Core\Console\Commands\UserPasswordShowCommand::class,
+            // System Management
+            \NetServa\Core\Console\Commands\ShhostCommand::class,
+            \NetServa\Core\Console\Commands\ChpermsCommand::class,
+            // Context Management
+            \NetServa\Core\Console\Commands\UseServerCommand::class,
+            \NetServa\Core\Console\Commands\ClearContextCommand::class,
+            // Infrastructure Management
+            \NetServa\Core\Console\Commands\RemoteExecCommand::class,
+            \NetServa\Core\Console\Commands\TunnelCommand::class,
+            // VPS Management
+            \NetServa\Core\Console\Commands\BinaryLaneCommand::class,
+            // Migration Commands
+            \NetServa\Core\Console\Commands\MigrateCredentialsCommand::class,
+            \NetServa\Core\Console\Commands\ImportVmailCredentialsCommand::class,
+            \NetServa\Core\Console\Commands\MigrateVhostConfigsCommand::class,
+            \NetServa\Core\Console\Commands\MigratePlatformProfilesCommand::class,
+            // VHost Validation & Migration
+            \NetServa\Core\Console\Commands\ValidateCommand::class,
+            \NetServa\Core\Console\Commands\MigrateVhostCommand::class,
+            \NetServa\Core\Console\Commands\RollbackVhostCommand::class,
         ]);
     }
 

@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NetServa\Cli\Services\NetServaContext;
 use NetServa\Core\Models\VConf;
+use NetServa\Core\Services\NetServaContext;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Models\FleetVsite;

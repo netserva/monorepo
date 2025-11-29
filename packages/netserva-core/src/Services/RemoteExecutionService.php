@@ -24,7 +24,7 @@ class RemoteExecutionService extends RemoteConnectionService
     {
         parent::__construct();
         $this->vhostConfig = $vhostConfig;
-        $this->shellPath = config('netserva-core.remote.shell_env_path', '~/.sh');
+        $this->shellPath = config('netserva-cli.remote.shell_env_path', '~/.sh');
     }
 
     /**
@@ -113,7 +113,7 @@ class RemoteExecutionService extends RemoteConnectionService
      */
     public function syncShellEnvironment(string $host): bool
     {
-        if (! config('netserva-core.remote.sync_shell_env', true)) {
+        if (! config('netserva-cli.remote.sync_shell_env', true)) {
             return true;
         }
 
@@ -221,7 +221,7 @@ class RemoteExecutionService extends RemoteConnectionService
         // Source shell functions and VHost environment
         $sourceCommands = [];
 
-        if (config('netserva-core.remote.source_shrc', true)) {
+        if (config('netserva-cli.remote.source_shrc', true)) {
             $sourceCommands[] = "source {$this->shellPath}/_shrc";
         }
 
@@ -424,7 +424,7 @@ class RemoteExecutionService extends RemoteConnectionService
 
             // This would require access to the SSH2 connection internals
             // For now, return a default based on configuration
-            return config('netserva-core.ssh.default_user', 'root');
+            return config('netserva-cli.ssh.default_user', 'root');
         } catch (Exception $e) {
             return 'root';
         }
@@ -497,10 +497,11 @@ class RemoteExecutionService extends RemoteConnectionService
         string $script,
         array $args = [],
         bool $asRoot = true,
-        bool $dryRun = false
+        bool $dryRun = false,
+        bool $strictMode = true
     ): array {
-        // Build script with set -euo pipefail for safety
-        $safeScript = $this->wrapScriptWithSafety($script);
+        // Build script with set -euo pipefail for safety (unless disabled for interactive use)
+        $safeScript = $strictMode ? $this->wrapScriptWithSafety($script) : $script;
 
         // Escape arguments for shell
         $escapedArgs = array_map('escapeshellarg', $args);

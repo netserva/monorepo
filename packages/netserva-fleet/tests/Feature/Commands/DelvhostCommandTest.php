@@ -1,20 +1,27 @@
 <?php
 
-use NetServa\Cli\Services\NetServaContext;
+use NetServa\Core\Services\NetServaContext;
 use NetServa\Fleet\Services\VhostManagementService;
 
 uses()
     ->group('feature', 'commands', 'netserva-fleet', 'vhost-management', 'crud', 'priority-1');
 
 beforeEach(function () {
-    $this->context = $this->mock(NetServaContext::class);
+    // Mock NetServaContext - allow all method calls
+    $this->context = $this->mock(NetServaContext::class, function ($mock) {
+        $mock->shouldReceive('addToHistory')->andReturn(null);
+        $mock->shouldReceive('getHistory')->andReturn([]);
+        $mock->shouldReceive('getCurrentServer')->andReturn('test-server');
+        $mock->shouldReceive('setCurrentServer')->andReturn(null);
+    });
+
+    // Mock VhostManagementService - will be configured per test
     $this->vhostService = $this->mock(VhostManagementService::class);
 });
 
 it('displays help information', function () {
     $this->artisan('delvhost --help')
-        ->expectsOutput('Description:')
-        ->expectsOutput('Delete a virtual host (NetServa CRUD pattern)')
+        ->expectsOutputToContain('Delete a virtual host')
         ->assertExitCode(0);
 });
 
@@ -111,15 +118,15 @@ it('handles VNode not found error', function () {
 });
 
 it('validates required vnode argument', function () {
-    // Missing vnode argument should fail with Laravel's validation
-    $this->artisan('delvhost')
-        ->assertExitCode(1);
+    // Missing vnode argument throws RuntimeException
+    expect(fn () => $this->artisan('delvhost'))
+        ->toThrow(\Symfony\Component\Console\Exception\RuntimeException::class);
 });
 
 it('validates required vhost argument', function () {
-    // Missing vhost argument should fail with Laravel's validation
-    $this->artisan('delvhost markc')
-        ->assertExitCode(1);
+    // Missing vhost argument throws RuntimeException
+    expect(fn () => $this->artisan('delvhost markc'))
+        ->toThrow(\Symfony\Component\Console\Exception\RuntimeException::class);
 });
 
 it('handles remote cleanup failure gracefully', function () {

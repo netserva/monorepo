@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Config\Filament\Clusters\Config\ConfigCluster;
 use NetServa\Config\Filament\Resources\ConfigDeploymentResource\Pages\CreateConfigDeployment;
 use NetServa\Config\Filament\Resources\ConfigDeploymentResource\Pages\EditConfigDeployment;
 use NetServa\Config\Filament\Resources\ConfigDeploymentResource\Pages\ListConfigDeployments;
 use NetServa\Config\Filament\Resources\ConfigDeploymentResource\Schemas\ConfigDeploymentForm;
 use NetServa\Config\Filament\Resources\ConfigDeploymentResource\Tables\ConfigDeploymentsTable;
 use NetServa\Config\Models\ConfigDeployment;
+use UnitEnum;
 
 class ConfigDeploymentResource extends Resource
 {
@@ -21,7 +21,7 @@ class ConfigDeploymentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRocketLaunch;
 
-    protected static ?string $cluster = ConfigCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Config';
 
     protected static ?int $navigationSort = 13;
 

@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Web\Filament\Clusters\Web\WebCluster;
 use NetServa\Web\Filament\Resources\SslCertificateResource\Pages\CreateSslCertificate;
 use NetServa\Web\Filament\Resources\SslCertificateResource\Pages\EditSslCertificate;
 use NetServa\Web\Filament\Resources\SslCertificateResource\Pages\ListSslCertificates;
 use NetServa\Web\Filament\Resources\SslCertificateResource\Schemas\SslCertificateForm;
 use NetServa\Web\Filament\Resources\SslCertificateResource\Tables\SslCertificatesTable;
 use NetServa\Web\Models\SslCertificate;
+use UnitEnum;
 
 class SslCertificateResource extends Resource
 {
@@ -21,9 +21,9 @@ class SslCertificateResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLockClosed;
 
-    protected static ?string $cluster = WebCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Web';
 
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

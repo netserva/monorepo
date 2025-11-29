@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Config\Filament\Clusters\Config\ConfigCluster;
 use NetServa\Config\Filament\Resources\ConfigVariableResource\Pages\CreateConfigVariable;
 use NetServa\Config\Filament\Resources\ConfigVariableResource\Pages\EditConfigVariable;
 use NetServa\Config\Filament\Resources\ConfigVariableResource\Pages\ListConfigVariables;
 use NetServa\Config\Filament\Resources\ConfigVariableResource\Schemas\ConfigVariableForm;
 use NetServa\Config\Filament\Resources\ConfigVariableResource\Tables\ConfigVariablesTable;
 use NetServa\Config\Models\ConfigVariable;
+use UnitEnum;
 
 class ConfigVariableResource extends Resource
 {
@@ -21,7 +21,7 @@ class ConfigVariableResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedVariable;
 
-    protected static ?string $cluster = ConfigCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Config';
 
     protected static ?int $navigationSort = 12;
 

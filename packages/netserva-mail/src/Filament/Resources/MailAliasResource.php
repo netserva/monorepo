@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Mail\Filament\Clusters\Mail\MailCluster;
 use NetServa\Mail\Filament\Resources\MailAliasResource\Pages\CreateMailAlias;
 use NetServa\Mail\Filament\Resources\MailAliasResource\Pages\EditMailAlias;
 use NetServa\Mail\Filament\Resources\MailAliasResource\Pages\ListMailAliases;
 use NetServa\Mail\Filament\Resources\MailAliasResource\Schemas\MailAliasForm;
 use NetServa\Mail\Filament\Resources\MailAliasResource\Tables\MailAliasesTable;
 use NetServa\Mail\Models\MailAlias;
+use UnitEnum;
 
 class MailAliasResource extends Resource
 {
@@ -21,9 +21,9 @@ class MailAliasResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
-    protected static ?string $cluster = MailCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Mail';
 
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {

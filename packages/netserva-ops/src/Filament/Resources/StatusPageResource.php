@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\StatusPageResource\Pages\CreateStatusPage;
 use NetServa\Ops\Filament\Resources\StatusPageResource\Pages\EditStatusPage;
 use NetServa\Ops\Filament\Resources\StatusPageResource\Pages\ListStatusPages;
 use NetServa\Ops\Filament\Resources\StatusPageResource\Schemas\StatusPageForm;
 use NetServa\Ops\Filament\Resources\StatusPageResource\Tables\StatusPagesTable;
 use NetServa\Ops\Models\StatusPage;
+use UnitEnum;
 
 class StatusPageResource extends Resource
 {
@@ -21,7 +21,7 @@ class StatusPageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSignal;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 14;
 

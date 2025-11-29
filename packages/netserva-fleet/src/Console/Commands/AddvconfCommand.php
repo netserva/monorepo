@@ -2,7 +2,7 @@
 
 namespace NetServa\Fleet\Console\Commands;
 
-use NetServa\Cli\Console\Commands\BaseNetServaCommand;
+use NetServa\Core\Console\Commands\BaseNetServaCommand;
 use NetServa\Core\Services\DatabaseVhostConfigService;
 use NetServa\Core\Services\RemoteExecutionService;
 use NetServa\Fleet\Models\FleetVhost;

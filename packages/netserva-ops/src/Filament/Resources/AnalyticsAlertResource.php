@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Ops\Filament\Clusters\Operations\OperationsCluster;
 use NetServa\Ops\Filament\Resources\AnalyticsAlertResource\Pages\CreateAnalyticsAlert;
 use NetServa\Ops\Filament\Resources\AnalyticsAlertResource\Pages\EditAnalyticsAlert;
 use NetServa\Ops\Filament\Resources\AnalyticsAlertResource\Pages\ListAnalyticsAlerts;
 use NetServa\Ops\Filament\Resources\AnalyticsAlertResource\Schemas\AnalyticsAlertForm;
 use NetServa\Ops\Filament\Resources\AnalyticsAlertResource\Tables\AnalyticsAlertsTable;
 use NetServa\Ops\Models\AnalyticsAlert;
+use UnitEnum;
 
 class AnalyticsAlertResource extends Resource
 {
@@ -21,7 +21,7 @@ class AnalyticsAlertResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;
 
-    protected static ?string $cluster = OperationsCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Ops';
 
     protected static ?int $navigationSort = 24;
 

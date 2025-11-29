@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Mail\Filament\Clusters\Mail\MailCluster;
 use NetServa\Mail\Filament\Resources\MailLogResource\Pages\CreateMailLog;
 use NetServa\Mail\Filament\Resources\MailLogResource\Pages\EditMailLog;
 use NetServa\Mail\Filament\Resources\MailLogResource\Pages\ListMailLogs;
 use NetServa\Mail\Filament\Resources\MailLogResource\Schemas\MailLogForm;
 use NetServa\Mail\Filament\Resources\MailLogResource\Tables\MailLogsTable;
 use NetServa\Mail\Models\MailLog;
+use UnitEnum;
 
 class MailLogResource extends Resource
 {
@@ -21,9 +21,9 @@ class MailLogResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentMagnifyingGlass;
 
-    protected static ?string $cluster = MailCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Mail';
 
-    protected static ?int $navigationSort = 60;
+    protected static ?int $navigationSort = 6;
 
     public static function form(Schema $schema): Schema
     {

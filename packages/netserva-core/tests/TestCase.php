@@ -4,7 +4,6 @@ namespace NetServa\Core\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
-use NetServa\Core\Models\SshHost;
 use Tests\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
@@ -15,7 +14,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        // Additional setup for Core tests
+        // Additional setup for CLI tests
     }
 
     /**
@@ -34,17 +33,18 @@ abstract class TestCase extends BaseTestCase
                 ->andReturn($response);
         }
 
+        // Default exec response
         $mock->shouldReceive('exec')->andReturn('');
 
         return $mock;
     }
 
     /**
-     * Create a test SSH host
+     * Create a test SSH host model
      */
-    protected function createTestSshHost(array $attributes = []): SshHost
+    protected function createTestSshHost(array $attributes = []): \NetServa\Core\Models\SshHost
     {
-        return SshHost::factory()->create(array_merge([
+        return \NetServa\Core\Models\SshHost::factory()->create(array_merge([
             'name' => 'test-server',
             'hostname' => 'test.example.com',
             'port' => 22,
@@ -53,18 +53,11 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Seed test infrastructure
+     * Mock successful SSH command execution
      */
-    protected function seedTestInfrastructure(): array
+    protected function mockSshExec(string $command, string $output = '', int $exitCode = 0): void
     {
-        $hosts = [
-            SshHost::factory()->create(['name' => 'pve1', 'hostname' => 'pve1.example.com']),
-            SshHost::factory()->create(['name' => 'ns1', 'hostname' => 'ns1.example.com']),
-        ];
-
-        return [
-            'hosts' => $hosts,
-        ];
+        // Can be extended with Process::fake() or SSH facade mocking
     }
 
     protected function tearDown(): void

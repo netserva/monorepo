@@ -3,7 +3,6 @@
 namespace NetServa\Config\Filament;
 
 use Filament\Panel;
-use NetServa\Config\Filament\Clusters\Config\ConfigCluster;
 use NetServa\Config\Filament\Resources\ConfigDeploymentResource;
 use NetServa\Config\Filament\Resources\ConfigProfileResource;
 use NetServa\Config\Filament\Resources\ConfigTemplateResource;
@@ -40,11 +39,6 @@ class NetServaConfigPlugin extends BaseFilamentPlugin
 
     protected function registerResources(Panel $panel): void
     {
-        // Register cluster for collapsible navigation
-        $panel->clusters([
-            ConfigCluster::class,
-        ]);
-
         $panel->resources([
             ConfigTemplateResource::class,
             ConfigProfileResource::class,
