@@ -7,13 +7,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Fleet\Filament\Clusters\Network\NetworkCluster;
 use NetServa\Fleet\Filament\Resources\IpNetworkResource\Pages\CreateIpNetwork;
 use NetServa\Fleet\Filament\Resources\IpNetworkResource\Pages\EditIpNetwork;
 use NetServa\Fleet\Filament\Resources\IpNetworkResource\Pages\ListIpNetworks;
 use NetServa\Fleet\Filament\Resources\IpNetworkResource\Schemas\IpNetworkForm;
 use NetServa\Fleet\Filament\Resources\IpNetworkResource\Tables\IpNetworksTable;
 use NetServa\Fleet\Models\IpNetwork;
+use UnitEnum;
 
 class IpNetworkResource extends Resource
 {
@@ -21,9 +21,9 @@ class IpNetworkResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
 
-    protected static ?string $cluster = NetworkCluster::class;
+    protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

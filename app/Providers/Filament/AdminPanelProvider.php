@@ -222,13 +222,6 @@ class AdminPanelProvider extends PanelProvider
                     ->icon($plugin->getNavigationIcon())
                     ->collapsed();
 
-                // Add Network group after Fleet (contains IP and WireGuard resources)
-                if ($plugin->name === 'netserva-fleet') {
-                    $groups[] = NavigationGroup::make()
-                        ->label('Network')
-                        ->icon('heroicon-o-signal')
-                        ->collapsed();
-                }
             }
 
             return $groups;
@@ -245,7 +238,7 @@ class AdminPanelProvider extends PanelProvider
      *
      * After plugin consolidation (Phase 9), the 8 target packages are:
      * Core, Fleet, DNS, Mail, Web, Ops, Config, CMS
-     * Plus Network (sub-group of Fleet for IP/WireGuard resources)
+     * Each plugin maps 1:1 to a navigation group.
      *
      * @return array<NavigationGroup>
      */
@@ -254,7 +247,6 @@ class AdminPanelProvider extends PanelProvider
         return [
             NavigationGroup::make()->label('Core')->icon('heroicon-o-cog-8-tooth')->collapsed(),
             NavigationGroup::make()->label('Fleet')->icon('heroicon-o-rocket-launch')->collapsed(),
-            NavigationGroup::make()->label('Network')->icon('heroicon-o-signal')->collapsed(),
             NavigationGroup::make()->label('Dns')->icon('heroicon-o-globe-alt')->collapsed(),
             NavigationGroup::make()->label('Mail')->icon('heroicon-o-envelope')->collapsed(),
             NavigationGroup::make()->label('Web')->icon('heroicon-o-server')->collapsed(),
