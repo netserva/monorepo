@@ -76,10 +76,25 @@ class Theme extends Model
 
     /**
      * Get theme base path
+     *
+     * Priority: 1) App resources/themes  2) Package themes (fallback)
      */
     public function path(): string
     {
-        return resource_path("themes/{$this->name}");
+        // Check app resources first (allows overriding)
+        $appPath = resource_path("themes/{$this->name}");
+        if (is_dir($appPath)) {
+            return $appPath;
+        }
+
+        // Fallback to package themes
+        $packagePath = dirname(__DIR__, 2)."/resources/themes/{$this->name}";
+        if (is_dir($packagePath)) {
+            return $packagePath;
+        }
+
+        // Default to app path even if doesn't exist
+        return $appPath;
     }
 
     /**
