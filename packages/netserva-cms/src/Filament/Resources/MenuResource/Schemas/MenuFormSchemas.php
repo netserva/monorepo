@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace NetServa\Cms\Filament\Resources\MenuResource\Schemas;
 
+use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Schemas\Components\Grid;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Icons\Heroicon;
 use NetServa\Cms\Models\Menu;
 
 /**
@@ -45,76 +50,81 @@ class MenuFormSchemas
     }
 
     /**
-     * Menu Items - compact table repeater with nested children
+     * Menu Items - table repeater with modal-based submenu editing
      */
     public static function getItemsSchema(): array
     {
         return [
             Forms\Components\Repeater::make('items')
                 ->hiddenLabel()
-                ->schema([
-                    Grid::make(4)->schema([
-                        Forms\Components\TextInput::make('label')
-                            ->required()
-                            ->maxLength(255)
-                            ->placeholder('Label')
-                            ->hiddenLabel(),
-
-                        Forms\Components\TextInput::make('url')
-                            ->required()
-                            ->maxLength(255)
-                            ->placeholder('/path')
-                            ->hiddenLabel(),
-
-                        Forms\Components\TextInput::make('icon')
-                            ->maxLength(255)
-                            ->placeholder('heroicon-o-...')
-                            ->hiddenLabel(),
-
-                        Forms\Components\Toggle::make('new_window')
-                            ->label('↗')
-                            ->inline(false),
-                    ]),
-
-                    // Nested children repeater
-                    Forms\Components\Repeater::make('children')
-                        ->label('Submenu')
-                        ->schema([
-                            Grid::make(4)->schema([
-                                Forms\Components\TextInput::make('label')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->placeholder('Sublabel')
-                                    ->hiddenLabel(),
-
-                                Forms\Components\TextInput::make('url')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->placeholder('/subpath')
-                                    ->hiddenLabel(),
-
-                                Forms\Components\TextInput::make('icon')
-                                    ->maxLength(255)
-                                    ->placeholder('heroicon-o-...')
-                                    ->hiddenLabel(),
-
-                                Forms\Components\Toggle::make('new_window')
-                                    ->label('↗')
-                                    ->inline(false),
-                            ]),
-                        ])
-                        ->defaultItems(0)
-                        ->reorderableWithButtons()
-                        ->addActionLabel('+ Submenu')
-                        ->collapsed()
-                        ->columnSpanFull(),
+                ->table([
+                    TableColumn::make('Label')
+                        ->markAsRequired(),
+                    TableColumn::make('URL')
+                        ->markAsRequired(),
+                    TableColumn::make('↗')
+                        ->alignment(Alignment::Center)
+                        ->width('50px'),
                 ])
-                ->itemLabel(fn (array $state): ?string => ($state['label'] ?? 'Item').' → '.($state['url'] ?? ''))
+                ->schema([
+                    Forms\Components\TextInput::make('label')
+                        ->required()
+                        ->maxLength(255)
+                        ->placeholder('Home'),
+
+                    Forms\Components\TextInput::make('url')
+                        ->required()
+                        ->maxLength(255)
+                        ->placeholder('/'),
+
+                    Forms\Components\Toggle::make('new_window'),
+
+                    // Hidden field to store children data
+                    Forms\Components\Hidden::make('children')
+                        ->default([]),
+                ])
+                ->extraItemActions([
+                    Action::make('editSubmenu')
+                        ->icon(Heroicon::QueueList)
+                        ->color(fn (array $arguments, Repeater $component): string => count($component->getRawItemState($arguments['item'])['children'] ?? []) > 0 ? 'primary' : 'gray')
+                        ->badge(fn (array $arguments, Repeater $component): ?string => ($count = count($component->getRawItemState($arguments['item'])['children'] ?? [])) > 0 ? (string) $count : null)
+                        ->tooltip('Edit submenu items')
+                        ->modalHeading(fn (array $arguments, Repeater $component): string => 'Submenu: '.($component->getRawItemState($arguments['item'])['label'] ?? 'Item'))
+                        ->modalWidth('lg')
+                        ->fillForm(fn (array $arguments, Repeater $component): array => [
+                            'children' => $component->getRawItemState($arguments['item'])['children'] ?? [],
+                        ])
+                        ->form([
+                            Forms\Components\Repeater::make('children')
+                                ->hiddenLabel()
+                                ->schema([
+                                    Grid::make(3)->schema([
+                                        Forms\Components\TextInput::make('label')
+                                            ->required()
+                                            ->placeholder('Label'),
+                                        Forms\Components\TextInput::make('url')
+                                            ->required()
+                                            ->placeholder('/path'),
+                                        Forms\Components\Toggle::make('new_window')
+                                            ->label('↗')
+                                            ->inline(false),
+                                    ]),
+                                ])
+                                ->defaultItems(0)
+                                ->reorderableWithButtons()
+                                ->addActionLabel('Add Submenu Item'),
+                        ])
+                        ->action(function (array $arguments, array $data, Repeater $component): void {
+                            $state = $component->getState();
+                            $state[$arguments['item']]['children'] = $data['children'] ?? [];
+                            $component->state($state);
+                        }),
+                ])
+                ->compact()
                 ->defaultItems(1)
                 ->reorderableWithButtons()
                 ->cloneable()
-                ->collapsible()
-                ->addActionLabel('Add Menu Item')
+                ->addActionLabel('Add Item')
                 ->columnSpanFull(),
         ];
     }

@@ -52,11 +52,12 @@ class EditMenu extends EditRecord
                 ->modalWidth(Width::Medium)
                 ->modalSubmitAction(false)
                 ->modalCancelActionLabel('Close')
+                ->modalFooterActionsAlignment(Alignment::End)
                 ->infolist([
                     TextEntry::make('preview')
                         ->hiddenLabel()
                         ->html()
-                        ->getStateUsing(fn () => $this->renderMenuPreview()),
+                        ->getStateUsing(fn () => $this->renderMenuPreview($this->form->getState()['items'] ?? [])),
                 ]),
 
             Actions\DeleteAction::make()
@@ -68,9 +69,9 @@ class EditMenu extends EditRecord
     /**
      * Render a visual preview of the menu structure
      */
-    protected function renderMenuPreview(): string
+    protected function renderMenuPreview(?array $items = null): string
     {
-        $items = $this->record->items ?? [];
+        $items = $items ?? $this->record->items ?? [];
 
         if (empty($items)) {
             return '<p class="text-gray-500 italic">No menu items defined</p>';
@@ -90,41 +91,30 @@ class EditMenu extends EditRecord
     /**
      * Render a single menu item with its children
      */
-    protected function renderMenuItem(array $item, bool $isChild = false): string
+    protected function renderMenuItem(array $item, int $depth = 0): string
     {
         $label = e($item['label'] ?? 'Untitled');
-        $url = e($item['url'] ?? '#');
-        $icon = $item['icon'] ?? null;
         $newWindow = $item['new_window'] ?? false;
         $children = $item['children'] ?? [];
 
-        $padding = $isChild ? 'pl-6' : '';
-        $textSize = $isChild ? 'text-sm' : 'text-base';
-        $fontWeight = $isChild ? 'font-normal' : 'font-medium';
-
-        $iconHtml = '';
-        if ($icon) {
-            $iconHtml = '<span class="text-gray-400 mr-2 text-xs">['.$icon.']</span>';
-        }
+        $paddingLeft = ($depth * 24).'px';
+        $textSize = $depth > 0 ? 'text-sm' : 'text-base';
+        $fontWeight = $depth > 0 ? 'font-normal' : 'font-medium';
+        $bullet = $depth > 0 ? '└ ' : '';
 
         $externalIcon = $newWindow ? ' <span class="text-gray-400 text-xs">↗</span>' : '';
 
-        $html = '<div class="'.$padding.' py-2 border-b border-gray-100 dark:border-gray-700">';
-        $html .= '<div class="flex items-center">';
-        $html .= $iconHtml;
-        $html .= '<span class="'.$textSize.' '.$fontWeight.' text-gray-900 dark:text-gray-100">'.$label.'</span>';
+        $html = '<div class="py-1.5 border-b border-gray-100 dark:border-gray-700" style="padding-left: '.$paddingLeft.'">';
+        $html .= '<span class="'.$textSize.' '.$fontWeight.' text-gray-900 dark:text-gray-100">'.$bullet.$label.'</span>';
         $html .= $externalIcon;
-        $html .= '<span class="ml-auto text-xs text-gray-400">'.$url.'</span>';
         $html .= '</div>';
 
-        // Render children
+        // Render children after parent (not nested inside)
         if (! empty($children)) {
             foreach ($children as $child) {
-                $html .= $this->renderMenuItem($child, true);
+                $html .= $this->renderMenuItem($child, $depth + 1);
             }
         }
-
-        $html .= '</div>';
 
         return $html;
     }
