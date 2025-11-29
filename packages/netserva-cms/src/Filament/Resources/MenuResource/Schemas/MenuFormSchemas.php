@@ -8,10 +8,12 @@ use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use NetServa\Cms\Models\Menu;
+use NetServa\Cms\Models\Page;
 
 /**
  * Shared form schemas for Menu create/edit pages
@@ -84,6 +86,44 @@ class MenuFormSchemas
                         ->default([]),
                 ])
                 ->extraItemActions([
+                    Action::make('createPage')
+                        ->icon(Heroicon::DocumentPlus)
+                        ->color('gray')
+                        ->tooltip('Create placeholder page')
+                        ->visible(fn (array $arguments, Repeater $component): bool => str_starts_with($component->getRawItemState($arguments['item'])['url'] ?? '', '/'))
+                        ->requiresConfirmation()
+                        ->modalHeading('Create Placeholder Page')
+                        ->modalDescription(fn (array $arguments, Repeater $component): string => 'Create a placeholder page for "'.($component->getRawItemState($arguments['item'])['label'] ?? 'Item').'" at '.($component->getRawItemState($arguments['item'])['url'] ?? '/path').'?')
+                        ->modalSubmitActionLabel('Create Page')
+                        ->action(function (array $arguments, Repeater $component): void {
+                            $item = $component->getRawItemState($arguments['item']);
+                            $url = $item['url'] ?? '';
+                            $label = $item['label'] ?? 'Untitled';
+                            $slug = ltrim($url, '/');
+
+                            if (Page::where('slug', $slug)->exists()) {
+                                Notification::make()
+                                    ->title('Page already exists')
+                                    ->body("A page with slug '{$slug}' already exists.")
+                                    ->warning()
+                                    ->send();
+
+                                return;
+                            }
+
+                            Page::create([
+                                'title' => $label,
+                                'slug' => $slug,
+                                'content' => "<h2>Coming Soon</h2>\n<p>This page is under construction. Please check back later.</p>",
+                                'is_published' => true,
+                            ]);
+
+                            Notification::make()
+                                ->title('Page created')
+                                ->body("Placeholder page '{$label}' created successfully.")
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('editSubmenu')
                         ->icon(Heroicon::QueueList)
                         ->color(fn (array $arguments, Repeater $component): string => count($component->getRawItemState($arguments['item'])['children'] ?? []) > 0 ? 'primary' : 'gray')
@@ -110,10 +150,53 @@ class MenuFormSchemas
                                             ->inline(false),
                                     ]),
                                 ])
+                                ->extraItemActions([
+                                    Action::make('createPage')
+                                        ->icon(Heroicon::DocumentPlus)
+                                        ->color('gray')
+                                        ->tooltip('Create placeholder page')
+                                        ->visible(fn (array $arguments, Repeater $component): bool => str_starts_with($component->getRawItemState($arguments['item'])['url'] ?? '', '/'))
+                                        ->requiresConfirmation()
+                                        ->modalHeading('Create Placeholder Page')
+                                        ->modalDescription(fn (array $arguments, Repeater $component): string => 'Create a placeholder page for "'.($component->getRawItemState($arguments['item'])['label'] ?? 'Item').'" at '.($component->getRawItemState($arguments['item'])['url'] ?? '/path').'?')
+                                        ->modalSubmitActionLabel('Create Page')
+                                        ->action(function (array $arguments, Repeater $component): void {
+                                            $item = $component->getRawItemState($arguments['item']);
+                                            $url = $item['url'] ?? '';
+                                            $label = $item['label'] ?? 'Untitled';
+                                            $slug = ltrim($url, '/');
+
+                                            // Check if page already exists
+                                            if (Page::where('slug', $slug)->exists()) {
+                                                Notification::make()
+                                                    ->title('Page already exists')
+                                                    ->body("A page with slug '{$slug}' already exists.")
+                                                    ->warning()
+                                                    ->send();
+
+                                                return;
+                                            }
+
+                                            // Create placeholder page
+                                            Page::create([
+                                                'title' => $label,
+                                                'slug' => $slug,
+                                                'content' => "<h2>Coming Soon</h2>\n<p>This page is under construction. Please check back later.</p>",
+                                                'is_published' => true,
+                                            ]);
+
+                                            Notification::make()
+                                                ->title('Page created')
+                                                ->body("Placeholder page '{$label}' created successfully.")
+                                                ->success()
+                                                ->send();
+                                        }),
+                                ])
                                 ->defaultItems(0)
                                 ->reorderableWithButtons()
                                 ->addActionLabel('Add Submenu Item'),
                         ])
+                        ->modalFooterActionsAlignment(\Filament\Support\Enums\Alignment::End)
                         ->action(function (array $arguments, array $data, Repeater $component): void {
                             $state = $component->getState();
                             $state[$arguments['item']]['children'] = $data['children'] ?? [];

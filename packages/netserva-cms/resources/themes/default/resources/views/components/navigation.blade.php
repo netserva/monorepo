@@ -32,7 +32,8 @@
 @else
     @foreach($items as $item)
         @php
-            $hasChildren = !empty($item['children'] ?? []);
+            $children = $item['children'] ?? [];
+            $hasChildren = is_array($children) && count($children) > 0;
             $isActive = request()->url() === url($item['url'] ?? '#');
             $target = ($item['new_window'] ?? false) ? '_blank' : null;
         @endphp
@@ -66,7 +67,7 @@
                         </a>
                         <hr class="my-1 border-gray-200 dark:border-gray-600">
                         {{-- Children --}}
-                        @foreach($item['children'] as $child)
+                        @foreach($children as $child)
                             <a href="{{ url($child['url'] ?? '#') }}"
                                class="{{ $dropdownClasses }}"
                                @if($child['new_window'] ?? false) target="_blank" @endif>
@@ -83,7 +84,7 @@
                @if($target) target="{{ $target }}" @endif>
                 {{ $item['label'] ?? 'Menu' }}
             </a>
-            @foreach($item['children'] as $child)
+            @foreach($children as $child)
                 <a href="{{ url($child['url'] ?? '#') }}"
                    class="{{ $baseClasses }} {{ $inactiveClasses }} pl-6"
                    @if($child['new_window'] ?? false) target="_blank" @endif>
