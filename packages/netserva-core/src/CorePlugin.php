@@ -6,9 +6,17 @@ namespace NetServa\Core;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use NetServa\Core\Filament\Pages\CommandRunner;
+use NetServa\Core\Filament\Pages\Dashboard;
+use NetServa\Core\Filament\Pages\SshTerminal;
 use NetServa\Core\Filament\Resources\AuditLogResource;
 use NetServa\Core\Filament\Resources\PluginResource;
 use NetServa\Core\Filament\Resources\SettingResource;
+use NetServa\Core\Filament\Resources\SshHostResource;
+use NetServa\Core\Filament\Resources\SshKeyResource;
+use NetServa\Core\Filament\Widgets\InfrastructureOverview;
+use NetServa\Core\Filament\Widgets\ServiceHealthStatus;
+use NetServa\Core\Filament\Widgets\SystemStatsOverview;
 
 /**
  * NetServa Core Plugin
@@ -16,10 +24,12 @@ use NetServa\Core\Filament\Resources\SettingResource;
  * Provides foundation functionality for all NetServa plugins.
  * This is the base plugin that other plugins depend on.
  *
- * Also provides system administration resources (merged from admin plugin):
- * - Settings management
- * - Plugin management
- * - Audit log viewing
+ * Core navigation group:
+ * - SSH Terminal (execute remote commands)
+ * - SSH Hosts (manage SSH host configs)
+ * - SSH Keys (manage SSH key pairs)
+ * - Commands (execute artisan commands)
+ * - Settings, Plugins, Audit Log
  */
 class CorePlugin implements Plugin
 {
@@ -30,11 +40,27 @@ class CorePlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        // Register system administration resources (merged from admin plugin)
+        // Register Core pages (including Dashboard)
+        $panel->pages([
+            Dashboard::class,
+            SshTerminal::class,
+            CommandRunner::class,
+        ]);
+
+        // Register Core resources
         $panel->resources([
+            SshHostResource::class,
+            SshKeyResource::class,
             SettingResource::class,
             PluginResource::class,
             AuditLogResource::class,
+        ]);
+
+        // Register Core widgets
+        $panel->widgets([
+            SystemStatsOverview::class,
+            InfrastructureOverview::class,
+            ServiceHealthStatus::class,
         ]);
     }
 

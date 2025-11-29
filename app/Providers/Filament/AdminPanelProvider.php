@@ -9,7 +9,6 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationGroup;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Facades\FilamentColor;
@@ -70,16 +69,8 @@ class AdminPanelProvider extends PanelProvider
             // Each plugin maps 1:1 to a navigation group
             ->navigationGroups($this->buildDynamicNavigationGroups())
             // Resources are registered via Plugin system (see registerEnabledPlugins)
+            // Dashboard page and widgets are provided by CorePlugin
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
-            ->pages([
-                Dashboard::class,
-            ])
-            ->widgets([
-                // Temporarily disabled all widgets until we fix route issues
-                // \App\Filament\Widgets\InfrastructureOverview::class,
-                // \App\Filament\Widgets\ServiceHealthStatus::class,
-                // \App\Filament\Widgets\FleetHierarchy::class,
-            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -104,15 +95,17 @@ class AdminPanelProvider extends PanelProvider
 
     /**
      * Register all enabled plugins using native Filament plugin system
+     *
+     * Plugins are loaded dynamically from the installed_plugins table.
+     * The PluginRegistry handles dependency resolution and ordering.
      */
     protected function registerEnabledPlugins(Panel $panel): void
     {
         try {
-            // During testing, always register critical plugins first
+            // During testing, register test plugins directly
             if (app()->environment('testing')) {
-                $this->registerCriticalPlugins($panel);
+                $this->registerTestPlugins($panel);
 
-                // In testing, ALWAYS return after critical plugins to skip database dependency
                 return;
             }
 
@@ -141,44 +134,26 @@ class AdminPanelProvider extends PanelProvider
             if (! empty($plugins)) {
                 $panel->plugins($plugins);
             } else {
-                Log::warning('No plugins to register, falling back to critical plugins');
-                $this->registerCriticalPlugins($panel);
+                Log::warning('No plugins found in database - check installed_plugins table');
             }
 
         } catch (\Exception $e) {
             Log::error('Failed to register plugins: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
-
-            // Fallback to manual registration of critical plugins
-            $this->registerCriticalPlugins($panel);
         }
     }
 
     /**
-     * Fallback method to register critical plugins manually if registry fails
+     * Register plugins for testing environment (no database dependency)
      */
-    protected function registerCriticalPlugins(Panel $panel): void
+    protected function registerTestPlugins(Panel $panel): void
     {
-        $criticalPlugins = [
-            // Admin plugin provides Settings, Plugins, and Audit Log resources
-            \NetServa\Admin\AdminPlugin::class,
-
-            // CMS plugin
+        // Minimal plugins needed for testing - Core and CMS
+        $testPlugins = [
+            \NetServa\Core\CorePlugin::class,
             \NetServa\Cms\NetServaCmsPlugin::class,
-
-            // Temporarily disabled Fleet plugin until routes are fixed
-            // \NetServa\Fleet\Filament\FleetPlugin::class,
-            // \NetServa\Dns\Filament\NetServaDnsPlugin::class,
-            // \NetServa\Config\Filament\NetServaConfigPlugin::class,
-            // \NetServa\Mail\Filament\NetServaMailPlugin::class,
-            // \NetServa\Web\Filament\NetServaWebPlugin::class,
-            // \NetServa\Ops\Filament\NetServaOpsPlugin::class,
-            // \NetServa\Cli\Filament\NetServaCliPlugin::class,
-            // \NetServa\Cron\Filament\NetServaCronPlugin::class,
-            // \NetServa\Ipam\Filament\NetServaIpamPlugin::class,
-            // \NetServa\Wg\Filament\NetServaWgPlugin::class,
         ];
 
-        foreach ($criticalPlugins as $pluginClass) {
+        foreach ($testPlugins as $pluginClass) {
             if (class_exists($pluginClass)) {
                 try {
                     if (method_exists($pluginClass, 'make')) {
@@ -187,7 +162,7 @@ class AdminPanelProvider extends PanelProvider
                         $panel->plugin(new $pluginClass);
                     }
                 } catch (\Exception $e) {
-                    Log::warning("Failed to manually register plugin {$pluginClass}: ".$e->getMessage());
+                    Log::warning("Failed to register test plugin {$pluginClass}: ".$e->getMessage());
                 }
             }
         }
@@ -210,7 +185,9 @@ class AdminPanelProvider extends PanelProvider
      *
      * Each enabled plugin creates one navigation group.
      * Groups are ordered by navigation_sort, then by name.
-     * Core plugin is excluded (no UI navigation).
+     *
+     * IMPORTANT: Navigation group labels MUST match the $navigationGroup
+     * property in resource classes (case-sensitive).
      *
      * @return array<NavigationGroup>
      */
@@ -228,8 +205,8 @@ class AdminPanelProvider extends PanelProvider
             }
 
             // Get enabled plugins ordered by navigation_sort
+            // Note: Core IS included - it has Settings, Plugins, and AuditLog resources
             $plugins = InstalledPlugin::enabled()
-                ->where('name', '!=', 'netserva-core') // Core has no UI
                 ->navigationOrder()
                 ->get();
 
@@ -243,6 +220,14 @@ class AdminPanelProvider extends PanelProvider
                     ->label($plugin->getNavigationGroupName())
                     ->icon($plugin->getNavigationIcon())
                     ->collapsed();
+
+                // Add Network group after Fleet (contains IP and WireGuard resources)
+                if ($plugin->name === 'netserva-fleet') {
+                    $groups[] = NavigationGroup::make()
+                        ->label('Network')
+                        ->icon('heroicon-o-signal')
+                        ->collapsed();
+                }
             }
 
             return $groups;
@@ -257,6 +242,10 @@ class AdminPanelProvider extends PanelProvider
     /**
      * Fallback navigation groups when database is unavailable
      *
+     * After plugin consolidation (Phase 9), the 8 target packages are:
+     * Core, Fleet, DNS, Mail, Web, Ops, Config, CMS
+     * Plus Network (sub-group of Fleet for IP/WireGuard resources)
+     *
      * @return array<NavigationGroup>
      */
     protected function getDefaultNavigationGroups(): array
@@ -264,16 +253,13 @@ class AdminPanelProvider extends PanelProvider
         return [
             NavigationGroup::make()->label('Core')->icon('heroicon-o-cog-8-tooth')->collapsed(),
             NavigationGroup::make()->label('Fleet')->icon('heroicon-o-rocket-launch')->collapsed(),
-            NavigationGroup::make()->label('Cms')->icon('heroicon-o-document-text')->collapsed(),
+            NavigationGroup::make()->label('Network')->icon('heroicon-o-signal')->collapsed(),
             NavigationGroup::make()->label('Dns')->icon('heroicon-o-globe-alt')->collapsed(),
             NavigationGroup::make()->label('Mail')->icon('heroicon-o-envelope')->collapsed(),
             NavigationGroup::make()->label('Web')->icon('heroicon-o-server')->collapsed(),
-            NavigationGroup::make()->label('Config')->icon('heroicon-o-wrench-screwdriver')->collapsed(),
-            NavigationGroup::make()->label('Ipam')->icon('heroicon-o-computer-desktop')->collapsed(),
-            NavigationGroup::make()->label('Wg')->icon('heroicon-o-shield-check')->collapsed(),
-            NavigationGroup::make()->label('Cli')->icon('heroicon-o-command-line')->collapsed(),
             NavigationGroup::make()->label('Ops')->icon('heroicon-o-chart-bar-square')->collapsed(),
-            // Cron merged into Ops - removed from navigation groups
+            NavigationGroup::make()->label('Config')->icon('heroicon-o-wrench-screwdriver')->collapsed(),
+            NavigationGroup::make()->label('Cms')->icon('heroicon-o-document-text')->collapsed(),
         ];
     }
 }
