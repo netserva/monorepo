@@ -4,29 +4,58 @@ declare(strict_types=1);
 
 namespace NetServa\Core\Filament\Widgets;
 
-use Filament\Widgets\Widget;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 
 /**
  * Service Health Status Widget
  *
  * Displays real-time health status of critical infrastructure services
  */
-class ServiceHealthStatus extends Widget
+class ServiceHealthStatus extends BaseWidget
 {
-    protected string $view = 'netserva-core::widgets.service-health-status';
-
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 'full';
-
-    public function getViewData(): array
+    protected function getStats(): array
     {
+        $sshHosts = $this->getSshHostsStatus();
+        $dnsProviders = $this->getDnsProvidersStatus();
+        $mailServers = $this->getMailServersStatus();
+        $webServers = $this->getWebServersStatus();
+
         return [
-            'ssh_hosts' => $this->getSshHostsStatus(),
-            'dns_providers' => $this->getDnsProvidersStatus(),
-            'mail_servers' => $this->getMailServersStatus(),
-            'web_servers' => $this->getWebServersStatus(),
+            Stat::make('SSH Hosts', "{$sshHosts['online']}/{$sshHosts['total']}")
+                ->description("{$sshHosts['health_percentage']}% online")
+                ->descriptionIcon('heroicon-m-server')
+                ->color($this->getHealthColor($sshHosts['health_percentage'])),
+
+            Stat::make('DNS Providers', "{$dnsProviders['active']}/{$dnsProviders['total']}")
+                ->description("{$dnsProviders['health_percentage']}% active")
+                ->descriptionIcon('heroicon-m-cloud')
+                ->color($this->getHealthColor($dnsProviders['health_percentage'])),
+
+            Stat::make('Mail Servers', "{$mailServers['running']}/{$mailServers['total']}")
+                ->description("{$mailServers['health_percentage']}% running")
+                ->descriptionIcon('heroicon-m-envelope')
+                ->color($this->getHealthColor($mailServers['health_percentage'])),
+
+            Stat::make('Web Servers', "{$webServers['running']}/{$webServers['total']}")
+                ->description("{$webServers['health_percentage']}% running")
+                ->descriptionIcon('heroicon-m-globe-alt')
+                ->color($this->getHealthColor($webServers['health_percentage'])),
         ];
+    }
+
+    protected function getHealthColor(int $percentage): string
+    {
+        if ($percentage >= 80) {
+            return 'success';
+        }
+        if ($percentage >= 50) {
+            return 'warning';
+        }
+
+        return 'danger';
     }
 
     protected function getSshHostsStatus(): array
@@ -42,7 +71,7 @@ class ServiceHealthStatus extends Widget
             'total' => $total,
             'online' => $online,
             'offline' => $total - $online,
-            'health_percentage' => $total > 0 ? round(($online / $total) * 100) : 0,
+            'health_percentage' => $total > 0 ? (int) round(($online / $total) * 100) : 0,
         ];
     }
 
@@ -59,7 +88,7 @@ class ServiceHealthStatus extends Widget
             'total' => $total,
             'active' => $active,
             'inactive' => $total - $active,
-            'health_percentage' => $total > 0 ? round(($active / $total) * 100) : 0,
+            'health_percentage' => $total > 0 ? (int) round(($active / $total) * 100) : 0,
         ];
     }
 
@@ -76,7 +105,7 @@ class ServiceHealthStatus extends Widget
             'total' => $total,
             'running' => $running,
             'stopped' => $total - $running,
-            'health_percentage' => $total > 0 ? round(($running / $total) * 100) : 0,
+            'health_percentage' => $total > 0 ? (int) round(($running / $total) * 100) : 0,
         ];
     }
 
@@ -93,7 +122,7 @@ class ServiceHealthStatus extends Widget
             'total' => $total,
             'running' => $running,
             'stopped' => $total - $running,
-            'health_percentage' => $total > 0 ? round(($running / $total) * 100) : 0,
+            'health_percentage' => $total > 0 ? (int) round(($running / $total) * 100) : 0,
         ];
     }
 }
