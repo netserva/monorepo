@@ -14,20 +14,17 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - { name: 'admin', path: 'packages/netserva-admin', repo: 'netserva/admin' }
-          - { name: 'core', path: 'packages/netserva-core', repo: 'netserva/core' }
-          - { name: 'cli', path: 'packages/netserva-cli', repo: 'netserva/cli' }
+          # 9 active packages after consolidation (Phase 9)
+          # Removed: admin (→core), cli (→core), cron (→ops), ipam (→fleet), wg (→fleet)
           - { name: 'cms', path: 'packages/netserva-cms', repo: 'netserva/cms' }
           - { name: 'config', path: 'packages/netserva-config', repo: 'netserva/config' }
-          - { name: 'cron', path: 'packages/netserva-cron', repo: 'netserva/cron' }
+          - { name: 'core', path: 'packages/netserva-core', repo: 'netserva/core' }
           - { name: 'dns', path: 'packages/netserva-dns', repo: 'netserva/dns' }
           - { name: 'fleet', path: 'packages/netserva-fleet', repo: 'netserva/fleet' }
-          - { name: 'ipam', path: 'packages/netserva-ipam', repo: 'netserva/ipam' }
           - { name: 'mail', path: 'packages/netserva-mail', repo: 'netserva/mail' }
           - { name: 'ops', path: 'packages/netserva-ops', repo: 'netserva/ops' }
-          - { name: 'web', path: 'packages/netserva-web', repo: 'netserva/web' }
-          - { name: 'wg', path: 'packages/netserva-wg', repo: 'netserva/wg' }
           - { name: 'platform', path: 'packages/netserva-platform', repo: 'netserva/platform' }
+          - { name: 'web', path: 'packages/netserva-web', repo: 'netserva/web' }
 
     steps:
       - name: Checkout code
