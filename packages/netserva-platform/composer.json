@@ -19,12 +19,10 @@
     "require": {
         "php": "^8.2",
         "netserva/cms": "^0.0.3",
-        "netserva/config": "^0.0.3",
         "netserva/core": "^0.0.3",
         "netserva/dns": "^0.0.3",
         "netserva/fleet": "^0.0.3",
         "netserva/mail": "^0.0.3",
-        "netserva/ops": "^0.0.3",
         "netserva/web": "^0.0.3"
     }
 }

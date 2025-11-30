@@ -20,7 +20,6 @@
         "netserva/dns": "@dev",
         "netserva/fleet": "@dev",
         "netserva/mail": "@dev",
-        "netserva/ops": "@dev",
         "netserva/platform": "@dev",
         "netserva/web": "@dev",
         "phpseclib/phpseclib": "^3.0.47",
@@ -48,7 +47,6 @@
             "NetServa\\Dns\\Database\\Factories\\": "packages/netserva-dns/database/factories/",
             "NetServa\\Fleet\\Database\\Factories\\": "packages/netserva-fleet/database/factories/",
             "NetServa\\Mail\\Database\\Factories\\": "packages/netserva-mail/database/factories/",
-            "NetServa\\Ops\\Database\\Factories\\": "packages/netserva-ops/database/factories/",
             "NetServa\\Web\\Database\\Factories\\": "packages/netserva-web/database/factories/"
         }
     },
@@ -147,15 +145,6 @@
             "options": {
                 "versions": {
                     "netserva/web": "0.0.3"
-                }
-            }
-        },
-        "netserva/ops": {
-            "type": "path",
-            "url": "./packages/netserva-ops",
-            "options": {
-                "versions": {
-                    "netserva/ops": "0.0.3"
                 }
             }
         },

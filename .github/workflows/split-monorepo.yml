@@ -19,14 +19,13 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          # 8 active packages (7 functional + platform bundle)
-          # Removed: admin (→core), cli (→core), cron (→ops), ipam (→fleet), wg (→fleet), config (unused)
+          # 7 active packages (6 functional + platform bundle)
+          # Removed: admin, cli, cron, ipam, wg (merged), config, ops (unused)
           - { name: 'cms', path: 'packages/netserva-cms', repo: 'netserva/cms' }
           - { name: 'core', path: 'packages/netserva-core', repo: 'netserva/core' }
           - { name: 'dns', path: 'packages/netserva-dns', repo: 'netserva/dns' }
           - { name: 'fleet', path: 'packages/netserva-fleet', repo: 'netserva/fleet' }
           - { name: 'mail', path: 'packages/netserva-mail', repo: 'netserva/mail' }
-          - { name: 'ops', path: 'packages/netserva-ops', repo: 'netserva/ops' }
           - { name: 'platform', path: 'packages/netserva-platform', repo: 'netserva/platform' }
           - { name: 'web', path: 'packages/netserva-web', repo: 'netserva/web' }
 
