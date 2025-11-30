@@ -128,13 +128,23 @@ class PluginRegistry
         try {
             $plugin = new $pluginClass;
 
+            // Read composer.json for additional metadata
+            $composerData = $this->readComposerJson($pluginId);
+
             InstalledPlugin::updateOrCreate(
                 ['name' => $pluginId],
                 [
                     'plugin_class' => $pluginClass,
                     'is_enabled' => $enable,
-                    'version' => method_exists($plugin, 'getVersion') ? $plugin->getVersion() : '1.0.0',
+                    'version' => $composerData['version'] ?? (method_exists($plugin, 'getVersion') ? $plugin->getVersion() : '1.0.0'),
                     'config' => method_exists($plugin, 'getDefaultConfig') ? $plugin->getDefaultConfig() : [],
+                    'package_name' => $composerData['name'] ?? null,
+                    'description' => $composerData['description'] ?? null,
+                    'author' => $composerData['author'] ?? null,
+                    'source' => $composerData['source'] ?? 'local',
+                    'source_url' => $composerData['source_url'] ?? null,
+                    'category' => $composerData['category'] ?? null,
+                    'composer_data' => $composerData,
                 ]
             );
 
@@ -147,6 +157,156 @@ class PluginRegistry
 
             return false;
         }
+    }
+
+    /**
+     * Sync plugin metadata from composer.json
+     */
+    public function syncPlugin(InstalledPlugin $plugin): bool
+    {
+        try {
+            $composerData = $this->readComposerJson($plugin->name);
+
+            if (empty($composerData)) {
+                Log::warning("No composer.json found for plugin {$plugin->name}");
+
+                return false;
+            }
+
+            $plugin->update([
+                'package_name' => $composerData['name'] ?? $plugin->package_name,
+                'description' => $composerData['description'] ?? $plugin->description,
+                'author' => $composerData['author'] ?? $plugin->author,
+                'version' => $composerData['version'] ?? $plugin->version,
+                'source' => $composerData['source'] ?? $plugin->source ?? 'local',
+                'source_url' => $composerData['source_url'] ?? $plugin->source_url,
+                'category' => $composerData['category'] ?? $plugin->category,
+                'composer_data' => $composerData,
+            ]);
+
+            Log::info("Plugin {$plugin->name} synced successfully");
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Failed to sync plugin {$plugin->name}: ".$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Sync all plugins from composer.json
+     */
+    public function syncAllPlugins(): array
+    {
+        $results = ['synced' => 0, 'failed' => 0];
+
+        foreach (InstalledPlugin::all() as $plugin) {
+            if ($this->syncPlugin($plugin)) {
+                $results['synced']++;
+            } else {
+                $results['failed']++;
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Read composer.json for a plugin and extract metadata
+     */
+    protected function readComposerJson(string $pluginId): array
+    {
+        // Map plugin ID to package directory
+        $packageDir = str_replace('netserva-', '', $pluginId);
+        $composerPath = base_path("packages/netserva-{$packageDir}/composer.json");
+
+        if (! File::exists($composerPath)) {
+            return [];
+        }
+
+        try {
+            $composer = json_decode(File::get($composerPath), true);
+
+            if (! $composer) {
+                return [];
+            }
+
+            // Extract author name from authors array
+            $author = null;
+            if (! empty($composer['authors'][0]['name'])) {
+                $author = $composer['authors'][0]['name'];
+            }
+
+            // Determine source from support URLs
+            $source = 'local';
+            $sourceUrl = null;
+            if (! empty($composer['support']['source'])) {
+                $sourceUrl = $composer['support']['source'];
+                if (str_contains($sourceUrl, 'github.com')) {
+                    $source = 'github';
+                } elseif (str_contains($sourceUrl, 'packagist.org')) {
+                    $source = 'packagist';
+                }
+            }
+
+            // Derive category from keywords or package type
+            $category = $this->deriveCategory($pluginId, $composer['keywords'] ?? []);
+
+            return [
+                'name' => $composer['name'] ?? null,
+                'description' => $composer['description'] ?? null,
+                'version' => $composer['version'] ?? '0.0.1',
+                'author' => $author,
+                'source' => $source,
+                'source_url' => $sourceUrl,
+                'category' => $category,
+                'keywords' => $composer['keywords'] ?? [],
+                'license' => $composer['license'] ?? null,
+                'homepage' => $composer['homepage'] ?? null,
+            ];
+        } catch (\Exception $e) {
+            Log::warning("Failed to read composer.json for {$pluginId}: ".$e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
+     * Derive plugin category from ID and keywords
+     */
+    protected function deriveCategory(string $pluginId, array $keywords): string
+    {
+        // Check keywords first
+        $keywordMap = [
+            'infrastructure' => 'Infrastructure',
+            'fleet' => 'Infrastructure',
+            'ssh' => 'Infrastructure',
+            'dns' => 'Services',
+            'mail' => 'Services',
+            'email' => 'Services',
+            'web' => 'Services',
+            'cms' => 'Content',
+            'content' => 'Content',
+            'core' => 'Foundation',
+            'config' => 'Foundation',
+        ];
+
+        foreach ($keywords as $keyword) {
+            $keyword = strtolower($keyword);
+            if (isset($keywordMap[$keyword])) {
+                return $keywordMap[$keyword];
+            }
+        }
+
+        // Fallback to plugin ID
+        return match (true) {
+            str_contains($pluginId, 'fleet'), str_contains($pluginId, 'ipam'), str_contains($pluginId, 'wg') => 'Infrastructure',
+            str_contains($pluginId, 'dns'), str_contains($pluginId, 'mail'), str_contains($pluginId, 'web') => 'Services',
+            str_contains($pluginId, 'cms') => 'Content',
+            str_contains($pluginId, 'core'), str_contains($pluginId, 'config') => 'Foundation',
+            default => 'Other',
+        };
     }
 
     /**

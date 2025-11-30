@@ -10,6 +10,7 @@ use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\Width;
 use NetServa\Core\Filament\Resources\SettingResource;
 use NetServa\Core\Filament\Resources\SettingResource\Schemas\SettingForm;
+use NetServa\Core\Models\Setting;
 
 class ListSettings extends ListRecords
 {
@@ -22,10 +23,10 @@ class ListSettings extends ListRecords
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => SettingForm::getFormSchema())
-                ->mutateFormDataBeforeCreate(function (array $data): array {
+                ->using(function (array $data): Setting {
                     $data['value'] = match ($data['type'] ?? 'string') {
                         'string' => $data['value_string'] ?? '',
-                        'integer' => $data['value_integer'] ?? 0,
+                        'integer' => (string) ($data['value_integer'] ?? 0),
                         'boolean' => ($data['value_boolean'] ?? false) ? '1' : '0',
                         'json' => $data['value_json'] ?? '{}',
                         default => $data['value_string'] ?? '',
@@ -33,7 +34,7 @@ class ListSettings extends ListRecords
 
                     unset($data['value_string'], $data['value_integer'], $data['value_boolean'], $data['value_json']);
 
-                    return $data;
+                    return Setting::create($data);
                 }),
         ];
     }
