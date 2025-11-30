@@ -16,7 +16,6 @@
         "laravel/framework": "^12.37.0",
         "laravel/tinker": "^2.10.1",
         "netserva/cms": "@dev",
-        "netserva/config": "@dev",
         "netserva/core": "@dev",
         "netserva/dns": "@dev",
         "netserva/fleet": "@dev",
@@ -45,7 +44,6 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
             "NetServa\\Cms\\Database\\Factories\\": "packages/netserva-cms/database/factories/",
-            "NetServa\\Config\\Database\\Factories\\": "packages/netserva-config/database/factories/",
             "NetServa\\Core\\Database\\Factories\\": "packages/netserva-core/database/factories/",
             "NetServa\\Dns\\Database\\Factories\\": "packages/netserva-dns/database/factories/",
             "NetServa\\Fleet\\Database\\Factories\\": "packages/netserva-fleet/database/factories/",
@@ -158,15 +156,6 @@
             "options": {
                 "versions": {
                     "netserva/ops": "0.0.3"
-                }
-            }
-        },
-        "netserva/config": {
-            "type": "path",
-            "url": "./packages/netserva-config",
-            "options": {
-                "versions": {
-                    "netserva/config": "0.0.3"
                 }
             }
         },

@@ -236,8 +236,8 @@ class AdminPanelProvider extends PanelProvider
     /**
      * Fallback navigation groups when database is unavailable
      *
-     * After plugin consolidation (Phase 9), the 8 target packages are:
-     * Core, Fleet, DNS, Mail, Web, Ops, Config, CMS
+     * After plugin consolidation, the 7 active packages are:
+     * Core, Fleet, DNS, Mail, Web, Ops, CMS
      * Each plugin maps 1:1 to a navigation group.
      *
      * @return array<NavigationGroup>
@@ -251,7 +251,6 @@ class AdminPanelProvider extends PanelProvider
             NavigationGroup::make()->label('Mail')->icon('heroicon-o-envelope')->collapsed(),
             NavigationGroup::make()->label('Web')->icon('heroicon-o-server')->collapsed(),
             NavigationGroup::make()->label('Ops')->icon('heroicon-o-chart-bar-square')->collapsed(),
-            NavigationGroup::make()->label('Config')->icon('heroicon-o-wrench-screwdriver')->collapsed(),
             NavigationGroup::make()->label('Cms')->icon('heroicon-o-document-text')->collapsed(),
         ];
     }
