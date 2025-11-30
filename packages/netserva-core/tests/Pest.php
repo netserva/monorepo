@@ -76,38 +76,6 @@ expect()->extend('toBeValidVhost', function () {
 |--------------------------------------------------------------------------
 */
 
-function createTestVhostConfiguration(array $attributes = []): \NetServa\Core\Models\VhostConfiguration
-{
-    return \NetServa\Core\Models\VhostConfiguration::factory()->create(array_merge([
-        'vhost' => 'test.example.com',
-        'vnode' => 'test-server',
-        'configuration' => [
-            'VHOST' => 'test.example.com',
-            'VNODE' => 'test-server',
-            'IP4_0' => '192.168.100.10',
-        ],
-    ], $attributes));
-}
-
-function createTestMigrationJob(array $attributes = []): \NetServa\Core\Models\MigrationJob
-{
-    return \NetServa\Core\Models\MigrationJob::factory()->create(array_merge([
-        'source_host' => 'old-server',
-        'target_host' => 'new-server',
-        'vhost' => 'migrate.example.com',
-        'status' => 'pending',
-    ], $attributes));
-}
-
-function createTestSetupJob(array $attributes = []): \NetServa\Core\Models\SetupJob
-{
-    return \NetServa\Core\Models\SetupJob::factory()->create(array_merge([
-        'name' => 'test-setup',
-        'status' => 'pending',
-        'server_id' => 'test-server',
-    ], $attributes));
-}
-
 function mockSuccessfulSshConnection(string $host = 'test-server'): void
 {
     \Illuminate\Support\Facades\Process::fake([

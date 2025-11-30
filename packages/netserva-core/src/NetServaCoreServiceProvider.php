@@ -206,15 +206,10 @@ class NetServaCoreServiceProvider extends ServiceProvider
             \NetServa\Core\Console\Commands\TunnelCommand::class,
             // VPS Management
             \NetServa\Core\Console\Commands\BinaryLaneCommand::class,
-            // Migration Commands
-            \NetServa\Core\Console\Commands\MigrateCredentialsCommand::class,
+            // Import Commands
             \NetServa\Core\Console\Commands\ImportVmailCredentialsCommand::class,
-            \NetServa\Core\Console\Commands\MigrateVhostConfigsCommand::class,
-            \NetServa\Core\Console\Commands\MigratePlatformProfilesCommand::class,
-            // VHost Validation & Migration
+            // VHost Validation
             \NetServa\Core\Console\Commands\ValidateCommand::class,
-            \NetServa\Core\Console\Commands\MigrateVhostCommand::class,
-            \NetServa\Core\Console\Commands\RollbackVhostCommand::class,
         ]);
     }
 

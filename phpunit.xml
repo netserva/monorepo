@@ -39,27 +39,24 @@
             <directory>tests/Performance</directory>
         </testsuite>
         
-        <!-- Consolidated NetServa Plugin Test Suites -->
+        <!-- Consolidated NetServa Plugin Test Suites (7 packages) -->
         <testsuite name="NetServa Core">
             <directory>packages/netserva-core/tests</directory>
         </testsuite>
+        <testsuite name="NetServa CMS">
+            <directory>packages/netserva-cms/tests</directory>
+        </testsuite>
         <testsuite name="NetServa DNS">
             <directory>packages/netserva-dns/tests</directory>
+        </testsuite>
+        <testsuite name="NetServa Fleet">
+            <directory>packages/netserva-fleet/tests</directory>
         </testsuite>
         <testsuite name="NetServa Mail">
             <directory>packages/netserva-mail/tests</directory>
         </testsuite>
         <testsuite name="NetServa Web">
             <directory>packages/netserva-web/tests</directory>
-        </testsuite>
-        <testsuite name="NetServa Operations">
-            <directory>packages/netserva-ops/tests</directory>
-        </testsuite>
-        <testsuite name="NetServa Configuration">
-            <directory>packages/netserva-config/tests</directory>
-        </testsuite>
-        <testsuite name="NetServa Fleet">
-            <directory>packages/netserva-fleet/tests</directory>
         </testsuite>
     </testsuites>
     
