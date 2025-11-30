@@ -107,13 +107,15 @@ class SshHostsTable
                     ->sortable()
                     ->weight('bold')
                     ->copyable()
-                    ->copyMessage('Host alias copied'),
+                    ->copyMessage('Host alias copied')
+                    ->width('120px'),
 
                 TextColumn::make('hostname')
                     ->label('Hostname / IP')
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
+                    ->copyable()
+                    ->width('160px'),
 
                 TextColumn::make('port')
                     ->sortable(),
