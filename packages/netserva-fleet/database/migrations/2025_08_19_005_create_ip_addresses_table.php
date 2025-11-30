@@ -20,6 +20,7 @@ return new class extends Migration
                 'available',
                 'allocated',
                 'reserved',
+                'discovered',
                 'dhcp_pool',
                 'network',
                 'broadcast',
@@ -34,6 +35,7 @@ return new class extends Migration
                 'dhcp',
                 'auto',
                 'manual',
+                'unknown',
             ])->default('static');
 
             // Assignment details
@@ -44,7 +46,7 @@ return new class extends Migration
             $table->json('ports')->nullable(); // Array of open/used ports
 
             // Infrastructure relationships
-            $table->foreignId('infrastructure_node_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('fleet_vnode_id')->nullable()->constrained()->nullOnDelete();
             $table->string('ssh_host_reference')->nullable(); // Reference to SSH host
 
             // Lease and lifecycle management
@@ -62,6 +64,9 @@ return new class extends Migration
             // DNS integration
             $table->boolean('auto_dns')->default(false); // Auto-create DNS records
             $table->json('dns_records')->nullable(); // Associated DNS records
+
+            // Sorting and display
+            $table->integer('sort_order')->default(0);
 
             // Metadata and tagging
             $table->json('tags')->nullable();

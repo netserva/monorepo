@@ -45,7 +45,7 @@ return new class extends Migration
 
             // Relationships
             $table->foreignId('parent_network_id')->nullable()->constrained('ip_networks')->nullOnDelete();
-            $table->foreignId('infrastructure_node_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('fleet_vnode_id')->nullable()->constrained()->nullOnDelete();
 
             // IPAM metadata
             $table->json('dhcp_config')->nullable(); // DHCP configuration

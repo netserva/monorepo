@@ -66,6 +66,9 @@ class PluginRegistry
     public function getEnabledPluginsInOrder(): array
     {
         return Cache::remember('enabled_plugins_ordered', 300, function () {
+            // Auto-discover and install plugins if table is empty
+            $this->autoDiscoverIfEmpty();
+
             // Get enabled plugins from database
             $enabledPlugins = InstalledPlugin::where('is_enabled', true)
                 ->pluck('plugin_class', 'name')
@@ -80,6 +83,62 @@ class PluginRegistry
             // Map plugin IDs back to their class names
             return array_map(fn ($id) => $availableEnabled[$id], $orderedIds);
         });
+    }
+
+    /**
+     * Auto-discover and install plugins if the installed_plugins table is empty
+     *
+     * This ensures that after a fresh migration, all available plugins in
+     * packages/* are automatically discovered and enabled.
+     */
+    protected function autoDiscoverIfEmpty(): void
+    {
+        try {
+            // Check if table exists and is empty
+            if (! \Illuminate\Support\Facades\Schema::hasTable('installed_plugins')) {
+                return;
+            }
+
+            if (InstalledPlugin::count() > 0) {
+                return;
+            }
+
+            Log::info('IPAM: installed_plugins table is empty, auto-discovering plugins...');
+
+            $navigationSort = 1;
+            foreach ($this->availablePlugins as $pluginId => $pluginClass) {
+                try {
+                    $plugin = new $pluginClass;
+
+                    // Read composer.json for metadata
+                    $composerData = $this->readComposerJson($pluginId);
+
+                    InstalledPlugin::create([
+                        'name' => $pluginId,
+                        'plugin_class' => $pluginClass,
+                        'is_enabled' => true,
+                        'navigation_sort' => $navigationSort++,
+                        'version' => $composerData['version'] ?? (method_exists($plugin, 'getVersion') ? $plugin->getVersion() : '1.0.0'),
+                        'config' => method_exists($plugin, 'getDefaultConfig') ? $plugin->getDefaultConfig() : [],
+                        'package_name' => $composerData['name'] ?? $pluginId,
+                        'description' => $composerData['description'] ?? null,
+                        'author' => $composerData['author'] ?? null,
+                        'source' => $composerData['source'] ?? 'local',
+                        'source_url' => $composerData['source_url'] ?? null,
+                        'category' => $composerData['category'] ?? null,
+                        'composer_data' => $composerData,
+                    ]);
+
+                    Log::info("Auto-discovered plugin: {$pluginId}");
+                } catch (\Exception $e) {
+                    Log::warning("Failed to auto-discover plugin {$pluginId}: ".$e->getMessage());
+                }
+            }
+
+            Log::info('Plugin auto-discovery complete: '.count($this->availablePlugins).' plugins installed');
+        } catch (\Exception $e) {
+            Log::error('Plugin auto-discovery failed: '.$e->getMessage());
+        }
     }
 
     /**

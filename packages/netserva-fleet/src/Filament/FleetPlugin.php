@@ -8,9 +8,7 @@ use NetServa\Fleet\Filament\Resources\FleetVenueResource;
 use NetServa\Fleet\Filament\Resources\FleetVhostResource;
 use NetServa\Fleet\Filament\Resources\FleetVnodeResource;
 use NetServa\Fleet\Filament\Resources\FleetVsiteResource;
-use NetServa\Fleet\Filament\Resources\IpAddressResource;
-use NetServa\Fleet\Filament\Resources\IpNetworkResource;
-use NetServa\Fleet\Filament\Resources\IpReservationResource;
+use NetServa\Fleet\Filament\Resources\IpamResource;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource;
 use NetServa\Fleet\Filament\Resources\WireguardServerResource;
 
@@ -26,9 +24,7 @@ use NetServa\Fleet\Filament\Resources\WireguardServerResource;
  * - VNode (server node) management
  * - VHost (virtual host) management
  * - Fleet-wide discovery and monitoring
- * - IP Network management (merged from IPAM)
- * - IP Address allocation and tracking (merged from IPAM)
- * - IP Reservations (merged from IPAM)
+ * - IPAM (unified IP network, address, and reservation management)
  * - WireGuard VPN server management (merged from WG)
  * - WireGuard peer management (merged from WG)
  */
@@ -44,15 +40,14 @@ class FleetPlugin extends BaseFilamentPlugin
     protected function registerResources(Panel $panel): void
     {
         $panel->resources([
-            // Fleet resources (navigation group: Fleet)
+            // Fleet resources
             FleetVenueResource::class,
             FleetVsiteResource::class,
             FleetVnodeResource::class,
             FleetVhostResource::class,
-            // Network resources (navigation group: Network)
-            IpNetworkResource::class,
-            IpAddressResource::class,
-            IpReservationResource::class,
+            // IPAM (unified network/address/reservation management)
+            IpamResource::class,
+            // WireGuard VPN
             WireguardServerResource::class,
             WireguardPeerResource::class,
         ]);

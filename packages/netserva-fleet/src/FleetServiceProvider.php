@@ -43,6 +43,9 @@ class FleetServiceProvider extends ServiceProvider
         // Load migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
+        // Load views
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'netserva-fleet');
+
         // Register commands (NetServa 3.0 CRUD pattern)
         if ($this->app->runningInConsole()) {
             $this->commands([

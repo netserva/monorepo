@@ -22,6 +22,27 @@ class IpNetwork extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::saving(function (IpNetwork $network) {
+            // Auto-extract network_address and prefix_length from CIDR
+            if ($network->cidr && str_contains($network->cidr, '/')) {
+                [$networkAddress, $prefixLength] = explode('/', $network->cidr);
+                $network->network_address = $networkAddress;
+                $network->prefix_length = (int) $prefixLength;
+
+                // Auto-calculate total addresses if not set
+                if (! $network->total_addresses || $network->total_addresses === 0) {
+                    if ($network->ip_version === '4') {
+                        $network->total_addresses = pow(2, 32 - (int) $prefixLength) - 2;
+                    } else {
+                        $network->total_addresses = 0; // IPv6 is too large to store
+                    }
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'name',
         'description',

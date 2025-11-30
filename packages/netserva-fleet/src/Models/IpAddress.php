@@ -24,12 +24,19 @@ class IpAddress extends Model
         'hostname',
         'fqdn',
         'status',
+        'assignment_type',
         'mac_address',
         'description',
         'owner',
         'service',
         'fleet_vnode_id',
+        'ssh_host_reference',
         'allocated_at',
+        'last_seen_at',
+        'last_ping_at',
+        'is_pingable',
+        'ping_count',
+        'sort_order',
     ];
 
     protected $casts = [
@@ -41,6 +48,7 @@ class IpAddress extends Model
         'available' => 'Available',
         'allocated' => 'Allocated',
         'reserved' => 'Reserved',
+        'discovered' => 'Discovered',
         'dhcp_pool' => 'DHCP Pool',
         'network' => 'Network Address',
         'broadcast' => 'Broadcast Address',

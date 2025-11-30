@@ -178,10 +178,27 @@ class Palette extends Model
 
     /**
      * Get the default system palette.
+     * Creates a default slate palette if none exists.
      */
     public static function default(): self
     {
-        return static::where('name', 'slate')->firstOrFail();
+        return static::firstOrCreate(
+            ['name' => 'slate'],
+            [
+                'label' => 'Slate',
+                'group' => 'neutral',
+                'colors' => [
+                    'primary' => 'slate',
+                    'danger' => 'red',
+                    'gray' => 'gray',
+                    'info' => 'blue',
+                    'success' => 'emerald',
+                    'warning' => 'amber',
+                ],
+                'is_active' => true,
+                'sort_order' => 0,
+            ]
+        );
     }
 
     /**
