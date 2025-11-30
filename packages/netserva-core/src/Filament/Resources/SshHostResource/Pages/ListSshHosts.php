@@ -25,7 +25,8 @@ class ListSshHosts extends ListRecords
             CreateAction::make()
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
-                ->schema(fn () => SshHostForm::getFormSchema()),
+                ->schema(fn () => SshHostForm::getFormSchema())
+                ->createAnother(false),
             Action::make('importFromFilesystem')
                 ->label('Import from ~/.ssh/hosts/')
                 ->icon(Heroicon::OutlinedArrowDownTray)
