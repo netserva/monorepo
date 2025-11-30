@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class WebApplication extends Model
 {
     use HasFactory;
-    // TODO: Re-enable Auditable trait after fixing audit log schema
-    // use Auditable;
 
     protected $fillable = [
         // Core application identification

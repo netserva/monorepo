@@ -11,8 +11,6 @@ use NetServa\Core\Models\InfrastructureNode;
 class VirtualHost extends Model
 {
     use HasFactory;
-    // TODO: Re-enable Auditable trait after fixing audit log schema
-    // use Auditable;
 
     protected $fillable = [
         // Core virtual host identification

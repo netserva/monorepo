@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use NetServa\Core\Traits\Auditable;
 
 /**
  * NetServa Core Base Platform Node
@@ -17,7 +16,7 @@ use NetServa\Core\Traits\Auditable;
  */
 abstract class BaseInfrastructureNode extends Model implements PlatformNodeInterface
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',

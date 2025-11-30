@@ -9,7 +9,6 @@ use Filament\Panel;
 use NetServa\Core\Filament\Pages\CommandRunner;
 use NetServa\Core\Filament\Pages\Dashboard;
 use NetServa\Core\Filament\Pages\SshTerminal;
-use NetServa\Core\Filament\Resources\AuditLogResource;
 use NetServa\Core\Filament\Resources\PluginResource;
 use NetServa\Core\Filament\Resources\SettingResource;
 use NetServa\Core\Filament\Resources\SshHostResource;
@@ -29,7 +28,7 @@ use NetServa\Core\Filament\Widgets\SystemStatsOverview;
  * - SSH Hosts (manage SSH host configs)
  * - SSH Keys (manage SSH key pairs)
  * - Commands (execute artisan commands)
- * - Settings, Plugins, Audit Log
+ * - Settings, Plugins
  */
 class CorePlugin implements Plugin
 {
@@ -53,7 +52,6 @@ class CorePlugin implements Plugin
             SshKeyResource::class,
             SettingResource::class,
             PluginResource::class,
-            AuditLogResource::class,
         ]);
 
         // Register Core widgets

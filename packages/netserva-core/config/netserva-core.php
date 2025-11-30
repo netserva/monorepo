@@ -70,7 +70,6 @@ return [
     |
     */
     'security' => [
-        'enable_audit_logging' => env('NETSERVA_ENABLE_AUDIT_LOGGING', true),
         'encrypt_sensitive_data' => env('NETSERVA_ENCRYPT_SENSITIVE_DATA', true),
         'password_min_length' => env('NETSERVA_PASSWORD_MIN_LENGTH', 12),
     ],

@@ -5,14 +5,12 @@ namespace NetServa\Web\Services;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Collection;
-use NetServa\Ops\Services\AuditLogService;
 use NetServa\Web\Models\SslCertificate;
 use NetServa\Web\Models\SslCertificateAuthority;
 
 class SslCertificateService
 {
     public function __construct(
-        private ?AuditLogService $auditService = null,
         private ?AcmeClientService $acmeClient = null,
         private ?CertificateValidationService $validationService = null,
         private ?CertificateDeploymentService $deploymentService = null
@@ -52,7 +50,6 @@ class SslCertificateService
             'status' => 'pending',
         ]);
 
-        $this->auditService?->logInfrastructureEvent(
             'certificate_created',
             "SSL certificate requested for {$data['common_name']}",
             $certificate,
@@ -75,7 +72,6 @@ class SslCertificateService
                 throw new Exception('Certificate authority is not healthy');
             }
 
-            $this->auditService?->logInfrastructureEvent(
                 'certificate_issuing',
                 "Starting certificate issuance for {$certificate->common_name}",
                 $certificate,
@@ -100,7 +96,6 @@ class SslCertificateService
                 'status' => 'failed',
             ]);
 
-            $this->auditService?->logInfrastructureEvent(
                 'certificate_failed',
                 "Certificate issuance failed for {$certificate->common_name}: ".$e->getMessage(),
                 $certificate,
@@ -155,7 +150,6 @@ class SslCertificateService
         $renewalDate = $validTo->subDays($certificate->renew_days_before_expiry ?? 30);
         $certificate->scheduleRenewal($renewalDate);
 
-        $this->auditService->logInfrastructureEvent(
             'certificate_issued',
             "SSL certificate successfully issued for {$certificate->common_name}",
             $certificate,
@@ -217,7 +211,6 @@ class SslCertificateService
             'status' => 'active',
         ]);
 
-        $this->auditService->logInfrastructureEvent(
             'certificate_issued',
             "Self-signed SSL certificate created for {$certificate->common_name}",
             $certificate,
@@ -243,7 +236,6 @@ class SslCertificateService
             $success = $this->issueCertificate($certificate);
 
             if ($success) {
-                $this->auditService?->logInfrastructureEvent(
                     'certificate_renewed',
                     "SSL certificate renewed for {$certificate->common_name}",
                     $certificate,
@@ -294,7 +286,6 @@ class SslCertificateService
         }
 
         if ($results['processed'] > 0) {
-            $this->auditService?->logSystemEvent(
                 'certificate_renewal_batch',
                 "Processed {$results['processed']} certificate renewals ({$results['successful']} successful, {$results['failed']} failed)",
                 'medium',
@@ -432,7 +423,6 @@ class SslCertificateService
         $updated += $reactivatedCount;
 
         if ($updated > 0) {
-            $this->auditService?->logSystemEvent(
                 'certificate_status_update',
                 "Updated status for {$updated} certificates ({$expiredCount} expired, {$reactivatedCount} reactivated)",
                 'low',
