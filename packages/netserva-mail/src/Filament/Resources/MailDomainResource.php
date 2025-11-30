@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NetServa\Mail\Filament\Resources;
 
 use BackedEnum;
@@ -7,8 +9,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Mail\Filament\Resources\MailDomainResource\Pages\CreateMailDomain;
-use NetServa\Mail\Filament\Resources\MailDomainResource\Pages\EditMailDomain;
 use NetServa\Mail\Filament\Resources\MailDomainResource\Pages\ListMailDomains;
 use NetServa\Mail\Filament\Resources\MailDomainResource\Schemas\MailDomainForm;
 use NetServa\Mail\Filament\Resources\MailDomainResource\Tables\MailDomainsTable;
@@ -21,13 +21,22 @@ class MailDomainResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAtSymbol;
 
+    protected static ?string $navigationLabel = 'Mail Domains';
+
     protected static string|UnitEnum|null $navigationGroup = 'Mail';
 
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $recordTitleAttribute = 'domain';
+
+    public static function getFormSchema(): array
+    {
+        return MailDomainForm::getFormSchema();
+    }
+
     public static function form(Schema $schema): Schema
     {
-        return MailDomainForm::configure($schema);
+        return $schema->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table
@@ -46,8 +55,11 @@ class MailDomainResource extends Resource
     {
         return [
             'index' => ListMailDomains::route('/'),
-            'create' => CreateMailDomain::route('/create'),
-            'edit' => EditMailDomain::route('/{record}/edit'),
         ];
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'domain', 'description'];
     }
 }

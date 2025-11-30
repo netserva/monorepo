@@ -7,8 +7,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Dns\Filament\Resources\DnsZoneResource\Pages\CreateDnsZone;
-use NetServa\Dns\Filament\Resources\DnsZoneResource\Pages\EditDnsZone;
 use NetServa\Dns\Filament\Resources\DnsZoneResource\Pages\ListDnsZones;
 use NetServa\Dns\Filament\Resources\DnsZoneResource\Schemas\DnsZoneForm;
 use NetServa\Dns\Filament\Resources\DnsZoneResource\Tables\DnsZonesTable;
@@ -24,6 +22,11 @@ class DnsZoneResource extends Resource
     protected static UnitEnum|string|null $navigationGroup = 'Dns';
 
     protected static ?int $navigationSort = 10;
+
+    public static function getFormSchema(): array
+    {
+        return DnsZoneForm::getFormSchema();
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -46,8 +49,6 @@ class DnsZoneResource extends Resource
     {
         return [
             'index' => ListDnsZones::route('/'),
-            'create' => CreateDnsZone::route('/create'),
-            'edit' => EditDnsZone::route('/{record}/edit'),
         ];
     }
 }

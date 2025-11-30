@@ -6,11 +6,15 @@ use Filament\Schemas\Schema;
 
 class VirtualHostForm
 {
+    public static function getSchema(): array
+    {
+        return [
+            //
+        ];
+    }
+
     public static function configure(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                //
-            ]);
+        return $schema->components(self::getSchema());
     }
 }

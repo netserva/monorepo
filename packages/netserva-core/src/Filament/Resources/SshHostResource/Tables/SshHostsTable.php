@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace NetServa\Core\Filament\Resources\SshHostResource\Tables;
 
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -172,116 +170,95 @@ class SshHostsTable
                     ->options(fn () => \NetServa\Core\Models\SshKey::pluck('name', 'name')->toArray()),
             ])
             ->recordActions([
-                ActionGroup::make([
-                    EditAction::make()
-                        ->modalWidth(Width::Medium)
-                        ->modalFooterActionsAlignment(Alignment::End)
-                        ->schema(fn () => self::getFormSchema()),
-                    DeleteAction::make(),
-                    Action::make('testConnection')
-                        ->label('Test Connection')
-                        ->icon(Heroicon::OutlinedWifi)
-                        ->color('success')
-                        ->action(function (SshHost $record) {
-                            try {
-                                $service = app(RemoteExecutionService::class);
-                                $result = $service->exec($record->host, 'echo "Connection OK"');
-
-                                if ($result['success']) {
-                                    $record->update([
-                                        'is_reachable' => true,
-                                        'last_tested_at' => now(),
-                                        'last_error' => null,
-                                    ]);
-
-                                    Notification::make()
-                                        ->success()
-                                        ->title('Connection Successful')
-                                        ->body("Connected to {$record->hostname}")
-                                        ->send();
-                                } else {
-                                    throw new \Exception($result['error'] ?? 'Connection failed');
-                                }
-                            } catch (\Exception $e) {
-                                $record->update([
-                                    'is_reachable' => false,
-                                    'last_tested_at' => now(),
-                                    'last_error' => $e->getMessage(),
-                                ]);
-
-                                Notification::make()
-                                    ->danger()
-                                    ->title('Connection Failed')
-                                    ->body($e->getMessage())
-                                    ->send();
-                            }
-                        }),
-                    Action::make('syncToFile')
-                        ->label('Sync to File')
-                        ->icon(Heroicon::OutlinedArrowUpTray)
-                        ->color('warning')
-                        ->action(function (SshHost $record) {
-                            $service = app(SshHostSyncService::class);
-
-                            if ($service->syncHost($record)) {
-                                Notification::make()
-                                    ->success()
-                                    ->title('Config Synced')
-                                    ->body("Synced to ~/.ssh/hosts/{$record->host}")
-                                    ->send();
-                            } else {
-                                Notification::make()
-                                    ->danger()
-                                    ->title('Sync Failed')
-                                    ->send();
-                            }
-                        }),
-                    Action::make('syncFromFile')
-                        ->label('Sync from File')
-                        ->icon(Heroicon::OutlinedArrowDownTray)
-                        ->color('info')
-                        ->action(function (SshHost $record) {
-                            $service = app(SshHostSyncService::class);
-                            $result = $service->importSingleHost($record->host);
-
-                            if ($result) {
-                                Notification::make()
-                                    ->success()
-                                    ->title('Config Imported')
-                                    ->body("Imported from ~/.ssh/hosts/{$record->host}")
-                                    ->send();
-                            } else {
-                                Notification::make()
-                                    ->warning()
-                                    ->title('Import Failed')
-                                    ->body("File ~/.ssh/hosts/{$record->host} not found or invalid")
-                                    ->send();
-                            }
-                        }),
-                ]),
-            ])
-            ->headerActions([
-                CreateAction::make()
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Edit SSH host')
                     ->modalWidth(Width::Medium)
                     ->modalFooterActionsAlignment(Alignment::End)
                     ->schema(fn () => self::getFormSchema()),
-                Action::make('importFromFilesystem')
-                    ->label('Import from ~/.ssh/hosts/')
-                    ->icon(Heroicon::OutlinedArrowDownTray)
-                    ->color('gray')
-                    ->action(function () {
-                        $service = app(SshHostSyncService::class);
-                        $results = $service->importFromFilesystem();
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete SSH host'),
+                Action::make('testConnection')
+                    ->label('Test Connection')
+                    ->icon(Heroicon::OutlinedWifi)
+                    ->color('success')
+                    ->action(function (SshHost $record) {
+                        try {
+                            $service = app(RemoteExecutionService::class);
+                            $result = $service->exec($record->host, 'echo "Connection OK"');
 
-                        Notification::make()
-                            ->success()
-                            ->title('Import Complete')
-                            ->body("Imported: {$results['imported']}, Skipped: {$results['skipped']}")
-                            ->send();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Import SSH Hosts')
-                    ->modalDescription('Import existing SSH host configurations from ~/.ssh/hosts/ into the database.'),
+                            if ($result['success']) {
+                                $record->update([
+                                    'is_reachable' => true,
+                                    'last_tested_at' => now(),
+                                    'last_error' => null,
+                                ]);
+
+                                Notification::make()
+                                    ->success()
+                                    ->title('Connection Successful')
+                                    ->body("Connected to {$record->hostname}")
+                                    ->send();
+                            } else {
+                                throw new \Exception($result['error'] ?? 'Connection failed');
+                            }
+                        } catch (\Exception $e) {
+                            $record->update([
+                                'is_reachable' => false,
+                                'last_tested_at' => now(),
+                                'last_error' => $e->getMessage(),
+                            ]);
+
+                            Notification::make()
+                                ->danger()
+                                ->title('Connection Failed')
+                                ->body($e->getMessage())
+                                ->send();
+                        }
+                    }),
+                Action::make('syncToFile')
+                    ->label('Sync to File')
+                    ->icon(Heroicon::OutlinedArrowUpTray)
+                    ->color('warning')
+                    ->action(function (SshHost $record) {
+                        $service = app(SshHostSyncService::class);
+
+                        if ($service->syncHost($record)) {
+                            Notification::make()
+                                ->success()
+                                ->title('Config Synced')
+                                ->body("Synced to ~/.ssh/hosts/{$record->host}")
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->danger()
+                                ->title('Sync Failed')
+                                ->send();
+                        }
+                    }),
+                Action::make('syncFromFile')
+                    ->label('Sync from File')
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->color('info')
+                    ->action(function (SshHost $record) {
+                        $service = app(SshHostSyncService::class);
+                        $result = $service->importSingleHost($record->host);
+
+                        if ($result) {
+                            Notification::make()
+                                ->success()
+                                ->title('Config Imported')
+                                ->body("Imported from ~/.ssh/hosts/{$record->host}")
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->warning()
+                                ->title('Import Failed')
+                                ->body("File ~/.ssh/hosts/{$record->host} not found or invalid")
+                                ->send();
+                        }
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

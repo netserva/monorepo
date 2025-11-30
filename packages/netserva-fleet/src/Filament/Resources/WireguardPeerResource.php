@@ -3,12 +3,16 @@
 namespace NetServa\Fleet\Filament\Resources;
 
 use BackedEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Pages\CreateWireguardPeer;
-use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Pages\EditWireguardPeer;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Pages\ListWireguardPeers;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Schemas\WireguardPeerForm;
 use NetServa\Fleet\Filament\Resources\WireguardPeerResource\Tables\WireguardPeersTable;
@@ -25,14 +29,36 @@ class WireguardPeerResource extends Resource
 
     protected static ?int $navigationSort = 8;  // Alphabetical: Wireguard Peers
 
+    public static function getFormSchema(): array
+    {
+        return WireguardPeerForm::getComponents();
+    }
+
     public static function form(Schema $schema): Schema
     {
-        return WireguardPeerForm::configure($schema);
+        return $schema->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table
     {
-        return WireguardPeersTable::configure($table);
+        return WireguardPeersTable::configure($table)
+            ->recordActions([
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Edit peer')
+                    ->modalWidth(Width::Medium)
+                    ->modalFooterActionsAlignment(Alignment::End)
+                    ->schema(fn () => self::getFormSchema()),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete peer'),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('updated_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -46,8 +72,6 @@ class WireguardPeerResource extends Resource
     {
         return [
             'index' => ListWireguardPeers::route('/'),
-            'create' => CreateWireguardPeer::route('/create'),
-            'edit' => EditWireguardPeer::route('/{record}/edit'),
         ];
     }
 }

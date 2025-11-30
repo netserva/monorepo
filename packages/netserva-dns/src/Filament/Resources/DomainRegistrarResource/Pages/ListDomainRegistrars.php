@@ -4,6 +4,8 @@ namespace NetServa\Dns\Filament\Resources\DomainRegistrarResource\Pages;
 
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use NetServa\Dns\Filament\Resources\DomainRegistrarResource;
 
 class ListDomainRegistrars extends ListRecords
@@ -13,7 +15,10 @@ class ListDomainRegistrars extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->modalWidth(Width::Medium)
+                ->modalFooterActionsAlignment(Alignment::End)
+                ->schema(fn () => DomainRegistrarResource::getFormSchema()),
         ];
     }
 }

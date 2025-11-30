@@ -3,12 +3,16 @@
 namespace NetServa\Mail\Filament\Resources;
 
 use BackedEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Mail\Filament\Resources\MailboxResource\Pages\CreateMailbox;
-use NetServa\Mail\Filament\Resources\MailboxResource\Pages\EditMailbox;
 use NetServa\Mail\Filament\Resources\MailboxResource\Pages\ListMailboxes;
 use NetServa\Mail\Filament\Resources\MailboxResource\Schemas\MailboxForm;
 use NetServa\Mail\Filament\Resources\MailboxResource\Tables\MailboxesTable;
@@ -25,14 +29,36 @@ class MailboxResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function getFormSchema(): array
+    {
+        return MailboxForm::getSchema();
+    }
+
     public static function form(Schema $schema): Schema
     {
-        return MailboxForm::configure($schema);
+        return $schema->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table
     {
-        return MailboxesTable::configure($table);
+        return MailboxesTable::configure($table)
+            ->recordActions([
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Edit mailbox')
+                    ->modalWidth(Width::Medium)
+                    ->modalFooterActionsAlignment(Alignment::End)
+                    ->schema(fn () => self::getFormSchema()),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete mailbox'),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('updated_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -46,8 +72,6 @@ class MailboxResource extends Resource
     {
         return [
             'index' => ListMailboxes::route('/'),
-            'create' => CreateMailbox::route('/create'),
-            'edit' => EditMailbox::route('/{record}/edit'),
         ];
     }
 }

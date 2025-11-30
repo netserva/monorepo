@@ -8,11 +8,11 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
+use NetServa\Core\Filament\Resources\SettingResource\Schemas\SettingForm;
 
 class SettingsTable
 {
@@ -25,12 +25,11 @@ class SettingsTable
                     ->sortable()
                     ->copyable()
                     ->description(fn ($record) => $record->category)
-                    ->weight('semibold'),
+                    ->weight('medium'),
 
                 Tables\Columns\TextColumn::make('value')
-                    ->searchable()
-                    ->limit(50)
-                    ->tooltip(fn ($record) => strlen((string) $record->value) > 50 ? $record->value : null)
+                    ->limit(40)
+                    ->tooltip(fn ($record) => strlen((string) $record->value) > 40 ? $record->value : null)
                     ->formatStateUsing(function ($state, $record) {
                         return match ($record->type) {
                             'boolean' => $state ? '✓ True' : '✗ False',
@@ -50,18 +49,13 @@ class SettingsTable
                         default => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('category')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable()
-                    ->placeholder('Uncategorized'),
-
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Updated')
+                    ->since()
                     ->sortable()
-                    ->toggleable()
-                    ->since(),
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('updated_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
                     ->options([
@@ -70,88 +64,18 @@ class SettingsTable
                         'boolean' => 'Boolean',
                         'json' => 'JSON',
                     ]),
-
-                Tables\Filters\SelectFilter::make('category')
-                    ->options(function () {
-                        return \NetServa\Core\Models\Setting::query()
-                            ->whereNotNull('category')
-                            ->distinct()
-                            ->pluck('category', 'category')
-                            ->toArray();
-                    }),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make()
-                    ->form([
-                        Section::make('Setting Details')
-                            ->schema([
-                                // Row 1: Key and Value
-                                Forms\Components\TextInput::make('key')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->unique(ignoreRecord: true)
-                                    ->placeholder('e.g., mail.driver, dns.provider')
-                                    ->helperText('Use dot notation for hierarchy (e.g., mail.driver)'),
-
-                                // Value field for string type
-                                Forms\Components\TextInput::make('value_string')
-                                    ->label('Value')
-                                    ->required(fn (Get $get): bool => $get('type') === 'string')
-                                    ->visible(fn (Get $get): bool => $get('type') === 'string')
-                                    ->placeholder('Setting value'),
-
-                                // Value field for integer type
-                                Forms\Components\TextInput::make('value_integer')
-                                    ->label('Value')
-                                    ->numeric()
-                                    ->required(fn (Get $get): bool => $get('type') === 'integer')
-                                    ->visible(fn (Get $get): bool => $get('type') === 'integer')
-                                    ->placeholder('0'),
-
-                                // Value field for boolean type
-                                Forms\Components\Toggle::make('value_boolean')
-                                    ->label('Value')
-                                    ->visible(fn (Get $get): bool => $get('type') === 'boolean'),
-
-                                // Value field for JSON type
-                                Forms\Components\TextInput::make('value_json')
-                                    ->label('Value')
-                                    ->required(fn (Get $get): bool => $get('type') === 'json')
-                                    ->visible(fn (Get $get): bool => $get('type') === 'json')
-                                    ->placeholder('{"key": "value"}')
-                                    ->helperText('Valid JSON format required'),
-
-                                // Row 2: Type and Category
-                                Forms\Components\Select::make('type')
-                                    ->options([
-                                        'string' => 'String',
-                                        'integer' => 'Integer',
-                                        'boolean' => 'Boolean',
-                                        'json' => 'JSON',
-                                    ])
-                                    ->default('string')
-                                    ->required()
-                                    ->live()
-                                    ->helperText('Data type for the value'),
-
-                                Forms\Components\TextInput::make('category')
-                                    ->maxLength(255)
-                                    ->placeholder('e.g., mail, dns, web')
-                                    ->helperText('Optional: Group settings by category'),
-
-                                // Row 3: Description (full width)
-                                Forms\Components\TextInput::make('description')
-                                    ->maxLength(500)
-                                    ->placeholder('Optional description of this setting')
-                                    ->columnSpanFull(),
-                            ])->columns(2),
-                    ])
+                    ->hiddenLabel()
+                    ->tooltip('Edit setting')
+                    ->modalWidth(Width::Medium)
+                    ->modalFooterActionsAlignment(Alignment::End)
+                    ->schema(fn () => SettingForm::getFormSchema())
                     ->mutateRecordDataUsing(function (array $data): array {
-                        // Map database 'value' column to type-specific form field
                         $value = $data['value'] ?? null;
                         $type = $data['type'] ?? 'string';
 
-                        // Set the appropriate typed field based on type
                         match ($type) {
                             'string' => $data['value_string'] = $value,
                             'integer' => $data['value_integer'] = $value,
@@ -160,13 +84,11 @@ class SettingsTable
                             default => $data['value_string'] = $value,
                         };
 
-                        // Don't pass 'value' to avoid hydration conflicts
                         unset($data['value']);
 
                         return $data;
                     })
                     ->using(function ($record, array $data): bool {
-                        // Map type-specific form field back to database 'value' column
                         $data['value'] = match ($data['type'] ?? 'string') {
                             'string' => $data['value_string'] ?? '',
                             'integer' => $data['value_integer'] ?? 0,
@@ -175,26 +97,21 @@ class SettingsTable
                             default => $data['value_string'] ?? '',
                         };
 
-                        // Clean up temporary typed fields
                         unset($data['value_string'], $data['value_integer'], $data['value_boolean'], $data['value_json']);
-
-                        // Update the record
                         $record->update($data);
 
                         return true;
-                    })
-                    ->modalWidth('2xl'),
-
-                DeleteAction::make(),
+                    }),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete setting'),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('updated_at', 'desc') // Most recently edited at top
-            ->persistSortInSession()
-            ->persistSearchInSession()
-            ->persistFiltersInSession();
+            ->striped()
+            ->paginated([25, 50, 100]);
     }
 }

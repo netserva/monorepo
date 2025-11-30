@@ -28,6 +28,11 @@ class SshHostResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'host';
 
+    public static function getFormSchema(): array
+    {
+        return SshHostForm::getFormSchema();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return SshHostForm::make($schema);

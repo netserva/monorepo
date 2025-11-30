@@ -2,15 +2,12 @@
 
 namespace NetServa\Mail\Filament\Resources\MailboxResource\Schemas;
 
-use Filament\Schemas\Schema;
-
 class MailboxForm
 {
-    public static function configure(Schema $schema): Schema
+    public static function getSchema(): array
     {
-        return $schema
-            ->components([
-                //
-            ]);
+        return [
+            //
+        ];
     }
 }

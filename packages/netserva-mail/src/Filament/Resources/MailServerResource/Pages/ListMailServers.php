@@ -4,6 +4,8 @@ namespace NetServa\Mail\Filament\Resources\MailServerResource\Pages;
 
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use NetServa\Mail\Filament\Resources\MailServerResource;
 
 class ListMailServers extends ListRecords
@@ -13,7 +15,10 @@ class ListMailServers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->modalWidth(Width::Medium)
+                ->modalFooterActionsAlignment(Alignment::End)
+                ->schema(fn () => MailServerResource::getFormSchema()),
         ];
     }
 }

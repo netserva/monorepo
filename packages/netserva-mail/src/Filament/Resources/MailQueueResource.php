@@ -4,13 +4,9 @@ namespace NetServa\Mail\Filament\Resources;
 
 use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Mail\Filament\Resources\MailQueueResource\Pages\CreateMailQueue;
-use NetServa\Mail\Filament\Resources\MailQueueResource\Pages\EditMailQueue;
 use NetServa\Mail\Filament\Resources\MailQueueResource\Pages\ListMailQueues;
-use NetServa\Mail\Filament\Resources\MailQueueResource\Schemas\MailQueueForm;
 use NetServa\Mail\Filament\Resources\MailQueueResource\Tables\MailQueuesTable;
 use NetServa\Mail\Models\MailQueue;
 use UnitEnum;
@@ -25,9 +21,9 @@ class MailQueueResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    public static function form(Schema $schema): Schema
+    public static function canCreate(): bool
     {
-        return MailQueueForm::configure($schema);
+        return false;
     }
 
     public static function table(Table $table): Table
@@ -46,8 +42,6 @@ class MailQueueResource extends Resource
     {
         return [
             'index' => ListMailQueues::route('/'),
-            'create' => CreateMailQueue::route('/create'),
-            'edit' => EditMailQueue::route('/{record}/edit'),
         ];
     }
 }

@@ -7,8 +7,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Web\Filament\Resources\VirtualHostResource\Pages\CreateVirtualHost;
-use NetServa\Web\Filament\Resources\VirtualHostResource\Pages\EditVirtualHost;
 use NetServa\Web\Filament\Resources\VirtualHostResource\Pages\ListVirtualHosts;
 use NetServa\Web\Filament\Resources\VirtualHostResource\Schemas\VirtualHostForm;
 use NetServa\Web\Filament\Resources\VirtualHostResource\Tables\VirtualHostsTable;
@@ -25,9 +23,14 @@ class VirtualHostResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getFormSchema(): array
+    {
+        return VirtualHostForm::getSchema();
+    }
+
     public static function form(Schema $schema): Schema
     {
-        return VirtualHostForm::configure($schema);
+        return $schema->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table
@@ -46,8 +49,6 @@ class VirtualHostResource extends Resource
     {
         return [
             'index' => ListVirtualHosts::route('/'),
-            'create' => CreateVirtualHost::route('/create'),
-            'edit' => EditVirtualHost::route('/{record}/edit'),
         ];
     }
 }

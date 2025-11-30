@@ -40,8 +40,6 @@ class SettingResource extends Resource
     {
         return [
             'index' => Pages\ListSettings::route('/'),
-            'create' => Pages\CreateSetting::route('/create'),
-            // Edit is now handled via modal in table action
         ];
     }
 }

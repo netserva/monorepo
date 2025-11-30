@@ -2,15 +2,12 @@
 
 namespace NetServa\Web\Filament\Resources\WebApplicationResource\Schemas;
 
-use Filament\Schemas\Schema;
-
 class WebApplicationForm
 {
-    public static function configure(Schema $schema): Schema
+    public static function getSchema(): array
     {
-        return $schema
-            ->components([
-                //
-            ]);
+        return [
+            //
+        ];
     }
 }

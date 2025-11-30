@@ -7,8 +7,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Web\Filament\Resources\WebServerResource\Pages\CreateWebServer;
-use NetServa\Web\Filament\Resources\WebServerResource\Pages\EditWebServer;
 use NetServa\Web\Filament\Resources\WebServerResource\Pages\ListWebServers;
 use NetServa\Web\Filament\Resources\WebServerResource\Schemas\WebServerForm;
 use NetServa\Web\Filament\Resources\WebServerResource\Tables\WebServersTable;
@@ -25,9 +23,14 @@ class WebServerResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function getFormSchema(): array
+    {
+        return WebServerForm::getSchema();
+    }
+
     public static function form(Schema $schema): Schema
     {
-        return WebServerForm::configure($schema);
+        return $schema->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table
@@ -46,8 +49,6 @@ class WebServerResource extends Resource
     {
         return [
             'index' => ListWebServers::route('/'),
-            'create' => CreateWebServer::route('/create'),
-            'edit' => EditWebServer::route('/{record}/edit'),
         ];
     }
 }

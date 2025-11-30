@@ -4,13 +4,9 @@ namespace NetServa\Mail\Filament\Resources;
 
 use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Mail\Filament\Resources\MailLogResource\Pages\CreateMailLog;
-use NetServa\Mail\Filament\Resources\MailLogResource\Pages\EditMailLog;
 use NetServa\Mail\Filament\Resources\MailLogResource\Pages\ListMailLogs;
-use NetServa\Mail\Filament\Resources\MailLogResource\Schemas\MailLogForm;
 use NetServa\Mail\Filament\Resources\MailLogResource\Tables\MailLogsTable;
 use NetServa\Mail\Models\MailLog;
 use UnitEnum;
@@ -25,9 +21,9 @@ class MailLogResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
-    public static function form(Schema $schema): Schema
+    public static function canCreate(): bool
     {
-        return MailLogForm::configure($schema);
+        return false;
     }
 
     public static function table(Table $table): Table
@@ -46,8 +42,6 @@ class MailLogResource extends Resource
     {
         return [
             'index' => ListMailLogs::route('/'),
-            'create' => CreateMailLog::route('/create'),
-            'edit' => EditMailLog::route('/{record}/edit'),
         ];
     }
 }

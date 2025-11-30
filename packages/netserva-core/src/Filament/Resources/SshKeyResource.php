@@ -10,7 +10,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use NetServa\Core\Filament\Resources\SshKeyResource\Pages;
-use NetServa\Core\Filament\Resources\SshKeyResource\Schemas\SshKeyForm;
 use NetServa\Core\Filament\Resources\SshKeyResource\Tables\SshKeysTable;
 use NetServa\Core\Models\SshKey;
 
@@ -28,9 +27,14 @@ class SshKeyResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getFormSchema(): array
+    {
+        return SshKeysTable::getFormSchema();
+    }
+
     public static function form(Schema $schema): Schema
     {
-        return SshKeyForm::make($schema);
+        return $schema->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table

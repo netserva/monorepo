@@ -6,9 +6,12 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use NetServa\Dns\Filament\Resources\DnsZoneResource;
 
 class DnsZonesTable
 {
@@ -118,14 +121,21 @@ class DnsZonesTable
                     ->toggle(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Edit zone')
+                    ->modalWidth(Width::Medium)
+                    ->modalFooterActionsAlignment(Alignment::End)
+                    ->schema(fn () => DnsZoneResource::getFormSchema()),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete zone'),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('name', 'asc');
+            ->defaultSort('updated_at', 'desc');
     }
 }

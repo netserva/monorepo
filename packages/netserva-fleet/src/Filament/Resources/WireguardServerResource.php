@@ -3,14 +3,17 @@
 namespace NetServa\Fleet\Filament\Resources;
 
 use BackedEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use NetServa\Fleet\Filament\Resources\WireguardServerResource\Pages\CreateWireguardServer;
-use NetServa\Fleet\Filament\Resources\WireguardServerResource\Pages\EditWireguardServer;
 use NetServa\Fleet\Filament\Resources\WireguardServerResource\Pages\ListWireguardServers;
-use NetServa\Fleet\Filament\Resources\WireguardServerResource\Schemas\WireguardServerForm;
 use NetServa\Fleet\Filament\Resources\WireguardServerResource\Tables\WireguardServersTable;
 use NetServa\Fleet\Models\WireguardServer;
 use UnitEnum;
@@ -25,14 +28,38 @@ class WireguardServerResource extends Resource
 
     protected static ?int $navigationSort = 9;  // Alphabetical: Wireguard Servers
 
+    public static function getFormSchema(): array
+    {
+        return [
+            // Form fields will be defined here
+        ];
+    }
+
     public static function form(Schema $schema): Schema
     {
-        return WireguardServerForm::configure($schema);
+        return $schema->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table
     {
-        return WireguardServersTable::configure($table);
+        return WireguardServersTable::configure($table)
+            ->recordActions([
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Edit server')
+                    ->modalWidth(Width::Medium)
+                    ->modalFooterActionsAlignment(Alignment::End)
+                    ->schema(fn () => self::getFormSchema()),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->tooltip('Delete server'),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('updated_at', 'desc');
     }
 
     public static function getRelations(): array
@@ -46,8 +73,6 @@ class WireguardServerResource extends Resource
     {
         return [
             'index' => ListWireguardServers::route('/'),
-            'create' => CreateWireguardServer::route('/create'),
-            'edit' => EditWireguardServer::route('/{record}/edit'),
         ];
     }
 }

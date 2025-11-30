@@ -6,11 +6,16 @@ use Filament\Schemas\Schema;
 
 class WireguardPeerForm
 {
+    public static function getComponents(): array
+    {
+        return [
+            //
+        ];
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
-            ->components([
-                //
-            ]);
+            ->components(self::getComponents());
     }
 }

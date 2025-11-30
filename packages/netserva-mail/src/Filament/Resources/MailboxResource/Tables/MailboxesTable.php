@@ -2,10 +2,6 @@
 
 namespace NetServa\Mail\Filament\Resources\MailboxResource\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Tables\Table;
 
 class MailboxesTable
@@ -18,15 +14,6 @@ class MailboxesTable
             ])
             ->filters([
                 //
-            ])
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }
