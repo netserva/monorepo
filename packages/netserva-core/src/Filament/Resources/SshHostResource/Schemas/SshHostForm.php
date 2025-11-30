@@ -10,6 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use NetServa\Core\Models\SshKey;
 
@@ -61,36 +62,41 @@ class SshHostForm
                 ->hintIcon('heroicon-o-question-mark-circle')
                 ->hintIconTooltip('Key from ~/.ssh/keys/'),
 
-            Toggle::make('is_active')
-                ->label('Active')
-                ->default(true)
-                ->hintIcon('heroicon-o-question-mark-circle')
-                ->hintIconTooltip('Inactive hosts are not synced to ~/.ssh/hosts/'),
+            Section::make('Advanced Options')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    Toggle::make('is_active')
+                        ->label('Active')
+                        ->default(true)
+                        ->hintIcon('heroicon-o-question-mark-circle')
+                        ->hintIconTooltip('Inactive hosts are not synced to ~/.ssh/hosts/'),
 
-            TextInput::make('jump_host')
-                ->label('Jump Host (ProxyJump)')
-                ->placeholder('bastion')
-                ->hintIcon('heroicon-o-question-mark-circle')
-                ->hintIconTooltip('SSH alias to use as jump host'),
+                    TextInput::make('jump_host')
+                        ->label('Jump Host (ProxyJump)')
+                        ->placeholder('bastion')
+                        ->hintIcon('heroicon-o-question-mark-circle')
+                        ->hintIconTooltip('SSH alias to use as jump host'),
 
-            Textarea::make('proxy_command')
-                ->label('Proxy Command')
-                ->rows(2)
-                ->placeholder('ssh -W %h:%p bastion')
-                ->hintIcon('heroicon-o-question-mark-circle')
-                ->hintIconTooltip('Custom proxy command (advanced)'),
+                    Textarea::make('proxy_command')
+                        ->label('Proxy Command')
+                        ->rows(2)
+                        ->placeholder('ssh -W %h:%p bastion')
+                        ->hintIcon('heroicon-o-question-mark-circle')
+                        ->hintIconTooltip('Custom proxy command (advanced)'),
 
-            KeyValue::make('custom_options')
-                ->label('Custom SSH Options')
-                ->keyLabel('Option')
-                ->valueLabel('Value')
-                ->addActionLabel('Add Option')
-                ->hintIcon('heroicon-o-question-mark-circle')
-                ->hintIconTooltip('Additional SSH config options'),
+                    KeyValue::make('custom_options')
+                        ->label('Custom SSH Options')
+                        ->keyLabel('Option')
+                        ->valueLabel('Value')
+                        ->addActionLabel('Add Option')
+                        ->hintIcon('heroicon-o-question-mark-circle')
+                        ->hintIconTooltip('Additional SSH config options'),
 
-            Textarea::make('description')
-                ->rows(2)
-                ->placeholder('Optional description for this host'),
+                    Textarea::make('description')
+                        ->rows(2)
+                        ->placeholder('Optional description for this host'),
+                ]),
         ];
     }
 

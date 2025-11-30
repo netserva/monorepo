@@ -85,8 +85,6 @@
 
         /* Debug panel styling */
         .debug-panel {
-            background: #1e1e1e;
-            border: 1px solid #333;
             border-radius: 6px;
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             font-size: 12px;
@@ -96,7 +94,7 @@
             display: flex;
             justify-content: space-between;
             padding: 4px 0;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.2);
         }
 
         .debug-row:last-child {
@@ -104,6 +102,10 @@
         }
 
         .debug-label {
+            color: #666;
+        }
+
+        .dark .debug-label {
             color: #888;
         }
 
@@ -139,8 +141,6 @@
             </div>
         </div>
         <pre class="terminal-screen">@if($this->lastOutput !== null)<span class="terminal-prompt">{{ $this->lastHost }}$</span> {{ $this->lastCommand }}
-<span class="{{ $this->lastExitCode === 0 ? 'terminal-exit-success' : 'terminal-exit-error' }}">[Exit: {{ $this->lastExitCode }}]</span>
-
 {{ $this->lastOutput }}@else<span class="terminal-status">Ready to execute commands...</span>
 <span class="terminal-prompt">Tip:</span> Select a host, enter a command, and click "Run Command"
 <span class="terminal-prompt">Bash Mode:</span> Enable to load .bashrc aliases and functions (bash -ci)@endif</pre>
@@ -150,10 +150,7 @@
     @if ($this->showDebug)
         <x-filament::section class="mt-6">
             <x-slot name="heading">
-                <div class="flex items-center gap-2">
-                    <x-heroicon-o-bug-ant class="w-5 h-5" />
-                    Debug Information
-                </div>
+                🐛 Debug Information
             </x-slot>
 
             <div class="debug-panel p-4">

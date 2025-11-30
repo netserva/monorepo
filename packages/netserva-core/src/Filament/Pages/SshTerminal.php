@@ -38,9 +38,9 @@ class SshTerminal extends Page implements HasActions, HasSchemas
 
     protected static string|\UnitEnum|null $navigationGroup = 'Core';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 14;
 
-    protected static ?string $navigationLabel = 'SSH Terminal';
+    protected static ?string $navigationLabel = 'Terminal';
 
     protected static ?string $title = 'SSH Terminal';
 
@@ -180,7 +180,7 @@ class SshTerminal extends Page implements HasActions, HasSchemas
 
             $this->lastHost = $this->selectedHost;
             $this->lastCommand = $this->command;
-            $this->lastOutput = $result['output'] ?: ($result['error'] ?? 'No output');
+            $this->lastOutput = $this->filterOutput($result['output'] ?: ($result['error'] ?? 'No output'));
             $this->lastExitCode = $result['return_code'] ?? ($result['success'] ? 0 : 1);
             $this->executionTime = round((microtime(true) - $startTime) * 1000, 2);
 
@@ -223,5 +223,27 @@ class SshTerminal extends Page implements HasActions, HasSchemas
         $this->lastHost = null;
         $this->executionTime = null;
         $this->connectionInfo = null;
+    }
+
+    /**
+     * Filter out common bash warnings from terminal output
+     */
+    protected function filterOutput(string $output): string
+    {
+        $lines = explode("\n", $output);
+
+        $filtered = array_filter($lines, function ($line) {
+            // Filter out bash job control warnings
+            if (str_contains($line, 'bash: cannot set terminal process group')) {
+                return false;
+            }
+            if (str_contains($line, 'bash: no job control in this shell')) {
+                return false;
+            }
+
+            return true;
+        });
+
+        return implode("\n", $filtered);
     }
 }

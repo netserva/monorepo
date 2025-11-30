@@ -26,11 +26,14 @@ class ListSshKeys extends ListRecords
             CreateAction::make()
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
-                ->schema(fn () => SshKeysTable::getFormSchema()),
+                ->schema(fn () => SshKeysTable::getFormSchema())
+                ->createAnother(false),
             Action::make('generateKeyPair')
                 ->label('Generate Key Pair')
                 ->icon(Heroicon::OutlinedSparkles)
                 ->color('primary')
+                ->modalWidth(Width::Medium)
+                ->modalFooterActionsAlignment(Alignment::End)
                 ->form([
                     Forms\Components\TextInput::make('name')
                         ->required()

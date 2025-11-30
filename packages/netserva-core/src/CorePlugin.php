@@ -6,7 +6,6 @@ namespace NetServa\Core;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use NetServa\Core\Filament\Pages\CommandRunner;
 use NetServa\Core\Filament\Pages\Dashboard;
 use NetServa\Core\Filament\Pages\SshTerminal;
 use NetServa\Core\Filament\Resources\PluginResource;
@@ -27,7 +26,6 @@ use NetServa\Core\Filament\Widgets\SystemStatsOverview;
  * - SSH Terminal (execute remote commands)
  * - SSH Hosts (manage SSH host configs)
  * - SSH Keys (manage SSH key pairs)
- * - Commands (execute artisan commands)
  * - Settings, Plugins
  */
 class CorePlugin implements Plugin
@@ -43,7 +41,6 @@ class CorePlugin implements Plugin
         $panel->pages([
             Dashboard::class,
             SshTerminal::class,
-            CommandRunner::class,
         ]);
 
         // Register Core resources
