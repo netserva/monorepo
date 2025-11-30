@@ -130,20 +130,6 @@ class SshHostsTable
                     ->label('Active')
                     ->boolean(),
 
-                IconColumn::make('is_reachable')
-                    ->label('Reachable')
-                    ->boolean()
-                    ->trueIcon(Heroicon::OutlinedCheckCircle)
-                    ->falseIcon(Heroicon::OutlinedXCircle)
-                    ->trueColor('success')
-                    ->falseColor('danger'),
-
-                TextColumn::make('last_tested_at')
-                    ->label('Last Test')
-                    ->since()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
                 TextColumn::make('description')
                     ->limit(30)
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -163,8 +149,6 @@ class SshHostsTable
             ->filters([
                 TernaryFilter::make('is_active')
                     ->label('Active'),
-                TernaryFilter::make('is_reachable')
-                    ->label('Reachable'),
                 SelectFilter::make('identity_file')
                     ->label('SSH Key')
                     ->options(fn () => \NetServa\Core\Models\SshKey::pluck('name', 'name')->toArray()),
@@ -190,12 +174,6 @@ class SshHostsTable
                             $result = $service->exec($record->host, 'echo "Connection OK"');
 
                             if ($result['success']) {
-                                $record->update([
-                                    'is_reachable' => true,
-                                    'last_tested_at' => now(),
-                                    'last_error' => null,
-                                ]);
-
                                 Notification::make()
                                     ->success()
                                     ->title('Connection Successful')
@@ -205,12 +183,6 @@ class SshHostsTable
                                 throw new \Exception($result['error'] ?? 'Connection failed');
                             }
                         } catch (\Exception $e) {
-                            $record->update([
-                                'is_reachable' => false,
-                                'last_tested_at' => now(),
-                                'last_error' => $e->getMessage(),
-                            ]);
-
                             Notification::make()
                                 ->danger()
                                 ->title('Connection Failed')
@@ -277,18 +249,8 @@ class SshHostsTable
                             foreach ($records as $record) {
                                 try {
                                     $result = $service->exec($record->host, 'echo "OK"');
-                                    $record->update([
-                                        'is_reachable' => $result['success'],
-                                        'last_tested_at' => now(),
-                                        'last_error' => $result['success'] ? null : ($result['error'] ?? 'Failed'),
-                                    ]);
                                     $result['success'] ? $success++ : $failed++;
                                 } catch (\Exception $e) {
-                                    $record->update([
-                                        'is_reachable' => false,
-                                        'last_tested_at' => now(),
-                                        'last_error' => $e->getMessage(),
-                                    ]);
                                     $failed++;
                                 }
                             }
