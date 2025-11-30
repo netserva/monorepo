@@ -38,6 +38,7 @@ class WebApplicationsTable
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->paginated([5, 10, 25, 50, 100]);
     }
 }

@@ -136,6 +136,7 @@ class DnsZonesTable
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('updated_at', 'desc');
+            ->defaultSort('updated_at', 'desc')
+            ->paginated([5, 10, 25, 50, 100]);
     }
 }

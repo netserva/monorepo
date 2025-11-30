@@ -17,6 +17,7 @@ class MailLogsTable
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([])
-            ->toolbarActions([]);
+            ->toolbarActions([])
+            ->paginated([5, 10, 25, 50, 100]);
     }
 }

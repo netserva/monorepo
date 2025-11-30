@@ -180,7 +180,8 @@ class SshHostsTable
                     ->hiddenLabel()
                     ->tooltip('Delete SSH host'),
                 Action::make('testConnection')
-                    ->label('Test Connection')
+                    ->hiddenLabel()
+                    ->tooltip('Test Connection')
                     ->icon(Heroicon::OutlinedWifi)
                     ->color('success')
                     ->action(function (SshHost $record) {
@@ -218,7 +219,8 @@ class SshHostsTable
                         }
                     }),
                 Action::make('syncToFile')
-                    ->label('Sync to File')
+                    ->hiddenLabel()
+                    ->tooltip('Sync to File')
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('warning')
                     ->action(function (SshHost $record) {
@@ -238,7 +240,8 @@ class SshHostsTable
                         }
                     }),
                 Action::make('syncFromFile')
-                    ->label('Sync from File')
+                    ->hiddenLabel()
+                    ->tooltip('Sync from File')
                     ->icon(Heroicon::OutlinedArrowDownTray)
                     ->color('info')
                     ->action(function (SshHost $record) {
@@ -318,6 +321,6 @@ class SshHostsTable
             ])
             ->defaultSort('updated_at', 'desc')
             ->striped()
-            ->paginated([25, 50, 100]);
+            ->paginated([5, 10, 25, 50, 100]);
     }
 }

@@ -14,6 +14,7 @@ class WireguardPeersTable
             ])
             ->filters([
                 //
-            ]);
+            ])
+            ->paginated([5, 10, 25, 50, 100]);
     }
 }

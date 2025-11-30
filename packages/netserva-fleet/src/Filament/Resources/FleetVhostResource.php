@@ -419,7 +419,8 @@ class FleetVhostResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('domain');
+            ->defaultSort('domain')
+            ->paginated([5, 10, 25, 50, 100]);
     }
 
     public static function infolist(Schema $schema): Schema

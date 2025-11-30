@@ -150,7 +150,7 @@ class CommandRunner extends Page implements HasActions, HasSchemas, HasTable
             ])
             ->defaultSort('name')
             ->striped()
-            ->paginated([25, 50, 100, 'all'])
+            ->paginated([5, 10, 25, 50, 100, 'all'])
             ->defaultPaginationPageOption(50);
     }
 

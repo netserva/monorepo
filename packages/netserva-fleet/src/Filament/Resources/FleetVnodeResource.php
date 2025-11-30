@@ -384,7 +384,8 @@ class FleetVnodeResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('name');
+            ->defaultSort('name')
+            ->paginated([5, 10, 25, 50, 100]);
     }
 
     public static function infolist(Schema $schema): Schema

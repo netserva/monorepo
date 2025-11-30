@@ -203,6 +203,6 @@ class SshKeysTable
             ])
             ->defaultSort('updated_at', 'desc')
             ->striped()
-            ->paginated([25, 50, 100]);
+            ->paginated([5, 10, 25, 50, 100]);
     }
 }
