@@ -47,6 +47,11 @@ class PluginsTable
                     ->trueColor('success')
                     ->falseColor('danger')
                     ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated')
+                    ->since()
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_enabled')

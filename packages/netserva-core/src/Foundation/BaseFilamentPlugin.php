@@ -59,8 +59,6 @@ abstract class BaseFilamentPlugin implements Plugin
         $this->registerWidgets($panel);
         $this->registerNavigationItems($panel);
         $this->registerAssets($panel);
-
-        Log::info("Plugin {$this->getId()} registered successfully");
     }
 
     /**
@@ -75,8 +73,6 @@ abstract class BaseFilamentPlugin implements Plugin
         // Plugin-specific boot logic
         $this->bootPlugin($panel);
         $this->booted = true;
-
-        Log::info("Plugin {$this->getId()} booted successfully");
     }
 
     // ================================
