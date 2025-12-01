@@ -16,6 +16,7 @@ class ListWebServers extends ListRecords
     {
         return [
             CreateAction::make()
+                ->createAnother(false)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => WebServerResource::getFormSchema()),

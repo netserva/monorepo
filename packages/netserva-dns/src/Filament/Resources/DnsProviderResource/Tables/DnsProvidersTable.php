@@ -208,6 +208,7 @@ class DnsProvidersTable
             ])
             ->headerActions([
                 CreateAction::make()
+                    ->createAnother(false)
                     ->modalWidth(Width::ExtraLarge)
                     ->modalFooterActionsAlignment(Alignment::End)
                     ->schema(fn () => DnsProviderForm::getFormSchema()),

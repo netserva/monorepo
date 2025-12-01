@@ -11,6 +11,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use NetServa\Fleet\Filament\Resources\IpamResource\Pages\ListIpam;
 use NetServa\Fleet\Filament\Resources\IpamResource\Pages\ManageAddresses;
+use NetServa\Fleet\Filament\Resources\IpamResource\Pages\ManageReservations;
 use NetServa\Fleet\Filament\Resources\IpamResource\Schemas\NetworkForm;
 use NetServa\Fleet\Filament\Resources\IpamResource\Tables\IpamTable;
 use NetServa\Fleet\Models\IpNetwork;
@@ -36,7 +37,7 @@ class IpamResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Networks';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {
@@ -58,6 +59,7 @@ class IpamResource extends Resource
         return [
             'index' => ListIpam::route('/'),
             'addresses' => ManageAddresses::route('/{record}/addresses'),
+            'reservations' => ManageReservations::route('/{record}/reservations'),
         ];
     }
 }

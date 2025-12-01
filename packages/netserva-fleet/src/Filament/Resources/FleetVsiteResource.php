@@ -39,7 +39,7 @@ class FleetVsiteResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 7;  // Alphabetical: VSites
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

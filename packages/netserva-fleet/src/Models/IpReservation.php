@@ -21,8 +21,6 @@ class IpReservation extends Model
         'end_ip',
         'name',
         'description',
-        'reservation_type',
-        'purpose',
         'is_active',
         'address_count',
     ];
@@ -30,12 +28,6 @@ class IpReservation extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'address_count' => 'integer',
-    ];
-
-    // Reservation types
-    public const RESERVATION_TYPES = [
-        'static_range' => 'Static Range',
-        'future_allocation' => 'Future Allocation',
     ];
 
     /**
@@ -123,11 +115,6 @@ class IpReservation extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
-    }
-
-    public function scopeByType($query, string $type)
-    {
-        return $query->where('reservation_type', $type);
     }
 
     public function scopeByNetwork($query, IpNetwork $network)

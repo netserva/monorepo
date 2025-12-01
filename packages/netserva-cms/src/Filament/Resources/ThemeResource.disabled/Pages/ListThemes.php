@@ -28,6 +28,7 @@ class ListThemes extends ListRecords
     {
         return [
             CreateAction::make()
+                ->createAnother(false)
                 ->label('Create Theme'),
         ];
     }

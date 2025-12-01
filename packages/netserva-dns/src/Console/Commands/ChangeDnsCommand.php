@@ -5,8 +5,6 @@ namespace NetServa\Dns\Console\Commands;
 use Illuminate\Console\Command;
 use NetServa\Dns\Services\DnsProviderManagementService;
 
-use function Laravel\Prompts\confirm;
-
 /**
  * Change DNS Provider Command
  *

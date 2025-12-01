@@ -43,7 +43,7 @@ class FleetVnodeResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 6;  // Alphabetical: VNodes
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {

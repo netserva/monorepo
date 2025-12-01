@@ -22,8 +22,6 @@ use NetServa\Dns\Filament\Resources\DomainRegistrationResource;
  * - Domain registration tracking
  * - PowerDNS integration
  * - Multiple DNS provider support
- *
- * @package NetServa\Dns\Filament
  */
 class NetServaDnsPlugin extends BaseFilamentPlugin
 {

@@ -20,6 +20,7 @@ class ListSettings extends ListRecords
     {
         return [
             CreateAction::make()
+                ->createAnother(false)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => SettingForm::getFormSchema())

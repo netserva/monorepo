@@ -62,13 +62,13 @@ class DeleteDnsCommand extends Command
         $this->newLine();
 
         $this->info('Impact Analysis:');
-        $this->line("  Zones:      <fg=".($zonesCount > 0 ? 'red' : 'green').">{$zonesCount}</>");
+        $this->line('  Zones:      <fg='.($zonesCount > 0 ? 'red' : 'green').">{$zonesCount}</>");
 
         if (! empty($usage)) {
-            $this->line("  Venues:     <fg=".($usage['venues'] > 0 ? 'red' : 'gray').">{$usage['venues']}</>");
-            $this->line("  VSites:     <fg=".($usage['vsites'] > 0 ? 'red' : 'gray').">{$usage['vsites']}</>");
-            $this->line("  VNodes:     <fg=".($usage['vnodes'] > 0 ? 'red' : 'gray').">{$usage['vnodes']}</>");
-            $this->line("  VHosts:     <fg=".($usage['vhosts'] > 0 ? 'red' : 'gray').">{$usage['vhosts']}</>");
+            $this->line('  Venues:     <fg='.($usage['venues'] > 0 ? 'red' : 'gray').">{$usage['venues']}</>");
+            $this->line('  VSites:     <fg='.($usage['vsites'] > 0 ? 'red' : 'gray').">{$usage['vsites']}</>");
+            $this->line('  VNodes:     <fg='.($usage['vnodes'] > 0 ? 'red' : 'gray').">{$usage['vnodes']}</>");
+            $this->line('  VHosts:     <fg='.($usage['vhosts'] > 0 ? 'red' : 'gray').">{$usage['vhosts']}</>");
         }
 
         $this->newLine();
@@ -204,7 +204,7 @@ class DeleteDnsCommand extends Command
                 if (isset($result['usage'])) {
                     foreach ($result['usage'] as $type => $count) {
                         if ($count > 0) {
-                            $this->line("  ".ucfirst($type).": {$count}");
+                            $this->line('  '.ucfirst($type).": {$count}");
                         }
                     }
                 }

@@ -146,13 +146,13 @@ class PluginsTable
                             Notification::make()
                                 ->success()
                                 ->title('Plugin Synced')
-                                ->body("Updated metadata from composer.json")
+                                ->body('Updated metadata from composer.json')
                                 ->send();
                         } else {
                             Notification::make()
                                 ->warning()
                                 ->title('Sync Failed')
-                                ->body("Could not read composer.json for this plugin")
+                                ->body('Could not read composer.json for this plugin')
                                 ->send();
                         }
                     }),

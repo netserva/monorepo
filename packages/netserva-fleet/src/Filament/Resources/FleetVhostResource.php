@@ -41,7 +41,7 @@ class FleetVhostResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 5;  // Alphabetical: VHosts
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

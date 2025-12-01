@@ -7,8 +7,8 @@
  * @license https://github.com/synergywholesale/whmcs-domains-module/LICENSE
  */
 
-use Illuminate\Database\Capsule\Manager as Capsule;
 use Carbon\Carbon;
+use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Support\Str;
 use WHMCS\Module\Queue;
 
@@ -42,25 +42,26 @@ function synergywholesaledomains_webRequest($url, $method = 'GET', array $params
     curl_setopt($ch, CURLOPT_TIMEOUT, 5);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
-    if ('POST' === $method) {
+    if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
     }
 
     $response = curl_exec($ch);
 
-    if (0 !== curl_errno($ch)) {
+    if (curl_errno($ch) !== 0) {
         $info = curl_getinfo($ch);
-        throw new \Exception('Curl error: ' . curl_error($ch), $info[CURLINFO_RESPONSE_CODE]);
+        throw new \Exception('Curl error: '.curl_error($ch), $info[CURLINFO_RESPONSE_CODE]);
     }
 
     curl_close($ch);
+
     return $response;
 }
 
 function synergywholesaledomains_helper_getDomain(array $params)
 {
-    return $params['sld'] . '.' . $params['tld'];
+    return $params['sld'].'.'.$params['tld'];
 }
 
 function synergywholesaledomains_helper_getNameservers(array $params)
@@ -80,15 +81,14 @@ function synergywholesaledomains_helper_getNameservers(array $params)
 /**
  * Sends the API requests to the Synergy Wholesale API.
  *
- * @param string    $command        The Command to run send to the API
- * @param array     $params         The WHMCS parameters that come from the calling function
- * @param array     $request        The data that makes up the API request
- * @param bool      $throw_on_error Throw an exception if the API returns an error
- * @param bool      $force_domain   Insert the "domainName" element if it is not present
+ * @param  string  $command  The Command to run send to the API
+ * @param  array  $params  The WHMCS parameters that come from the calling function
+ * @param  array  $request  The data that makes up the API request
+ * @param  bool  $throw_on_error  Throw an exception if the API returns an error
+ * @param  bool  $force_domain  Insert the "domainName" element if it is not present
+ * @return array
  *
  * @throws \Exception
- *
- * @return array
  */
 function synergywholesaledomains_apiRequest($command, array $params = [], array $request = [], $throw_on_error = true, $force_domain = true)
 {
@@ -110,16 +110,16 @@ function synergywholesaledomains_apiRequest($command, array $params = [], array 
 
     $request = array_merge($request, $analytics);
 
-    if (!isset($request['resellerID']) || !isset($request['apiKey'])) {
+    if (! isset($request['resellerID']) || ! isset($request['apiKey'])) {
         $request = array_merge($request, $auth);
     }
 
-    if (!isset($request['domainName']) && $force_domain) {
-        $request['domainName'] = $params['sld'] . '.' . $params['tld'];
+    if (! isset($request['domainName']) && $force_domain) {
+        $request['domainName'] = $params['sld'].'.'.$params['tld'];
     }
 
     $client = new \SoapClient(null, [
-        'location' => API_ENDPOINT . '/?wsdl',
+        'location' => API_ENDPOINT.'/?wsdl',
         'uri' => '',
         'trace' => true,
     ]);
@@ -135,14 +135,13 @@ function synergywholesaledomains_apiRequest($command, array $params = [], array 
             // Convert SOAP Faults to Exceptions
             throw new \Exception($e->getMessage());
         }
-        
+
         return [
             'error' => $e->getMessage(),
         ];
     }
 
-
-    if (!preg_match('/^(OK|AVAILABLE).*?/', $response->status)) {
+    if (! preg_match('/^(OK|AVAILABLE).*?/', $response->status)) {
         if ($throw_on_error) {
             throw new \Exception($response->errorMessage);
         }
@@ -158,10 +157,9 @@ function synergywholesaledomains_apiRequest($command, array $params = [], array 
 /**
  * Gets the contacts from the provided paramters
  *
- * @param      arrray  $params    The parameters
- * @param      array   $contacts  The requested contacts/contactMap
- *
- * @return     array   The contacts.
+ * @param  arrray  $params  The parameters
+ * @param  array  $contacts  The requested contacts/contactMap
+ * @return array The contacts.
  */
 function synergywholesaledomains_helper_getContacts(array $params, array $contacts = [])
 {
@@ -197,45 +195,47 @@ function synergywholesaledomains_helper_getContacts(array $params, array $contac
     foreach ($contacts as $sw_contact => $whmcs_contact) {
         foreach ($contactMap as $destination => $source) {
             if (is_array($source)) {
-                $request[$sw_contact . $destination] = [];
+                $request[$sw_contact.$destination] = [];
                 foreach ($source as $key) {
-                    $request[$sw_contact . $destination][] = $params[$whmcs_contact . $key];
+                    $request[$sw_contact.$destination][] = $params[$whmcs_contact.$key];
                 }
+
                 continue;
             }
 
-            if ('phone' === $destination) {
+            if ($destination === 'phone') {
                 $phoneNumber = synergywholesaledomains_formatPhoneNumber(
-                    $params[$whmcs_contact . $source],
-                    $params[$whmcs_contact . 'country'],
-                    $params[$whmcs_contact . 'state'],
-                    $params[$whmcs_contact . 'phonecc']
+                    $params[$whmcs_contact.$source],
+                    $params[$whmcs_contact.'country'],
+                    $params[$whmcs_contact.'state'],
+                    $params[$whmcs_contact.'phonecc']
                 );
 
-                $request[$sw_contact . 'phone'] = $phoneNumber;
+                $request[$sw_contact.'phone'] = $phoneNumber;
+
                 continue;
             }
 
-            if ('country' === $destination) {
-                if (!synergywholesaledomains_validateCountry($params[$whmcs_contact . $source])) {
+            if ($destination === 'country') {
+                if (! synergywholesaledomains_validateCountry($params[$whmcs_contact.$source])) {
                     return [
                         'error' => 'Country must be entered as 2 characters - ISO 3166 Standard. EG. AU',
                     ];
                 }
             }
 
-            if ('state' === $destination && 'AU' === $params[$whmcs_contact . 'country']) {
-                $state = synergywholesaledomains_validateAUState($params[$whmcs_contact . 'state']);
-                if (!$state) {
+            if ($destination === 'state' && $params[$whmcs_contact.'country'] === 'AU') {
+                $state = synergywholesaledomains_validateAUState($params[$whmcs_contact.'state']);
+                if (! $state) {
                     return [
                         'error' => 'A Valid Australian State Name Must Be Supplied, EG. NSW, VIC',
                     ];
                 }
 
-                $params[$whmcs_contact . $source] = $state;
+                $params[$whmcs_contact.$source] = $state;
             }
 
-            $request[$sw_contact . $destination] = $params[$whmcs_contact . $source];
+            $request[$sw_contact.$destination] = $params[$whmcs_contact.$source];
         }
     }
 
@@ -245,7 +245,7 @@ function synergywholesaledomains_helper_getContacts(array $params, array $contac
 /**
  * Sends AJAX response
  *
- * @param      array  $data   The data
+ * @param  array  $data  The data
  */
 function synergywholesaledomains_ajaxResponse(array $data, $response_code = 200)
 {
@@ -319,7 +319,7 @@ function synergywholesaledomains_getConfigArray(array $params)
                 '4' => 'FreeDNS',
                 '5' => 'SWS Account Default',
                 '6' => 'Legacy Hosting',
-                '7' => 'Wholesale Hosting'
+                '7' => 'Wholesale Hosting',
             ],
             'Description' => 'Which Default DNS Config will be applied to newly registered domains',
         ],
@@ -336,14 +336,14 @@ function synergywholesaledomains_getConfigArray(array $params)
             'Description' => 'Tick if you wish to enable email forwarding on the domain, if Default DNS supports it.',
         ],
         'Version' => [
-            'Description' => 'This module version: ' . SW_MODULE_VERSION,
+            'Description' => 'This module version: '.SW_MODULE_VERSION,
         ],
         '' => [
             'Description' => '<b>Having trouble?</b> Login to the Synergy Wholesale Management Console and <a style="text-decoration:underline;" target="_blank" href="https://manage.synergywholesale.com/home/support/new">create a new support request.</a>',
         ],
     ];
 
-    if (isset($params['test_api_connection']) && 'on' === $params['test_api_connection']) {
+    if (isset($params['test_api_connection']) && $params['test_api_connection'] === 'on') {
         try {
             $ipAddress = synergywholesaledomains_webRequest(WHATS_MY_IP_URL);
         } catch (\Exception $e) {
@@ -365,7 +365,7 @@ function synergywholesaledomains_getConfigArray(array $params)
                     $balance = synergywholesaledomains_apiRequest('balanceQuery', $params);
                     $apiAuth = '<b style="color:#1EB600">OK</b>';
                 } catch (\Exception $e) {
-                    $apiAuth = '<b style="color:#FF0000;">' . $e->getMessage() . '</b>';
+                    $apiAuth = '<b style="color:#FF0000;">'.$e->getMessage().'</b>';
                 }
                 break;
             case 403:
@@ -408,7 +408,6 @@ function synergywholesaledomains_getConfigArray(array $params)
 /**
  * Get the nameservers from the Synergy Wholesale API via the "domainInfo" command.
  *
- * @param array $params
  *
  * @return array
  */
@@ -429,9 +428,8 @@ function synergywholesaledomains_getNameservers(array $params, $include_dns_conf
     }
 
     foreach ($response['nameServers'] as $index => $value) {
-        $values['ns' . ($index + 1)] = strtolower($value);
+        $values['ns'.($index + 1)] = strtolower($value);
     }
-
 
     return $values;
 }
@@ -439,7 +437,6 @@ function synergywholesaledomains_getNameservers(array $params, $include_dns_conf
 /**
  * Updates a domain names nameservers.
  *
- * @param array $params
  *
  * @return array|void
  */
@@ -458,16 +455,16 @@ function synergywholesaledomains_SaveNameservers(array $params)
 /**
  * Returns the transfer lock status (if supported).
  *
- * @param array $params common module parameters
- *
+ * @param  array  $params  common module parameters
  * @return string|array|null Lock status or error message, or nothing if not supported.
  */
 function synergywholesaledomains_GetRegistrarLock(array $params)
 {
-    if (!preg_match('/\.?(au|uk)$/i', $params['tld'])) {
+    if (! preg_match('/\.?(au|uk)$/i', $params['tld'])) {
         try {
             $response = synergywholesaledomains_apiRequest('domainInfo', $params);
-            $locked = 'clientTransferProhibited' === $response['domain_status'];
+            $locked = $response['domain_status'] === 'clientTransferProhibited';
+
             return $locked ? 'locked' : 'unlocked';
         } catch (\Exception $e) {
             return [
@@ -482,8 +479,7 @@ function synergywholesaledomains_GetRegistrarLock(array $params)
 /**
  * Set registrar lock status.
  *
- * @param  $params common module parameters
- *
+ * @param  $params  common module parameters
  * @return array|void
  */
 function synergywholesaledomains_SaveRegistrarLock(array $params)
@@ -495,14 +491,14 @@ function synergywholesaledomains_SaveRegistrarLock(array $params)
         ];
     }
 
-    $command = 'locked' === $locked ? 'unlockDomain' : 'lockDomain';
+    $command = $locked === 'locked' ? 'unlockDomain' : 'lockDomain';
+
     return synergywholesaledomains_apiRequest($command, $params, [], false);
 }
 
 /**
  * .UK domain push function.
  *
- * @param array $params
  *
  * @return array
  */
@@ -516,7 +512,6 @@ function synergywholesaledomains_ReleaseDomain(array $params)
 /**
  * Domain name registration function.
  *
- * @param array $params
  *
  * @return array
  */
@@ -537,7 +532,7 @@ function synergywholesaledomains_RegisterDomain(array $params)
         $eligibility['registrantName'] = $params['additionalfields']['Registrant Name'];
         $eligibility['registrantID'] = $params['additionalfields']['Registrant ID'];
 
-        if ('Business Registration Number' === $params['additionalfields']['Registrant ID Type']) {
+        if ($params['additionalfields']['Registrant ID Type'] === 'Business Registration Number') {
             $params['additionalfields']['Registrant ID Type'] = 'OTHER';
         }
 
@@ -550,7 +545,7 @@ function synergywholesaledomains_RegisterDomain(array $params)
             $matches
         );
 
-        list(,, $brn) = $matches;
+        [, , $brn] = $matches;
         if (synergywholesaledomains_validateAUState($brn)) {
             $brn .= ' BN';
         }
@@ -559,9 +554,8 @@ function synergywholesaledomains_RegisterDomain(array $params)
         $eligibility['eligibilityID'] = $params['additionalfields']['Eligibility ID'];
         $eligibility['eligibilityName'] = $params['additionalfields']['Eligibility Name'];
 
-
         // .AU Direct
-        if (!empty($params['additionalfields']['Priority contact ID']) && !empty($params['additionalfields']['Priority authInfo'])) {
+        if (! empty($params['additionalfields']['Priority contact ID']) && ! empty($params['additionalfields']['Priority authInfo'])) {
             $eligibility['associationID'] = $params['additionalfields']['Priority contact ID'];
             $eligibility['associationAuthInfo'] = $params['additionalfields']['Priority authInfo'];
         }
@@ -574,10 +568,9 @@ function synergywholesaledomains_RegisterDomain(array $params)
         $eligibility['optout'] = $params['additionalfields']['WHOIS Opt-out'];
     }
 
-
     if (preg_match('/\.?us$/', $params['tld'])) {
         $eligibility['nexusCategory'] = $params['additionalfields']['Nexus Category'];
-        if (!empty($params['additionalfields']['Nexus Country'])) {
+        if (! empty($params['additionalfields']['Nexus Country'])) {
             $eligibility['nexusCountry'] = $params['additionalfields']['Nexus Country'];
         }
 
@@ -606,12 +599,12 @@ function synergywholesaledomains_RegisterDomain(array $params)
         }
     }
 
-    if (!empty($eligibility)) {
+    if (! empty($eligibility)) {
         $request['eligibility'] = json_encode($eligibility);
     }
 
     // "premiumCost" is the price the API returned on "CheckAvailability"
-    if (isset($params['premiumEnabled']) && $params['premiumEnabled'] && !empty($params['premiumCost'])) {
+    if (isset($params['premiumEnabled']) && $params['premiumEnabled'] && ! empty($params['premiumCost'])) {
         $request['costPrice'] = $params['premiumCost'];
         $request['premium'] = true;
     }
@@ -632,13 +625,12 @@ function synergywholesaledomains_RegisterDomain(array $params)
 /**
  * Transfer domain name functionality.
  *
- * @param array $params
  *
  * @return array
  */
 function synergywholesaledomains_TransferDomain(array $params)
 {
-     // This is a lazy way of getting the contact data in the format we need.
+    // This is a lazy way of getting the contact data in the format we need.
     $contact = synergywholesaledomains_helper_getContacts($params, ['' => '']);
 
     if (preg_match('/\.?uk$/', $params['tld'])) {
@@ -651,14 +643,14 @@ function synergywholesaledomains_TransferDomain(array $params)
 
     $canRenew = synergywholesaledomains_apiRequest('domainRenewRequired', $params, $request, false);
 
-    $forceAuRenewal = ('on' === $params['doRenewal']);
-    
+    $forceAuRenewal = ($params['doRenewal'] === 'on');
+
     $canRenewDomain = $canRenew['status'] === 'OK_RENEWAL';
 
     $request['doRenewal'] = $canRenewDomain;
 
     // If this is an AU domain and we have disabled forcing .au renewals, disable doRenewal on the request
-    if (preg_match('/\.?au$/', $params['tld']) && !$forceAuRenewal) {
+    if (preg_match('/\.?au$/', $params['tld']) && ! $forceAuRenewal) {
         $request['doRenewal'] = false;
     }
 
@@ -671,31 +663,30 @@ function synergywholesaledomains_TransferDomain(array $params)
     // Merge contact data into request
     $request = array_merge($request, $contact);
 
-    if (isset($params['premiumEnabled']) && $params['premiumEnabled'] && !empty($params['premiumCost'])) {
+    if (isset($params['premiumEnabled']) && $params['premiumEnabled'] && ! empty($params['premiumCost'])) {
         $request['costPrice'] = $params['premiumCost'];
         $request['premium'] = true;
     }
-    
+
     return synergywholesaledomains_apiRequest('transferDomain', $params, $request, false);
 }
 
 /**
  * Enable or Disables ID Protection.
  *
- * @param array $params
  *
  * @return array
  */
 function synergywholesaledomains_IDProtectToggle(array $params)
 {
     $command = $params['protectenable'] ? 'enableIDProtection' : 'disableIDProtection';
+
     return synergywholesaledomains_apiRequest($command, $params, [], false);
 }
 
 /**
  * Renew domain name function.
  *
- * @param array $params
  *
  * @return array
  */
@@ -705,7 +696,7 @@ function synergywholesaledomains_RenewDomain(array $params)
         'years' => $params['regperiod'],
     ];
 
-    if (isset($params['premiumEnabled']) && $params['premiumEnabled'] && !empty($params['premiumCost'])) {
+    if (isset($params['premiumEnabled']) && $params['premiumEnabled'] && ! empty($params['premiumCost'])) {
         $request['costPrice'] = $params['premiumCost'];
         $request['premium'] = true;
     }
@@ -713,14 +704,12 @@ function synergywholesaledomains_RenewDomain(array $params)
     return synergywholesaledomains_apiRequest('renewDomain', $params, $request, false);
 }
 
-
 /**
  * Synergy Wholesale uses a custom function instead of this.
  *
  * This is because the default WHMCS behaviour does not support SRV records.
  * We still register this so the "dnsmanagement" condition is met.
  *
- * @param array $params
  *
  * @return array
  */
@@ -737,7 +726,6 @@ function synergywholesaledomains_GetDNS(array $params)
 /**
  * This function will save any dns records to the database
  *
- * @param array $params
  *
  * @return array
  */
@@ -749,7 +737,6 @@ function synergywholesaledomains_SaveDNS(array $params)
 /**
  * Syncs the domain name with the information in Synergy Wholesale.
  *
- * @param array $params
  *
  * @return array
  */
@@ -761,10 +748,10 @@ function synergywholesaledomains_Sync(array $params)
             ->where('domainid', $params['domainid'])
             ->where('name', 'Priority contact ID')
             ->first();
-        
+
         $response = synergywholesaledomains_apiRequest(
             'domainInfo',
-            $params, 
+            $params,
             ['associationID' => $associationId->value ?? null],
             false
         );
@@ -794,14 +781,14 @@ function synergywholesaledomains_Sync(array $params)
         $check = synergywholesaledomains_apiRequest('checkDomain', $params, [
             'command' => 'renew',
         ]);
-        
+
         if ($check['premium']) {
             // Get the currency ID for AUD
             $currency = Capsule::table('tblcurrencies')
                 ->select('id')
                 ->where('code', 'AUD')
                 ->first();
-            if (!isset($currency->id)) {
+            if (! isset($currency->id)) {
                 return [
                     'error' => 'Failed to find AUD in currency table.',
                 ];
@@ -839,11 +826,11 @@ function synergywholesaledomains_Sync(array $params)
                         'value' => $currency->id,
                     ]
                 );
-        } elseif (!$check['premium'] && $domain->is_premium) {
+        } elseif (! $check['premium'] && $domain->is_premium) {
             // Mark as not premium and recalculate the recurring amount.
             $pricing = localAPI('GetTLDPricing')['pricing'];
             $recurringamount = $pricing[$params['tld']]['renew'][$domain->registrationperiod];
-            
+
             Capsule::table('tbldomains')
                 ->where('id', $params['domainid'])
                 ->update([
@@ -876,7 +863,7 @@ function synergywholesaledomains_Sync(array $params)
                 if (empty($response[$apiName])) {
                     continue;
                 }
-                if ('auPolicyID' === $apiName) {
+                if ($apiName === 'auPolicyID') {
                     switch ($response[$apiName]) {
                         case 1:
                             $response[$apiName] = 'Domain name is an Exact Match Abbreviation or Acronym of your Entity or Trading Name.';
@@ -890,7 +877,7 @@ function synergywholesaledomains_Sync(array $params)
                     ->updateOrInsert(
                         [
                             'domainid' => $params['domainid'],
-                            'name' => $whmcsName
+                            'name' => $whmcsName,
                         ],
                         ['value' => $response[$apiName]]
                     );
@@ -916,10 +903,10 @@ function synergywholesaledomains_Sync(array $params)
                 $note = 'Domain has been marked as transferred away due to not being in your account';
                 $returnData['transferredAway'] = true;
             }
-        } elseif (!isset($response['domain_status'])) {
+        } elseif (! isset($response['domain_status'])) {
             return [
-                'active' => 'Active' === $selectInfo->status,
-                'expired' => 'Active' !== $selectInfo->status,
+                'active' => $selectInfo->status === 'Active',
+                'expired' => $selectInfo->status !== 'Active',
             ];
         } else {
             switch (strtolower($response['domain_status'])) {
@@ -964,7 +951,7 @@ function synergywholesaledomains_Sync(array $params)
                     ];
                     break;
                 case 'application_pending':
-                // Application Approved and Rejected are transitional statuses, meaning Approved will eventually turn into OK and Rejected will turn into Deleted
+                    // Application Approved and Rejected are transitional statuses, meaning Approved will eventually turn into OK and Rejected will turn into Deleted
                 case 'application_approved':
                 case 'application_rejected':
                 case 'register_au_identity_verification':
@@ -997,7 +984,7 @@ function synergywholesaledomains_Sync(array $params)
                 ->where('id', $params['domainid'])
                 ->update(
                     [
-                        'additionalnotes' => $selectInfo->additionalnotes . PHP_EOL . date('d/m/Y') . ' - Sync Cron - ' . $note,
+                        'additionalnotes' => $selectInfo->additionalnotes.PHP_EOL.date('d/m/Y').' - Sync Cron - '.$note,
                     ]
                 );
         }
@@ -1008,12 +995,10 @@ function synergywholesaledomains_Sync(array $params)
     return $returnData;
 }
 
-
 /**
  * Syncs the appropriate WHMCS status with the relevent
  * domain status in Synergy Wholesale.
  *
- * @param array $params
  *
  * @return array
  */
@@ -1026,7 +1011,7 @@ function synergywholesaledomains_TransferSync(array $params)
             return [
                 'completed' => false,
                 'failed' => true,
-                'reason' => 'Domain has been marked as cancelled due to not being in your account'
+                'reason' => 'Domain has been marked as cancelled due to not being in your account',
             ];
         }
 
@@ -1035,7 +1020,7 @@ function synergywholesaledomains_TransferSync(array $params)
         ];
     }
 
-    if (!isset($response['domain_status'])) {
+    if (! isset($response['domain_status'])) {
         if (isset($response['transfer_status'])
             && isset($response['status'])
             && in_array($response['status'], ['OK_TRANSFER_TIMEOUT', 'OK_TRANSFER_REJECTED', 'OK_TRANSFER_CANCELLED'])) {
@@ -1043,9 +1028,10 @@ function synergywholesaledomains_TransferSync(array $params)
             return [
                 'completed' => false,
                 'failed' => true,
-                'reason' => 'Transfer was either rejected, cancelled or timed out'
+                'reason' => 'Transfer was either rejected, cancelled or timed out',
             ];
         }
+
         return [
             'completed' => false,
         ];
@@ -1083,7 +1069,6 @@ function synergywholesaledomains_TransferSync(array $params)
 /**
  * Updates the contacts on a domain name.
  *
- * @param array $params
  *
  * @return array|void
  */
@@ -1091,20 +1076,20 @@ function synergywholesaledomains_SaveContactDetails(array $params)
 {
     $request = [];
     $contactTypes = [
-        'registrant' => 'Registrant', 
+        'registrant' => 'Registrant',
         'admin' => 'Admin',
         'technical' => 'Tech',
         'billing' => 'Billing',
     ];
 
     foreach ($contactTypes as $contactType => $whmcs_contact) {
-        if (!isset($params['contactdetails'][$whmcs_contact])) {
+        if (! isset($params['contactdetails'][$whmcs_contact])) {
             continue;
         }
 
         $request["{$contactType}_firstname"] = $params['contactdetails'][$whmcs_contact]['First Name'];
-        $request["{$contactType}_lastname"]  = $params['contactdetails'][$whmcs_contact]['Last Name'];
-        
+        $request["{$contactType}_lastname"] = $params['contactdetails'][$whmcs_contact]['Last Name'];
+
         $request["{$contactType}_address"] = [
             $params['contactdetails'][$whmcs_contact]['Address 1'],
             $params['contactdetails'][$whmcs_contact]['Address 2'],
@@ -1115,12 +1100,12 @@ function synergywholesaledomains_SaveContactDetails(array $params)
         $request["{$contactType}_suburb"] = $params['contactdetails'][$whmcs_contact]['City'];
         $request["{$contactType}_postcode"] = $params['contactdetails'][$whmcs_contact]['Postcode'];
 
-        if (!preg_match('/\.?uk$/', $params['tld'])) {
+        if (! preg_match('/\.?uk$/', $params['tld'])) {
             $request["{$contactType}_organisation"] = $params['contactdetails'][$whmcs_contact]['Organisation'] ?? $params['contactdetails'][$whmcs_contact]['Organisation Name'] ?? $params['contactdetails'][$whmcs_contact]['Company Name'];
         }
 
         // Validate the country being specified
-        if (!synergywholesaledomains_validateCountry($params['contactdetails'][$whmcs_contact]['Country'])) {
+        if (! synergywholesaledomains_validateCountry($params['contactdetails'][$whmcs_contact]['Country'])) {
             return [
                 'error' => "$whmcs_contact Country must be entered as 2 characters - ISO 3166 Standard. EG. AU",
             ];
@@ -1128,10 +1113,10 @@ function synergywholesaledomains_SaveContactDetails(array $params)
 
         $request["{$contactType}_country"] = $params['contactdetails'][$whmcs_contact]['Country'];
         // See if country is AU
-        if ('AU' == $request["{$contactType}_country"]) {
+        if ($request["{$contactType}_country"] == 'AU') {
             // It is, so check to see if a valid AU State has been specified
             $state = synergywholesaledomains_validateAUState($params['contactdetails'][$whmcs_contact]['State']);
-            if (!empty($params['contactdetails'][$whmcs_contact]['State']) && !$state) {
+            if (! empty($params['contactdetails'][$whmcs_contact]['State']) && ! $state) {
                 return [
                     'error' => 'A Valid Australian State Name Must Be Supplied, EG. NSW, VIC',
                 ];
@@ -1161,6 +1146,7 @@ function synergywholesaledomains_SaveContactDetails(array $params)
 
     try {
         synergywholesaledomains_apiRequest('updateContact', $params, $request);
+
         return [
             'success' => true,
         ];
@@ -1175,14 +1161,13 @@ function synergywholesaledomains_SaveContactDetails(array $params)
  * Get the contacts for a domain name. If ID Protect is enabled,
  * it'll still display the protected contact data.
  *
- * @param array $params
  *
  * @return array
  */
 function synergywholesaledomains_GetContactDetails(array $params)
 {
     $idProtectStatus = synergywholesaledomains_apiRequest('domainInfo', $params, [], false);
-    $command = ('Enabled' === $idProtectStatus['idProtect'] ? 'listProtectedContacts' : 'listContacts');
+    $command = ($idProtectStatus['idProtect'] === 'Enabled' ? 'listProtectedContacts' : 'listContacts');
     $contacts = synergywholesaledomains_apiRequest($command, $params, [], false);
     $response = [];
 
@@ -1201,11 +1186,9 @@ function synergywholesaledomains_GetContactDetails(array $params)
         'email' => 'Email',
     ];
 
-
     if (preg_match('/\.?uk$/', $params['tld'])) {
         unset($map['organisation']);
     }
-
 
     $contactTypes = ['registrant'];
     foreach (['admin', 'billing', 'tech'] as $otherTypes) {
@@ -1228,7 +1211,6 @@ function synergywholesaledomains_GetContactDetails(array $params)
 /**
  * Returns the EPP Code for the domain name.
  *
- * @param array $params
  *
  * @return array
  */
@@ -1236,6 +1218,7 @@ function synergywholesaledomains_GetEPPCode(array $params)
 {
     try {
         $eppCode = synergywholesaledomains_apiRequest('domainInfo', $params);
+
         return [
             'eppcode' => $eppCode['domainPassword'],
         ];
@@ -1247,8 +1230,6 @@ function synergywholesaledomains_GetEPPCode(array $params)
 }
 
 /**
- * @param $params
- *
  * @return array
  */
 function synergywholesaledomains_domainOptions(array $params)
@@ -1260,8 +1241,8 @@ function synergywholesaledomains_domainOptions(array $params)
         ->where('id', $params['domainid'])
         ->first();
 
-    $tldInfo = Capsule::table("tbldomainpricing")
-        ->where("extension", ".{$params['tld']}")
+    $tldInfo = Capsule::table('tbldomainpricing')
+        ->where('extension', ".{$params['tld']}")
         ->first();
 
     $vars = [
@@ -1279,7 +1260,7 @@ function synergywholesaledomains_domainOptions(array $params)
     ];
 
     if ($domainInfo->emailforwarding == 1) {
-        $availableDnsConfigTypes[2] = $domainInfo->dnsmanagement == 1 
+        $availableDnsConfigTypes[2] = $domainInfo->dnsmanagement == 1
             ? 'URL & Email Forwarding + DNS Hosting'
             : 'Email Forwarding';
     }
@@ -1297,7 +1278,7 @@ function synergywholesaledomains_domainOptions(array $params)
         $vars['currentDnsConfigType'] = $info['dnsConfig'];
         $vars['icannStatus'] = $info['icannStatus'];
     } catch (\Exception $e) {
-        $errors[] = 'An error occured retrieving the domain information: ' . $e->getMessage();
+        $errors[] = 'An error occured retrieving the domain information: '.$e->getMessage();
     }
 
     if (isset($_REQUEST['sub']) && $_REQUEST['sub'] === 'save' && isset($_REQUEST['opt']) && empty($errors)) {
@@ -1313,14 +1294,14 @@ function synergywholesaledomains_domainOptions(array $params)
                         'ns3.nameserver.net.au',
                     ];
                 }
-                
+
                 // Set the new DNS Configuration Type.
                 $vars['currentDnsConfigType'] = $request['dnsConfigType'] = $_REQUEST['option'];
-                
+
                 try {
                     synergywholesaledomains_apiRequest('updateNameServers', $params, $request);
                 } catch (\Exception $e) {
-                    $errors[] = 'Update DNS type failed: ' . $e->getMessage();
+                    $errors[] = 'Update DNS type failed: '.$e->getMessage();
                 }
                 break;
             case 'xxxmembership':
@@ -1330,7 +1311,7 @@ function synergywholesaledomains_domainOptions(array $params)
                     ]);
                     $vars['info'] = 'Update XXX Membership successful.';
                 } catch (\Exception $e) {
-                    $errors[] = 'Update XXX Membership failed: ' . $e->getMessage();
+                    $errors[] = 'Update XXX Membership failed: '.$e->getMessage();
                 }
                 break;
             case 'resendwhoisverif':
@@ -1338,19 +1319,19 @@ function synergywholesaledomains_domainOptions(array $params)
                     synergywholesaledomains_apiRequest('resendVerificationEmail', $params, $request);
                     $vars['info'] = 'Resend WHOIS Verification Email successful';
                 } catch (\Exception $e) {
-                    $errors[] = 'Resend WHOIS Verification Email failed: ' . $e->getMessage();
+                    $errors[] = 'Resend WHOIS Verification Email failed: '.$e->getMessage();
                 }
                 break;
         }
     }
 
-    if (!empty($errors)) {
+    if (! empty($errors)) {
         $vars['error'] = implode('<br>', $errors);
-    } elseif (isset($_REQUEST['sub']) && 'save' === $_REQUEST['sub']) {
+    } elseif (isset($_REQUEST['sub']) && $_REQUEST['sub'] === 'save') {
         $vars['info'] = 'Domain options have been updated successfully';
     }
 
-    $uri = 'clientarea.php?' . http_build_query([
+    $uri = 'clientarea.php?'.http_build_query([
         'action' => 'domaindetails',
         'domainid' => $params['domainid'],
         'modop' => 'custom',
@@ -1368,8 +1349,6 @@ function synergywholesaledomains_domainOptions(array $params)
 
 /**
  * Controller for the "Manage DNSSEC" page.
- *
- * @param array $params
  */
 function synergywholesaledomains_manageDNSSEC(array $params)
 {
@@ -1418,12 +1397,11 @@ function synergywholesaledomains_manageDNSSEC(array $params)
         $errors[] = $e->getMessage();
     }
 
-
-    if (!empty($errors)) {
+    if (! empty($errors)) {
         $vars['error'] = implode('<br>', $errors);
     }
 
-    $uri = 'clientarea.php?' . http_build_query([
+    $uri = 'clientarea.php?'.http_build_query([
         'action' => 'domaindetails',
         'domainid' => $params['domainid'],
         'modop' => 'custom',
@@ -1432,7 +1410,7 @@ function synergywholesaledomains_manageDNSSEC(array $params)
 
     return [
         'templatefile' => 'domaindnssec',
-        'breadcrumb'   => [
+        'breadcrumb' => [
             $uri => 'Manage DNSSEC Records',
         ],
         'vars' => $vars,
@@ -1441,8 +1419,6 @@ function synergywholesaledomains_manageDNSSEC(array $params)
 
 /**
  * Controller for the "Manage Child Hosts" page.
- *
- * @param array $params
  */
 function synergywholesaledomains_manageChildHosts(array $params)
 {
@@ -1459,19 +1435,19 @@ function synergywholesaledomains_manageChildHosts(array $params)
                 ];
                 break;
             case 'Delete Host':
-                if (!preg_match("/(.*)\.$domainName/", $_REQUEST['ipHost'], $matches)) {
+                if (! preg_match("/(.*)\.$domainName/", $_REQUEST['ipHost'], $matches)) {
                     $errors[] = 'Unable to determine the hostname of the child host record';
                     break;
                 }
 
-                list(, $ipHost) = $matches;
+                [, $ipHost] = $matches;
                 try {
                     synergywholesaledomains_apiRequest('deleteHost', $params, [
                         'host' => $ipHost,
                     ]);
                     $vars['info'] = 'Child Host has been successfully deleted';
                 } catch (\Exception $e) {
-                    $error[] = 'Unable to delete host record: ' . $e->getMessage();
+                    $error[] = 'Unable to delete host record: '.$e->getMessage();
                 }
                 break;
             case 'Save Host':
@@ -1483,7 +1459,7 @@ function synergywholesaledomains_manageChildHosts(array $params)
                         ],
                     ]);
                 } catch (\Exception $e) {
-                    $errors[] = 'There was an error adding the new host: ' . $e->getMessage();
+                    $errors[] = 'There was an error adding the new host: '.$e->getMessage();
                 }
                 break;
             case 'Delete Host IP':
@@ -1493,14 +1469,14 @@ function synergywholesaledomains_manageChildHosts(array $params)
                     'hostname' => $_REQUEST['ipHost'],
                 ];
 
-                if (!preg_match("/(.*)\.$domainName/", $_REQUEST['ipHost'], $matches)) {
+                if (! preg_match("/(.*)\.$domainName/", $_REQUEST['ipHost'], $matches)) {
                     $errors[] = 'Unable to determine the hostname of the child host record';
                     break;
                 }
 
-                $save = 'Save Host IP' === $_REQUEST['sub'];
+                $save = $_REQUEST['sub'] === 'Save Host IP';
 
-                list(, $ipHost) = $matches;
+                [, $ipHost] = $matches;
                 try {
                     $command = ($save ? 'addHostIP' : 'deleteHostIP');
                     synergywholesaledomains_apiRequest($command, $params, [
@@ -1516,7 +1492,7 @@ function synergywholesaledomains_manageChildHosts(array $params)
                         ($save ? 'to' : 'from')
                     );
                 } catch (\Exception $e) {
-                    $errors[] = 'There was an error updating the ' . ($save ? 'adding' : 'deleting')  . ' IP: ' . $e->getMessage();
+                    $errors[] = 'There was an error updating the '.($save ? 'adding' : 'deleting').' IP: '.$e->getMessage();
                 }
                 break;
         }
@@ -1526,7 +1502,7 @@ function synergywholesaledomains_manageChildHosts(array $params)
         $vars['records'] = [];
         $hosts = synergywholesaledomains_apiRequest('listAllHosts', $params);
         foreach ($hosts['hosts'] as $host) {
-             $vars['records'][$host->hostName] = [];
+            $vars['records'][$host->hostName] = [];
             foreach ($host->ip as $ipAddress) {
                 $vars['records'][$host->hostName][] = $ipAddress;
             }
@@ -1539,11 +1515,11 @@ function synergywholesaledomains_manageChildHosts(array $params)
         }
     }
 
-    if (!empty($errors)) {
+    if (! empty($errors)) {
         $vars['error'] = implode('<br>', $errors);
     }
 
-    $uri = 'clientarea.php?' . http_build_query([
+    $uri = 'clientarea.php?'.http_build_query([
         'action' => 'domaindetails',
         'domainid' => $params['domainid'],
         'modop' => 'custom',
@@ -1562,7 +1538,6 @@ function synergywholesaledomains_manageChildHosts(array $params)
 /**
  * Controller for the "Initiate CoR" page.
  *
- * @param array $params
  * @return array
  */
 function synergywholesaledomains_initiateAuCorClient(array $params)
@@ -1578,7 +1553,7 @@ function synergywholesaledomains_initiateAuCorClient(array $params)
         $response = synergywholesaledomains_apiRequest('domainInfo', $params);
 
         $vars['pending_cor'] = false;
-        if(strtolower($response['status']) == 'ok_pending_cor') {
+        if (strtolower($response['status']) == 'ok_pending_cor') {
             $vars['pending_cor'] = true;
         }
     } catch (\Exception $e) {
@@ -1594,7 +1569,7 @@ function synergywholesaledomains_initiateAuCorClient(array $params)
         ->orderByDesc('id')
         ->first();
 
-    $invoiceId = !empty($cor) ? substr($cor->name, 4) : null;
+    $invoiceId = ! empty($cor) ? substr($cor->name, 4) : null;
 
     $corInvoice = Capsule::table('tblinvoices')
         ->where([
@@ -1604,10 +1579,10 @@ function synergywholesaledomains_initiateAuCorClient(array $params)
         ->first();
 
     // If a Cor exists return invoice ID
-    $vars['cor'] = !empty($corInvoice) ? $corInvoice->id : '';
+    $vars['cor'] = ! empty($corInvoice) ? $corInvoice->id : '';
 
     // If renewal period and no Cors exists
-    if (!empty($_REQUEST['renewalLength']) && empty($vars['cor']) && !$vars['pending_cor']) {
+    if (! empty($_REQUEST['renewalLength']) && empty($vars['cor']) && ! $vars['pending_cor']) {
         $renewalLength = $_REQUEST['renewalLength'];
         // If valid period create an invoice and add meta
         if (array_key_exists($renewalLength, $vars['pricing'])) {
@@ -1637,25 +1612,25 @@ function synergywholesaledomains_initiateAuCorClient(array $params)
         }
     }
 
-    if (empty($errors) && !empty($invoice)) {
+    if (empty($errors) && ! empty($invoice)) {
         header("Location: viewinvoice.php?id={$invoice['invoiceid']}");
         exit;
     }
 
-    if (!empty($errors)) {
+    if (! empty($errors)) {
         $vars['error'] = implode('<br>', $errors);
     }
 
-    $uri = 'clientarea.php?' . http_build_query([
-            'action' => 'domaindetails',
-            'domainid' => $params['domainid'],
-            'modop' => 'custom',
-            'a' => 'initiateAuCorClient',
-        ]);
+    $uri = 'clientarea.php?'.http_build_query([
+        'action' => 'domaindetails',
+        'domainid' => $params['domainid'],
+        'modop' => 'custom',
+        'a' => 'initiateAuCorClient',
+    ]);
 
     return [
         'templatefile' => 'domaincor',
-        'breadcrumb'   => [
+        'breadcrumb' => [
             $uri => 'Initiate CoR',
         ],
         'vars' => $vars,
@@ -1666,10 +1641,9 @@ function synergywholesaledomains_initiateAuCorClient(array $params)
  * Adds a URL Forwarder. This functionality is only available when
  * using the Synergy Wholesale "DNS Hosting" DNS/Nameserver configuration.
  *
- * @param string $type  The record type
- * @param array $record The record information
- * @param array $params The WHMCS parameters
- *
+ * @param  string  $type  The record type
+ * @param  array  $record  The record information
+ * @param  array  $params  The WHMCS parameters
  * @return mixed
  */
 function synergywholesaledomains_UrlForward($type, array $record, array $params)
@@ -1681,12 +1655,9 @@ function synergywholesaledomains_UrlForward($type, array $record, array $params)
     ], false);
 }
 
-
 /**
  * Deletes a URL forwarder from the DNS Hosting/Forwarding system.
  *
- * @param array $record
- * @param array $params
  *
  * @return mixed
  */
@@ -1700,8 +1671,6 @@ function synergywholesaledomains_DelURLForward(array $record, array $params)
 /**
  * Adds a DNS record from the DNS Hosting zone.
  *
- * @param array $record
- * @param array $params
  *
  * @return array
  */
@@ -1711,7 +1680,7 @@ function synergywholesaledomains_AddDNSRec(array $record, array $params)
         'recordName' => $record['hostname'],
         'recordType' => $record['type'],
         'recordContent' => $record['address'],
-        'recordTTL' => 14400
+        'recordTTL' => 14400,
     ];
 
     // See if the TTL has been specified
@@ -1724,9 +1693,9 @@ function synergywholesaledomains_AddDNSRec(array $record, array $params)
         $request['recordPrio'] = $record['priority'];
     }
 
-    if ('NS' === $request['recordType'] && $request['recordName'] === $request['domainName']) {
+    if ($request['recordType'] === 'NS' && $request['recordName'] === $request['domainName']) {
         return [
-            'error' => 'Cannot add or remove NS records from root domain.'
+            'error' => 'Cannot add or remove NS records from root domain.',
         ];
     }
 
@@ -1736,8 +1705,6 @@ function synergywholesaledomains_AddDNSRec(array $record, array $params)
 /**
  * Deletes a DNS record from the DNS Hosting zone.
  *
- * @param array $record
- * @param array $params
  *
  * @return array|void
  */
@@ -1758,7 +1725,6 @@ function synergywholesaledomains_DelDNSRec(array $record, array $params)
 /**
  * Synergy Wholesale Module does not use this function
  *
- * @param array $params
  *
  * @return array
  */
@@ -1772,8 +1738,6 @@ function synergywholesaledomains_GetEmailForwarding(array $params)
 }
 
 /**
- * @param array $params
- *
  * @return array
  */
 function synergywholesaledomains_SaveEmailForwarding(array $params)
@@ -1784,8 +1748,6 @@ function synergywholesaledomains_SaveEmailForwarding(array $params)
 
 /**
  * Handles the functionality for the DNS and URL forwarding page.
- *
- * @param $params
  */
 function synergywholesaledomains_manageDNSURLForwarding(array $params)
 {
@@ -1804,7 +1766,7 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
         $info = synergywholesaledomains_apiRequest('domainInfo', $params);
         $vars['currentDnsConfigType'] = $info['dnsConfig'];
     } catch (\Exception $e) {
-        $errors[] = 'An error occured retrieving the domain information: ' . $e->getMessage();
+        $errors[] = 'An error occured retrieving the domain information: '.$e->getMessage();
     }
 
     if (isset($_REQUEST['op']) && empty($errors)) {
@@ -1826,15 +1788,16 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
 
                 $data['domain'] = $params['domain'];
                 $data['records'] = $records;
+
                 return synergywholesaledomains_ajaxResponse($data);
             case 'deleteRecord':
                 if (empty($_REQUEST['record_id'])) {
                     return synergywholesaledomains_ajaxResponse(['error' => 'Missing identifier for record delete request.']);
                 }
 
-                if ('NS' === $_REQUEST['type'] && $_REQUEST['hostname'] == $request['domainName']) {
+                if ($_REQUEST['type'] === 'NS' && $_REQUEST['hostname'] == $request['domainName']) {
                     return synergywholesaledomains_ajaxResponse([
-                        'error' => 'Error Deleting DNS record from database: Cannot add or remove NS records from root domain.'
+                        'error' => 'Error Deleting DNS record from database: Cannot add or remove NS records from root domain.',
                     ]);
                 }
 
@@ -1853,7 +1816,7 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
 
                 if (isset($delete['error'])) {
                     return synergywholesaledomains_ajaxResponse([
-                        'error' => "Error deleting $type:" . $delete['error'],
+                        'error' => "Error deleting $type:".$delete['error'],
                     ]);
                 }
 
@@ -1874,7 +1837,7 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
                 }
 
                 // See if we match all conditions required
-                if (3 !== $correct || !in_array($nameservers['dnsConfigType'], [2, 4])) {
+                if ($correct !== 3 || ! in_array($nameservers['dnsConfigType'], [2, 4])) {
                     try {
                         synergywholesaledomains_apiRequest('updateNameServers', $params, [
                             'dnsConfigType' => 2,
@@ -1887,24 +1850,24 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
 
                 $domain = synergywholesaledomains_helper_getDomain($params);
 
-                if ('NS' === $_REQUEST['type'] && $_REQUEST['hostname'] === $domain) {
+                if ($_REQUEST['type'] === 'NS' && $_REQUEST['hostname'] === $domain) {
                     return synergywholesaledomains_ajaxResponse(['error' => 'Error adding DNS record: Cannot add NS on root domain.']);
                 }
 
                 if ($_REQUEST['type'] == 'SRV') {
-                    if (!is_numeric($_REQUEST['address1'])) {
+                    if (! is_numeric($_REQUEST['address1'])) {
                         return synergywholesaledomains_ajaxResponse(['error' => 'Record Weight must be a numeric value between 0 and 65535']);
                     }
 
-                    if (!is_numeric($_REQUEST['address2'])) {
+                    if (! is_numeric($_REQUEST['address2'])) {
                         return synergywholesaledomains_ajaxResponse(['error' => 'Record Port must be a numeric value between 0 and 65535']);
                     }
 
-                    if (!is_numeric($_REQUEST['address2'])) {
+                    if (! is_numeric($_REQUEST['address2'])) {
                         return synergywholesaledomains_ajaxResponse(['error' => 'Record Port must be a numeric value between 0 and 65535']);
                     }
 
-                    if (!filter_var($_REQUEST['address3'], FILTER_VALIDATE_DOMAIN)) {
+                    if (! filter_var($_REQUEST['address3'], FILTER_VALIDATE_DOMAIN)) {
                         return synergywholesaledomains_ajaxResponse(['error' => 'Record Target must be a valid domain name']);
                     }
 
@@ -1912,14 +1875,14 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
                 }
 
                 if (in_array($_REQUEST['type'], ['MX', 'SRV'])) {
-                    if (!is_numeric($_REQUEST['priority'])) {
+                    if (! is_numeric($_REQUEST['priority'])) {
                         return synergywholesaledomains_ajaxResponse(['error' => 'Record Priority must be a numeric value between 0 and 65535']);
                     }
                 }
 
                 $record = [];
                 foreach (['type', 'address', 'priority', 'ttl'] as $key) {
-                    if (!empty($_REQUEST[$key])) {
+                    if (! empty($_REQUEST[$key])) {
                         $record[$key] = $_REQUEST[$key];
                     }
                 }
@@ -1931,8 +1894,8 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
                     $record['hostname'] = strtolower($_REQUEST['hostname']);
                     $record['hostname'] = preg_replace('/(^https?:\/\/|\.$)/i', '', $record['hostname']);
 
-                    if (!preg_match("/$domain$/i", $record['hostname'])) {
-                        $record['hostname'] = $record['hostname'] . '.' . $domain;
+                    if (! preg_match("/$domain$/i", $record['hostname'])) {
+                        $record['hostname'] = $record['hostname'].'.'.$domain;
                     }
                 }
 
@@ -1944,7 +1907,7 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
                     case 'URL':
                         $add = synergywholesaledomains_UrlForward('P', $record, $params);
                         if (isset($add['error'])) {
-                            return synergywholesaledomains_ajaxResponse(['error' => 'Error adding permanent URL forward: ' . $add['error']]);
+                            return synergywholesaledomains_ajaxResponse(['error' => 'Error adding permanent URL forward: '.$add['error']]);
                         }
                         $add['info'] = 'Permanent URL forward has been created';
                         $add['hostname'] = $add['hostname'] ?? '';
@@ -1953,7 +1916,7 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
                     case 'FRAME':
                         $add = synergywholesaledomains_UrlForward('C', $record, $params);
                         if (isset($add['error'])) {
-                            return synergywholesaledomains_ajaxResponse(['error' => 'Error adding URL Cloak forward: ' . $add['error']]);
+                            return synergywholesaledomains_ajaxResponse(['error' => 'Error adding URL Cloak forward: '.$add['error']]);
                         }
                         $add['info'] = 'URL Cloaking forward has been created';
                         $add['hostname'] = $add['hostname'] ?? '';
@@ -1962,7 +1925,7 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
                     default:
                         $add = synergywholesaledomains_AddDNSRec($record, $params);
                         if (isset($add['error'])) {
-                            return synergywholesaledomains_ajaxResponse(['error' => 'Error adding DNS record: ' . $add['error']]);
+                            return synergywholesaledomains_ajaxResponse(['error' => 'Error adding DNS record: '.$add['error']]);
                         }
 
                         // Strip the domain name from the record for cosmetic reasons.
@@ -1980,11 +1943,11 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
         }
     }
 
-    if (!empty($errors)) {
+    if (! empty($errors)) {
         $vars['error'] = implode('<br>', $errors);
     }
 
-    $uri = 'clientarea.php?' . http_build_query([
+    $uri = 'clientarea.php?'.http_build_query([
         'action' => 'domaindetails',
         'domainid' => $params['domainid'],
         'modop' => 'custom',
@@ -2003,8 +1966,6 @@ function synergywholesaledomains_manageDNSURLForwarding(array $params)
 
 /**
  * Handles the functionality for the email forwarding page.
- *
- * @param $params
  */
 function synergywholesaledomains_manageEmailForwarding(array $params)
 {
@@ -2035,12 +1996,12 @@ function synergywholesaledomains_manageEmailForwarding(array $params)
                 } catch (\Exception $e) {
                     if (preg_match('/Email Forwarding Is Not Enabled For This Domain/i', $e->getMessage())) {
                         return synergywholesaledomains_ajaxResponse([
-                            'info' => 'NOTE: It appears that DNS Hosting is not enabled for this domain name. Any records you add will automatically update the nameservers set on the domain name which may result in an undesired outcome which could result in your website and email being taken offline.'
+                            'info' => 'NOTE: It appears that DNS Hosting is not enabled for this domain name. Any records you add will automatically update the nameservers set on the domain name which may result in an undesired outcome which could result in your website and email being taken offline.',
                         ]);
                     }
 
                     return synergywholesaledomains_ajaxResponse([
-                        'info' => $e->getMessage()
+                        'info' => $e->getMessage(),
                     ]);
                 }
 
@@ -2059,7 +2020,7 @@ function synergywholesaledomains_manageEmailForwarding(array $params)
 
                     $response['info'] = 'Email forwarder deleted.';
                 } catch (\Exception $e) {
-                    $response['error'] = 'Error deleteing email forwarder: ' . $e->getMessage();
+                    $response['error'] = 'Error deleteing email forwarder: '.$e->getMessage();
                 }
 
                 return synergywholesaledomains_ajaxResponse($response);
@@ -2077,7 +2038,7 @@ function synergywholesaledomains_manageEmailForwarding(array $params)
                 }
 
                 // See if we match all conditions required
-                if (3 !== $correct || !in_array($nameservers['dnsConfigType'], [2, 4])) {
+                if ($correct !== 3 || ! in_array($nameservers['dnsConfigType'], [2, 4])) {
                     try {
                         synergywholesaledomains_apiRequest('updateNameServers', $params, [
                             'dnsConfigType' => 2,
@@ -2090,18 +2051,18 @@ function synergywholesaledomains_manageEmailForwarding(array $params)
 
                 $request = $response = [];
 
-                if (!empty($_REQUEST['prefix'])) {
+                if (! empty($_REQUEST['prefix'])) {
                     $request['source'] = strtolower($_REQUEST['prefix']);
                     $request['source'] = rtrim($_REQUEST['prefix'], '@');
 
                     $safe = preg_quote($domain, '/');
 
-                    if (!preg_match("/{$safe}$/i", $request['source'])) {
-                        $request['source'] = $request['source'] . '@' . $domain;
+                    if (! preg_match("/{$safe}$/i", $request['source'])) {
+                        $request['source'] = $request['source'].'@'.$domain;
                     }
                 }
 
-                if (!empty($_REQUEST['forwardto'])) {
+                if (! empty($_REQUEST['forwardto'])) {
                     $request['destination'] = $_REQUEST['forwardto'];
                 }
 
@@ -2112,14 +2073,14 @@ function synergywholesaledomains_manageEmailForwarding(array $params)
                         'record_id' => $add['recordID'] ?? $add['id'],
                     ];
                 } catch (\Exception $e) {
-                    $response['error'] = 'Error adding mail forwarder: ' . $e->getMessage();
+                    $response['error'] = 'Error adding mail forwarder: '.$e->getMessage();
                 }
 
                 return synergywholesaledomains_ajaxResponse($response);
         }
     }
 
-    $uri = 'clientarea.php?' . http_build_query([
+    $uri = 'clientarea.php?'.http_build_query([
         'action' => 'domaindetails',
         'domainid' => $params['domainid'],
         'modop' => 'custom',
@@ -2128,7 +2089,7 @@ function synergywholesaledomains_manageEmailForwarding(array $params)
 
     return [
         'templatefile' => 'domaindnsemailforwarding',
-        'breadcrumb'   => [
+        'breadcrumb' => [
             $uri => 'Email Forwarding',
         ],
     ];
@@ -2139,7 +2100,6 @@ function synergywholesaledomains_manageEmailForwarding(array $params)
  *
  * Note: This feature is only available to domains using DNS Hosting
  *
- * @param array $params
  * @return array
  */
 function synergywholesaledomains_custom_GetDNS(array $params)
@@ -2148,7 +2108,7 @@ function synergywholesaledomains_custom_GetDNS(array $params)
 
     try {
         $forwarders = synergywholesaledomains_apiRequest('getSimpleURLForwards', $params);
-        if (!empty($forwarders['records'])) {
+        if (! empty($forwarders['records'])) {
             foreach ($forwarders['records'] as $record) {
                 switch ($record->redirectType) {
                     case 'C':
@@ -2171,12 +2131,12 @@ function synergywholesaledomains_custom_GetDNS(array $params)
             }
         }
     } catch (\Exception $e) {
-        $errors[] = 'Get URL Forwards failed: ' . $e->getMessage();
+        $errors[] = 'Get URL Forwards failed: '.$e->getMessage();
     }
 
     try {
         $dns = synergywholesaledomains_apiRequest('listDNSZone', $params);
-        if (!empty($dns['records'])) {
+        if (! empty($dns['records'])) {
 
             /**
              * This is to remove the hostname from the record purely for cosmetic purposes.
@@ -2186,7 +2146,7 @@ function synergywholesaledomains_custom_GetDNS(array $params)
             $safeHostname = preg_quote(synergywholesaledomains_helper_getDomain($params), '/');
             $hostNameRegex = "/(?:\.{$safeHostname}\s*)$/m";
             foreach ($dns['records'] as $record) {
-                if ('SOA' === $record->type) {
+                if ($record->type === 'SOA') {
                     continue;
                 }
                 $data = [
@@ -2205,10 +2165,10 @@ function synergywholesaledomains_custom_GetDNS(array $params)
             }
         }
     } catch (\Exception $e) {
-        $errors[] = 'Get DNS records failed: ' . $e->getMessage();
+        $errors[] = 'Get DNS records failed: '.$e->getMessage();
     }
 
-    if (!empty($errors)) {
+    if (! empty($errors)) {
         return [
             'error' => implode('<br>', $errors),
         ];
@@ -2225,15 +2185,14 @@ function synergywholesaledomains_push(array $params)
 /**
  * Register our custom pages we want to display in the Client Area.
  *
- * @param array $params
  * @return array
  */
 function synergywholesaledomains_ClientAreaCustomButtonArray(array $params)
 {
     $pages = [
         'Manage Child Host Records' => 'manageChildHosts',
-        'Domain Options'            => 'domainOptions',
-        'Manage DNSSEC Records'     => 'manageDNSSEC',
+        'Domain Options' => 'domainOptions',
+        'Manage DNSSEC Records' => 'manageDNSSEC',
     ];
 
     if (Str::endsWith($params['tld'], 'au')) {
@@ -2246,7 +2205,6 @@ function synergywholesaledomains_ClientAreaCustomButtonArray(array $params)
 /**
  * Register the functionality we want available (conditionally) in the Client Area.
  *
- * @param  $params
  * @return mixed
  */
 function synergywholesaledomains_ClientAreaAllowedFunctions(array $params)
@@ -2269,11 +2227,7 @@ function synergywholesaledomains_ClientAreaAllowedFunctions(array $params)
     return $functions;
 }
 
-
 /**
- * @param  $phoneNumber
- * @param  $country
- * @param  $state
  * @return mixed
  */
 function synergywholesaledomains_formatPhoneNumber($phoneNumber, $country, $state = '', $countryCode = null)
@@ -2305,19 +2259,21 @@ function synergywholesaledomains_formatPhoneNumber($phoneNumber, $country, $stat
     preg_match_all('/^61\.([2,3,4,7,8]{1})([0-9]{8})$/', $phoneNumber, $result, PREG_PATTERN_ORDER);
     if (strlen($result[1][0]) > 0 && strlen($result[2][0]) > 0) {
         // Create new phone number (formatted)
-        $phoneNumber = '+61.' . $result[1][0] . $result[2][0];
+        $phoneNumber = '+61.'.$result[1][0].$result[2][0];
     }
 
     // Now let'e see if this is a psuedo international phone number for Australia
     preg_match_all('/^61([2,3,4,7,8]{1})([0-9]{8})$|^\+61([2,3,4,7,8]{1})([0-9]{8})$/i', $phoneNumber, $result, PREG_PATTERN_ORDER);
     if (strlen($result[1][0]) > 0 && strlen($result[2][0]) > 0) {
         // Create new phone number (formatted)
-        $phoneNumber = '+61.' . $result[1][0] . $result[2][0];
+        $phoneNumber = '+61.'.$result[1][0].$result[2][0];
+
         // Return phone number
         return $phoneNumber;
     } elseif (strlen($result[3][0] > 0) && strlen($result[4][0]) > 0) {
         // Create new phone number (formatted)
-        $phoneNumber = '+61.' . $result[3][0] . $result[4][0];
+        $phoneNumber = '+61.'.$result[3][0].$result[4][0];
+
         // Return phone number
         return $phoneNumber;
     }
@@ -2326,11 +2282,13 @@ function synergywholesaledomains_formatPhoneNumber($phoneNumber, $country, $stat
     preg_match_all('/^\(0([2,3,7,8])\)([0-9]{8})|^0([2,3,4,7,8])([0-9]{8})/', $phoneNumber, $result, PREG_PATTERN_ORDER);
     if (strlen($result[1][0]) > 0 && strlen($result[2][0]) > 0) {
         // Create the new formatted phone number
-        $phoneNumber = '+61.' . $result[1][0] . $result[2][0];
+        $phoneNumber = '+61.'.$result[1][0].$result[2][0];
+
         return $phoneNumber;
     } elseif (strlen($result[3][0] > 0) && strlen($result[4][0]) > 0) {
         // Create the new formatted phone number
-        $phoneNumber = '+61.' . $result[3][0] . $result[4][0];
+        $phoneNumber = '+61.'.$result[3][0].$result[4][0];
+
         return $phoneNumber;
     }
 
@@ -2339,7 +2297,7 @@ function synergywholesaledomains_formatPhoneNumber($phoneNumber, $country, $stat
         $result = $regs[0];
 
         // If country is AU
-        if ('AU' == strtoupper($country)) {
+        if (strtoupper($country) == 'AU') {
             // Strip any spaces from the state name and change to all UPPER case chars
             $state = preg_replace('/ /', '', $state);
             $state = strtoupper($state);
@@ -2381,7 +2339,7 @@ function synergywholesaledomains_formatPhoneNumber($phoneNumber, $country, $stat
         }
 
         // Format the phone number
-        $phoneNumber = '+61.' . $areacode . $result;
+        $phoneNumber = '+61.'.$areacode.$result;
 
         // Return the formatted phone number
         return $phoneNumber;
@@ -2404,7 +2362,6 @@ This function will validate the supplied country code
  */
 
 /**
- * @param  $country
  * @return bool
  */
 function synergywholesaledomains_validateCountry($country)
@@ -2431,7 +2388,7 @@ This function will return a valid au state name
  */
 
 /**
- * @param string $state
+ * @param  string  $state
  * @return bool|string
  */
 function synergywholesaledomains_validateAUState($state)
@@ -2514,22 +2471,21 @@ function synergywholesaledomains_AdditionalDomainFields(array $params)
 
     switch ($params['tld']) {
         case 'au':
-            if (!defined('ADMINAREA') || !ADMINAREA) {
+            if (! defined('ADMINAREA') || ! ADMINAREA) {
                 break;
             }
 
-            $additionalDomainFields[] = ["Name" => "Priority contact ID", "LangVar" => "auprioritytoken", "Type" => "text", "Size" => "20", "Default" => "", "Required" => false];
-            $additionalDomainFields[] = ["Name" => "Priority authInfo", "LangVar" => "auprioritytokenpassword", "Type" => "text", "Size" => "20", "Default" => "", "Required" => false];
+            $additionalDomainFields[] = ['Name' => 'Priority contact ID', 'LangVar' => 'auprioritytoken', 'Type' => 'text', 'Size' => '20', 'Default' => '', 'Required' => false];
+            $additionalDomainFields[] = ['Name' => 'Priority authInfo', 'LangVar' => 'auprioritytokenpassword', 'Type' => 'text', 'Size' => '20', 'Default' => '', 'Required' => false];
             break;
     }
 
     return [
-        'fields' => $additionalDomainFields
+        'fields' => $additionalDomainFields,
     ];
 }
 
 /**
- * @param array $params
  * @return array|string[]|void
  */
 function synergywholesaledomains_initiateAuCor(array $params)
@@ -2541,6 +2497,7 @@ function synergywholesaledomains_initiateAuCor(array $params)
             ->first();
     } catch (Exception $e) {
         logModuleCall('synergywholesaledomains', 'initiateAuCor', 'Select DB', $e->getMessage());
+
         return [
             'error' => $e->getMessage(),
         ];
@@ -2568,6 +2525,7 @@ function synergywholesaledomains_initiateAuCor(array $params)
             'initiateAuCor', // moduleAction
             $e->getMessage() // lastAttemptError
         );
+
         // Time to fail politely now
         return [
             'error' => $e->getMessage(),
@@ -2585,7 +2543,7 @@ function synergywholesaledomains_resendTransferApprovalEmail(array $params)
         logModuleCall('synergywholesaledomains', 'resendTransferApprovalEmail', $params, $e->getMessage());
 
         return [
-            'error' => 'Request Failed with error: ' . $e->getMessage(),
+            'error' => 'Request Failed with error: '.$e->getMessage(),
         ];
     }
 
@@ -2602,12 +2560,13 @@ function synergywholesaledomains_sync_adhoc(array $params)
             ->first();
     } catch (\Exception $e) {
         logModuleCall('synergywholesaledomains', 'syncButton', 'Select DB', $e->getMessage());
+
         return [
             'error' => $e->getMessage(),
         ];
     }
 
-    if ('Pending Transfer' === $domainInfo->status) {
+    if ($domainInfo->status === 'Pending Transfer') {
         return synergywholesaledomains_adhocTransferSync($params, $domainInfo);
     }
 
@@ -2617,10 +2576,9 @@ function synergywholesaledomains_sync_adhoc(array $params)
 /**
  * This function syncs domain transfers via "Sync" button in the admin panel.
  *
- * @param      array   $params      The parameters
- * @param      object  $domainInfo  The domain information
- *
- * @return     array   ( description_of_the_return_value )
+ * @param  array  $params  The parameters
+ * @param  object  $domainInfo  The domain information
+ * @return array   ( description_of_the_return_value )
  */
 function synergywholesaledomains_adhocTransferSync(array $params, $domainInfo)
 {
@@ -2632,12 +2590,12 @@ function synergywholesaledomains_adhocTransferSync(array $params, $domainInfo)
         return $response;
     }
 
-    if ($response['failed'] && 'Cancelled' != $domainInfo->status) {
+    if ($response['failed'] && $domainInfo->status != 'Cancelled') {
         $update['status'] = 'Cancelled';
         $errorMessage = (isset($response['reason']) ? $response['reason'] : $_LANG['domaintrffailreasonunavailable']);
     } elseif ($response['completed']) {
         $response = synergywholesaledomains_Sync($params);
-        if ($response['active'] && 'Active' != $domainInfo->status) {
+        if ($response['active'] && $domainInfo->status != 'Active') {
             $update['status'] = 'Active';
             $syncMessages[] = sprintf('Status updated from %s to Active', $domainInfo->status);
             sendMessage('Domain Transfer Completed', $domainInfo->id);
@@ -2654,7 +2612,7 @@ function synergywholesaledomains_adhocTransferSync(array $params, $domainInfo)
         }
     }
 
-    if (!empty($update)) {
+    if (! empty($update)) {
         try {
             $update['synced'] = 1;
 
@@ -2663,7 +2621,8 @@ function synergywholesaledomains_adhocTransferSync(array $params, $domainInfo)
                 ->update($update);
         } catch (\Exception $e) {
             logModuleCall('synergywholesaledomains', 'adhocTransferSync', 'Update DB', $e->getMessage());
-            return ['error' => 'Error updating domain; ' . $e->getMessage()];
+
+            return ['error' => 'Error updating domain; '.$e->getMessage()];
         }
     }
 
@@ -2696,7 +2655,7 @@ function synergywholesaledomains_adhocTransferSync(array $params, $domainInfo)
             break;
     }
 
-    if (!empty($hookName)) {
+    if (! empty($hookName)) {
         run_hook(
             $hookName,
             [
@@ -2712,8 +2671,8 @@ function synergywholesaledomains_adhocTransferSync(array $params, $domainInfo)
         'message' => nl2br(
             empty($syncMessages) ?
             'Domain Sync successful.' :
-            "Updated;\n    - " . implode("\n    - ", $syncMessages)
-        )
+            "Updated;\n    - ".implode("\n    - ", $syncMessages)
+        ),
     ];
 }
 
@@ -2723,10 +2682,9 @@ function synergywholesaledomains_adhocTransferSync(array $params, $domainInfo)
  * Most of the stuff we are updating here is to actually update the interface. This is
  * because the interface has the data fetched prior to this function running.
  *
- * @param      array   $params      The parameters
- * @param      object  $domainInfo  The domain information from the DB
- *
- * @return     array   Returns a message containing the updated information.
+ * @param  array  $params  The parameters
+ * @param  object  $domainInfo  The domain information from the DB
+ * @return array Returns a message containing the updated information.
  */
 function synergywholesaledomains_adhocSync(array $params, $domainInfo)
 {
@@ -2738,19 +2696,19 @@ function synergywholesaledomains_adhocSync(array $params, $domainInfo)
         return $response;
     }
 
-    if ($response['active'] && 'Active' != $domainInfo->status) {
+    if ($response['active'] && $domainInfo->status != 'Active') {
         $update['status'] = 'Active';
     }
 
-    if ($response['expired'] && 'Expired' != $domainInfo->status) {
+    if ($response['expired'] && $domainInfo->status != 'Expired') {
         $update['status'] = 'Expired';
     }
 
-    if ($response['cancelled'] && 'Active' == $domainInfo->status) {
+    if ($response['cancelled'] && $domainInfo->status == 'Active') {
         $update['status'] = 'Cancelled';
     }
 
-    if (isset($response['transferredAway']) && $response['transferredAway'] && 'Transferred Away' != $domainInfo->status) {
+    if (isset($response['transferredAway']) && $response['transferredAway'] && $domainInfo->status != 'Transferred Away') {
         $update['status'] = 'Transferred Away';
     }
 
@@ -2781,7 +2739,7 @@ function synergywholesaledomains_adhocSync(array $params, $domainInfo)
         }
     }
 
-    if (!empty($update)) {
+    if (! empty($update)) {
         try {
             $update['synced'] = 1;
 
@@ -2790,7 +2748,8 @@ function synergywholesaledomains_adhocSync(array $params, $domainInfo)
                 ->update($update);
         } catch (\Exception $e) {
             logModuleCall('synergywholesaledomains', 'adhocSync', 'Update DB', $e->getMessage());
-            return ['error' => 'Error updating domain; ' . $e->getMessage()];
+
+            return ['error' => 'Error updating domain; '.$e->getMessage()];
         }
     }
 
@@ -2810,7 +2769,7 @@ function synergywholesaledomains_adhocSync(array $params, $domainInfo)
     $domain = Capsule::table('tbldomains')
         ->where('id', $params['domainid'])
         ->first();
-    
+
     if ($isPremium != $domain->is_premium) {
         if ($domain->is_premium) {
             $syncMessages[] = 'Domain has been identified as premium.';
@@ -2827,8 +2786,8 @@ function synergywholesaledomains_adhocSync(array $params, $domainInfo)
         'message' => nl2br(
             empty($syncMessages) ?
             'Domain Sync successful.' :
-            "Updated;\n    - " . implode("\n    - ", $syncMessages)
-        )
+            "Updated;\n    - ".implode("\n    - ", $syncMessages)
+        ),
     ];
 }
 
@@ -2837,9 +2796,8 @@ function synergywholesaledomains_adhocSync(array $params, $domainInfo)
  * This returns the URL _without_ the Base URL before it
  * Example: clientarea.php -> /subwhmcs/clientarea.php or /clientarea.php depending upon the base URL
  * Basically this is what WHMCS' menu items setUri function does to relative URLs
- * 
- * @param string $uri
- * @return string 
+ *
+ * @return string
  */
 function synergywholesaledomains_getFullUrl(string $uri)
 {
@@ -2853,7 +2811,7 @@ function synergywholesaledomains_getFullUrl(string $uri)
         $uri = "${base}/{$uri}";
     }
 
-    $uri = preg_replace("/\\/+/", "/", $uri);
+    $uri = preg_replace('/\\/+/', '/', $uri);
 
     return $uri;
 }
@@ -2869,15 +2827,15 @@ if (
      * Determine if a domain or group of domains are available for
      * registration or transfer.
      *
-     * @param array $params common module parameters
-     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     * @param  array  $params  common module parameters
      *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
      * @see \WHMCS\Domains\DomainLookup\SearchResult
      * @see \WHMCS\Domains\DomainLookup\ResultsList
      *
-     * @throws Exception Upon domain availability check failure.
-     *
      * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
+     *
+     * @throws Exception Upon domain availability check failure.
      */
     function synergywholesaledomains_CheckAvailability(array $params)
     {
@@ -2886,42 +2844,42 @@ if (
         try {
             $list = [];
             foreach ($params['tldsToInclude'] as $tld) {
-                $list[] = $params['sld'] . $tld;
+                $list[] = $params['sld'].$tld;
             }
 
             $check = synergywholesaledomains_apiRequest('bulkCheckDomain', $params, [
                 'domainList' => $list,
-                'command' => ('register' === $type ? 'create' : $type),
+                'command' => ($type === 'register' ? 'create' : $type),
             ], true, false);
-            
-            $results = new WHMCS\Domains\DomainLookup\ResultsList();
-            
-            foreach ($check['domainList'] as $domain) {
-                list($sld, $tld) = explode('.', $domain->domain, 2);
 
-                $searchResult = new WHMCS\Domains\DomainLookup\SearchResult($sld, '.' . $tld);
-                
+            $results = new WHMCS\Domains\DomainLookup\ResultsList;
+
+            foreach ($check['domainList'] as $domain) {
+                [$sld, $tld] = explode('.', $domain->domain, 2);
+
+                $searchResult = new WHMCS\Domains\DomainLookup\SearchResult($sld, '.'.$tld);
+
                 $status = WHMCS\Domains\DomainLookup\SearchResult::STATUS_NOT_REGISTERED;
 
-                if ('transfer' === $type && $domain->available) {
+                if ($type === 'transfer' && $domain->available) {
                     $status = WHMCS\Domains\DomainLookup\SearchResult::STATUS_REGISTERED;
                 }
 
-                if ('register' === $type && !$domain->available) {
+                if ($type === 'register' && ! $domain->available) {
                     $status = WHMCS\Domains\DomainLookup\SearchResult::STATUS_REGISTERED;
                 }
 
-                if ('au' === $tld) {
+                if ($tld === 'au') {
                     // Check if showing single contested domains as available is enabled
-                    if ('register' === $type && (!isset($params['auDirectShowSingleContestedAvailable']) || $params['auDirectShowSingleContestedAvailable'] !== 'on')
+                    if ($type === 'register' && (! isset($params['auDirectShowSingleContestedAvailable']) || $params['auDirectShowSingleContestedAvailable'] !== 'on')
                         && isset($domain->requiresMembership) && $domain->requiresMembership
-                        && isset($domain->requiresApplication) && !$domain->requiresApplication
+                        && isset($domain->requiresApplication) && ! $domain->requiresApplication
                     ) {
                         $status = WHMCS\Domains\DomainLookup\SearchResult::STATUS_RESERVED;
                     }
 
                     // Check if showing multi contested domains as available is enabled
-                    if ('register' === $type && (!isset($params['auDirectShowMultiContestedAvailable']) || $params['auDirectShowMultiContestedAvailable'] !== 'on')
+                    if ($type === 'register' && (! isset($params['auDirectShowMultiContestedAvailable']) || $params['auDirectShowMultiContestedAvailable'] !== 'on')
                         && isset($domain->requiresApplication) && $domain->requiresApplication
                     ) {
                         $status = WHMCS\Domains\DomainLookup\SearchResult::STATUS_RESERVED;
@@ -2929,8 +2887,8 @@ if (
                 }
 
                 if (
-                    (!empty($domain->premium) && !$params['premiumEnabled'] && $domain->available) ||
-                    (!empty($domain->premium) && empty($domain->costPrice))
+                    (! empty($domain->premium) && ! $params['premiumEnabled'] && $domain->available) ||
+                    (! empty($domain->premium) && empty($domain->costPrice))
                 ) {
                     $status = WHMCS\Domains\DomainLookup\SearchResult::STATUS_RESERVED;
                 }
@@ -2954,7 +2912,7 @@ if (
              *
              * @see cart.php#L207-231 of 7.4.1 source.
              */
-            if ('transfer' === $type) {
+            if ($type === 'transfer') {
                 $premiumSessionData = [];
                 foreach ($results as $domain) {
                     $domain = $domain->toArray();
@@ -2985,14 +2943,15 @@ if (
     /**
      * Synergy Wholesale does not utilise this method.
      *
-     * @param array $params common module parameters
+     * @param  array  $params  common module parameters
+     *
      * @see https://developers.whmcs.com/domain-registrars/module-parameters/
      *
      * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
      */
     function synergywholesaledomains_GetDomainSuggestions(array $params)
     {
-        return new WHMCS\Domains\DomainLookup\ResultsList();
+        return new WHMCS\Domains\DomainLookup\ResultsList;
     }
 
     function synergywholesaledomains_GetPremiumPrice(array $params)
@@ -3005,9 +2964,9 @@ if (
             foreach ($params['type'] as $type) {
                 $type = strtolower($type);
                 $check = synergywholesaledomains_apiRequest('checkDomain', $params, [
-                    'command' => ('register' === $type ? 'create' : $type),
+                    'command' => ($type === 'register' ? 'create' : $type),
                 ]);
-    
+
                 $pricing[$type] = $check->costPrice;
             }
 
@@ -3031,10 +2990,10 @@ if (class_exists('\WHMCS\Domain\TopLevel\ImportItem') && class_exists('\WHMCS\Re
             ];
         }
 
-        $results = new WHMCS\Results\ResultsList();
+        $results = new WHMCS\Results\ResultsList;
 
         foreach ($response['pricing'] as $extension) {
-            $tld = '.' . $extension->tld;
+            $tld = '.'.$extension->tld;
 
             $minYears = $extension->minPeriod;
             $maxYears = $extension->maxPeriod;
@@ -3062,7 +3021,7 @@ if (class_exists('\WHMCS\Domain\TopLevel\ImportItem') && class_exists('\WHMCS\Re
                 $registerPrice = $renewPrice;
             }
 
-            $results[] = (new WHMCS\Domain\TopLevel\ImportItem())
+            $results[] = (new WHMCS\Domain\TopLevel\ImportItem)
                 ->setExtension($tld)
                 ->setMinYears($minYears)
                 ->setMaxYears($maxYears)
@@ -3072,10 +3031,9 @@ if (class_exists('\WHMCS\Domain\TopLevel\ImportItem') && class_exists('\WHMCS\Re
                 ->setRedemptionFeePrice($redemptionPrice)
                 ->setRedemptionFeeDays($extension->cannotRenewWithin)
                 ->setCurrency('AUD')
-                ->setEppRequired(!preg_match('/\.uk$/', $tld))
+                ->setEppRequired(! preg_match('/\.uk$/', $tld))
                 ->setGraceFeeDays($extension->canRenewWithin)
-                ->setGraceFeePrice('0.00')
-            ;
+                ->setGraceFeePrice('0.00');
         }
 
         return $results;
@@ -3096,15 +3054,14 @@ if (class_exists('\WHMCS\Domain\Registrar\Domain') && class_exists('\WHMCS\Carbo
         $status = constant('\WHMCS\Domain\Registrar\Domain::STATUS_ACTIVE');
 
         if (isset($response['transfer_status'])) {
-            return (new WHMCS\Domain\Registrar\Domain())
+            return (new WHMCS\Domain\Registrar\Domain)
                 ->setDomain($response['domainName'])
-                ->setRegistrationStatus($status)
-            ;
+                ->setRegistrationStatus($status);
         }
 
         $nameservers = [];
         foreach ($response['nameServers'] as $index => $value) {
-            $nameservers['ns' . ($index + 1)] = strtolower($value);
+            $nameservers['ns'.($index + 1)] = strtolower($value);
         }
 
         switch (strtolower($response['domain_status'])) {
@@ -3129,17 +3086,16 @@ if (class_exists('\WHMCS\Domain\Registrar\Domain') && class_exists('\WHMCS\Carbo
                 break;
         }
 
-        if ('Suspended' === $response['icannStatus']) {
+        if ($response['icannStatus'] === 'Suspended') {
             $status = constant('\WHMCS\Domain\Registrar\Domain::STATUS_SUSPENDED');
         }
 
-        return (new WHMCS\Domain\Registrar\Domain())
+        return (new WHMCS\Domain\Registrar\Domain)
             ->setDomain($response['domainName'])
             ->setNameservers($nameservers)
-            ->setTransferLock('clientTransferProhibited' === $response['domain_status'])
+            ->setTransferLock($response['domain_status'] === 'clientTransferProhibited')
             ->setExpiryDate(WHMCS\Carbon::createFromFormat('Y-m-d H:i:s', $response['domain_expiry']))
-            ->setIdProtectionStatus('Enabled' === $response['idProtect'])
-            ->setRegistrationStatus($status)
-        ;
+            ->setIdProtectionStatus($response['idProtect'] === 'Enabled')
+            ->setRegistrationStatus($status);
     }
 }

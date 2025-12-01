@@ -9,8 +9,7 @@ use NetServa\Fleet\Filament\Resources\FleetVhostResource;
 use NetServa\Fleet\Filament\Resources\FleetVnodeResource;
 use NetServa\Fleet\Filament\Resources\FleetVsiteResource;
 use NetServa\Fleet\Filament\Resources\IpamResource;
-use NetServa\Fleet\Filament\Resources\WireguardPeerResource;
-use NetServa\Fleet\Filament\Resources\WireguardServerResource;
+use NetServa\Fleet\Filament\Resources\WireguardResource;
 
 /**
  * NetServa Fleet Plugin
@@ -47,9 +46,8 @@ class FleetPlugin extends BaseFilamentPlugin
             FleetVhostResource::class,
             // IPAM (unified network/address/reservation management)
             IpamResource::class,
-            // WireGuard VPN
-            WireguardServerResource::class,
-            WireguardPeerResource::class,
+            // WireGuard VPN (unified server/peer management)
+            WireguardResource::class,
         ]);
     }
 

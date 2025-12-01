@@ -16,6 +16,7 @@ class ListDnsRecords extends ListRecords
     {
         return [
             CreateAction::make()
+                ->createAnother(false)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => DnsRecordResource::getFormSchema()),

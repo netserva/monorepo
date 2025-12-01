@@ -16,6 +16,7 @@ class ListDomainRegistrars extends ListRecords
     {
         return [
             CreateAction::make()
+                ->createAnother(false)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => DomainRegistrarResource::getFormSchema()),

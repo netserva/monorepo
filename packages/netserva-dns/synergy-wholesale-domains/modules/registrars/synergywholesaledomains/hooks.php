@@ -7,11 +7,9 @@
  * @license https://github.com/synergywholesale/whmcs-domains-module/LICENSE
  */
 
-
-use WHMCS\Domain\Domain;
-use WHMCS\View\Menu\Item as MenuItem; // http://docs.whmcs.com/Editing_Client_Area_Menus
 use Illuminate\Database\Capsule\Manager as Capsule;
-
+use WHMCS\Domain\Domain; // http://docs.whmcs.com/Editing_Client_Area_Menus
+use WHMCS\View\Menu\Item as MenuItem;
 
 /**
  * We have our own custom ones, so remove the default;
@@ -26,8 +24,8 @@ add_hook('ClientAreaPrimarySidebar', 1, function (MenuItem $primarySidebar) {
     $menu = $primarySidebar->getChild('Domain Details Management');
 
     // Make sure the domain belongs to the Synergy Wholesale Domains module
-    if (!is_null($menu) && 'synergywholesaledomains' === $context->registrarModuleName) {
-        if (!is_null($menu->getChild('Manage Private Nameservers'))) {
+    if (! is_null($menu) && $context->registrarModuleName === 'synergywholesaledomains') {
+        if (! is_null($menu->getChild('Manage Private Nameservers'))) {
             $menu->removeChild('Manage Private Nameservers');
         }
 
@@ -37,39 +35,39 @@ add_hook('ClientAreaPrimarySidebar', 1, function (MenuItem $primarySidebar) {
             $vars = [
                 'resellerID' => $settings['resellerID'],
                 'apiKey' => $settings['apiKey'],
-                'domainName' => $context->domain
+                'domainName' => $context->domain,
             ];
-    
+
             try {
                 $info = synergywholesaledomains_apiRequest('domainInfo', [], $vars);
 
-                if (!in_array($info['dnsConfig'], [1, 5]) && !is_null($menu->getChild('Modify Nameservers'))) {
+                if (! in_array($info['dnsConfig'], [1, 5]) && ! is_null($menu->getChild('Modify Nameservers'))) {
                     $menu->removeChild('Modify Nameservers');
                 }
-    
-                if ($context->hasDnsManagement && !in_array($info['dnsConfig'], [2, 4]) && !is_null($menu->getChild('Manage DNS Host Records'))) {
+
+                if ($context->hasDnsManagement && ! in_array($info['dnsConfig'], [2, 4]) && ! is_null($menu->getChild('Manage DNS Host Records'))) {
                     $menu->removeChild('Manage DNS Host Records');
                 }
-        
-                if ($context->hasEmailForwarding && !in_array($info['dnsConfig'], [2]) && !is_null($menu->getChild('Manage Email Forwarding'))) {
+
+                if ($context->hasEmailForwarding && ! in_array($info['dnsConfig'], [2]) && ! is_null($menu->getChild('Manage Email Forwarding'))) {
                     $menu->removeChild('Manage Email Forwarding');
                 }
             } catch (\Exception $e) {
-                if (!is_null($menu->getChild('Modify Nameservers'))) {
+                if (! is_null($menu->getChild('Modify Nameservers'))) {
                     $menu->removeChild('Modify Nameservers');
                 }
 
-                if (!is_null($menu->getChild('Manage DNS Host Records'))) {
+                if (! is_null($menu->getChild('Manage DNS Host Records'))) {
                     $menu->removeChild('Manage DNS Host Records');
                 }
 
-                if (!is_null($menu->getChild('Manage Email Forwarding'))) {
+                if (! is_null($menu->getChild('Manage Email Forwarding'))) {
                     $menu->removeChild('Manage Email Forwarding');
                 }
             }
 
             // Overwrite Menu Item URL for DNS and Email Forwarding
-            if (!is_null($menu->getChild('Manage DNS Host Records'))) {
+            if (! is_null($menu->getChild('Manage DNS Host Records'))) {
                 $dnsUrl = "clientarea.php?action=domaindetails&id={$context->id}&modop=custom&a=manageDNSURLForwarding";
 
                 $menu->getChild('Manage DNS Host Records')
@@ -77,17 +75,16 @@ add_hook('ClientAreaPrimarySidebar', 1, function (MenuItem $primarySidebar) {
                     ->setCurrent(synergywholesaledomains_getFullUrl($dnsUrl) === htmlspecialchars_decode($_SERVER['REQUEST_URI']));
             }
 
-            if (!is_null($menu->getChild('Manage Email Forwarding'))) {
+            if (! is_null($menu->getChild('Manage Email Forwarding'))) {
                 $forwardingUrl = "clientarea.php?action=domaindetails&id={$context->id}&modop=custom&a=manageEmailForwarding";
-                
+
                 $menu->getChild('Manage Email Forwarding')
                     ->setUri($forwardingUrl)
                     ->setCurrent(synergywholesaledomains_getFullUrl($forwardingUrl) === htmlspecialchars_decode($_SERVER['REQUEST_URI']));
             }
         }
-       
-        
-        if (preg_match('/\.au$/', $context->domain) && !is_null($menu->getChild('Registrar Lock Status'))) {
+
+        if (preg_match('/\.au$/', $context->domain) && ! is_null($menu->getChild('Registrar Lock Status'))) {
             $menu->removeChild('Registrar Lock Status');
         }
     }
@@ -105,7 +102,7 @@ add_hook('ClientAreaPageDomainDNSManagement', 1, function (array $vars) {
         $registrarModuleName = $vars['dnsrecords']['vars']['registrarModule'];
     }
 
-    if ('synergywholesaledomains' === $registrarModuleName) {
+    if ($registrarModuleName === 'synergywholesaledomains') {
         header("Location: clientarea.php?action=domaindetails&id={$domain_id}&modop=custom&a=manageDNSURLForwarding&token={$vars['token']}");
     }
 });
@@ -122,13 +119,14 @@ add_hook('ClientAreaPageDomainEmailForwarding', 1, function (array $vars) {
         $registrarModuleName = $vars['emailforwarders']['vars']['registrarModule'];
     }
 
-    if ('synergywholesaledomains' === $registrarModuleName) {
+    if ($registrarModuleName === 'synergywholesaledomains') {
         header("Location: clientarea.php?action=domaindetails&id={$domain_id}&modop=custom&a=manageEmailForwarding&token={$vars['token']}");
     }
 });
 
 /**
  * We've had reports of things not working/loading properly when they're using Cloudflare Rocket Loader, so let's add an exemption.
+ *
  * @see https://support.cloudflare.com/hc/en-us/articles/200169436-How-can-I-have-Rocket-Loader-ignore-specific-JavaScripts-
  */
 add_hook('ClientAreaHeadOutput', 1, function (array $vars) {
@@ -140,15 +138,14 @@ add_hook('ClientAreaHeadOutput', 1, function (array $vars) {
     ');
 });
 
-
 /*
  * Remove the "Domain Currently Unlocked!" error message on the domain overview for TLDs that don't support registrar lock (such as .au)
  */
 add_hook('ClientAreaPageDomainDetails', 1, function (array $vars) {
 
     $menu = Menu::context('domain');
-        
-    if (preg_match('/\.au$/', $menu->domain) && 'synergywholesaledomains' === $menu->registrar) {
+
+    if (preg_match('/\.au$/', $menu->domain) && $menu->registrar === 'synergywholesaledomains') {
         // Required to hide the error message
         $vars['managementoptions']['locking'] = false;
         $vars['lockstatus'] = false;
@@ -157,7 +154,7 @@ add_hook('ClientAreaPageDomainDetails', 1, function (array $vars) {
     }
 });
 
-add_hook('InvoicePaid', 1, function($vars) {
+add_hook('InvoicePaid', 1, function ($vars) {
     // Check if the invoice has any Cor
     try {
         $cor = Capsule::table('tbldomains_extra')
@@ -167,24 +164,25 @@ add_hook('InvoicePaid', 1, function($vars) {
             ->first();
 
         // Get Domains details from Cor
-        if (!empty($cor)) {
+        if (! empty($cor)) {
             $domain = Domain::find($cor->domain_id);
         }
     } catch (\Exception $e) {
         logModuleCall('synergywholesaledomains', 'initiateAuCor', 'Select DB', $e->getMessage());
+
         return [
             'error' => $e->getMessage(),
         ];
     }
 
     // If a cor and domain was found, and it's registrar is synergy
-    if (!empty($cor) && !empty($domain) && $domain->registrar === 'synergywholesaledomains') {
+    if (! empty($cor) && ! empty($domain) && $domain->registrar === 'synergywholesaledomains') {
         try {
             // Get reseller Id
             $resellerId = Capsule::table('tblregistrars')
                 ->where([
                     ['registrar', 'synergywholesaledomains'],
-                    ['setting', 'resellerID']
+                    ['setting', 'resellerID'],
                 ])
                 ->first();
 
@@ -195,7 +193,7 @@ add_hook('InvoicePaid', 1, function($vars) {
             $apiKey = Capsule::table('tblregistrars')
                 ->where([
                     ['registrar', 'synergywholesaledomains'],
-                    ['setting', 'apiKey']
+                    ['setting', 'apiKey'],
                 ])
                 ->first();
 
@@ -203,22 +201,22 @@ add_hook('InvoicePaid', 1, function($vars) {
             $apiKeyDecrypt = localAPI('DecryptPassword', ['password2' => $apiKey->value]);
 
         } catch (\Exception $e) {
-                logModuleCall('synergywholesaledomains', 'initiateAuCor', 'Select DB', $e->getMessage());
-                return [
-                    'error' => $e->getMessage(),
-                ];
-            }
+            logModuleCall('synergywholesaledomains', 'initiateAuCor', 'Select DB', $e->getMessage());
 
+            return [
+                'error' => $e->getMessage(),
+            ];
+        }
 
         // Pass details to initiateAuCor function in the Synergy Module
-        require_once('synergywholesaledomains.php');
+        require_once 'synergywholesaledomains.php';
         try {
             synergywholesaledomains_initiateAuCor([
                 'resellerID' => $resellerIdDecrypt['password'],
                 'apiKey' => $apiKeyDecrypt['password'],
                 'domainid' => $cor->domain_id,
                 'renewal' => $cor->value,
-                'domainname' => $domain->domain
+                'domainname' => $domain->domain,
             ]);
 
             // Delete CoR meta
@@ -229,6 +227,7 @@ add_hook('InvoicePaid', 1, function($vars) {
                 ->delete();
         } catch (\Exception $e) {
             logModuleCall('synergywholesaledomains', 'initiateAuCorHook', 'Initiate CoR', $e->getMessage());
+
             return [
                 'error' => $e->getMessage(),
             ];
@@ -240,7 +239,7 @@ add_hook('AfterRegistrarRegistration', 1, function ($vars) {
     // Only fire for the SWS registrar module
     if ($vars['params']['registrar'] == 'synergywholesaledomains') {
         // If defaultDnsConfig is set
-        if (!empty($vars['params']['defaultDnsConfig'])) {
+        if (! empty($vars['params']['defaultDnsConfig'])) {
             // If defaultDnsConfig is Parked, FreeDns or Forwarding, SWS Account Default, Legacy Hosting, Wholesale Hosting
             if (in_array($vars['params']['defaultDnsConfig'], ['2', '3', '4', '5', '6', '7'])) {
                 synergywholesaledomains_apiRequest('updateNameServers', $vars['params'], [
@@ -250,7 +249,7 @@ add_hook('AfterRegistrarRegistration', 1, function ($vars) {
                         'ns1.nameserver.net.au',
                         'ns2.nameserver.net.au',
                         'ns3.nameserver.net.au',
-                    ]
+                    ],
                 ], false);
             }
 
@@ -277,7 +276,7 @@ add_hook('AfterRegistrarRegistration', 1, function ($vars) {
                 }
             }
 
-                // If defaultDnsConfig is customNS
+            // If defaultDnsConfig is customNS
             if ($vars['params']['defaultDnsConfig'] == '1') {
                 synergywholesaledomains_apiRequest('updateNameServers', $vars['params'], [
                     'domainName' => $vars['params']['domainName'],

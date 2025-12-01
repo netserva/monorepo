@@ -18,6 +18,7 @@ class ListMailDomains extends ListRecords
     {
         return [
             CreateAction::make()
+                ->createAnother(false)
                 ->modalWidth(Width::ExtraLarge)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => MailDomainResource::getFormSchema()),

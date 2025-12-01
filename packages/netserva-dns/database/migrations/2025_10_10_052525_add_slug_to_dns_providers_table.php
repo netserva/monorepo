@@ -32,7 +32,7 @@ return new class extends Migration
 
             // Update: name becomes slug, description gets old name + old description
             $provider->name = $slug;
-            $provider->description = $oldName . ($oldDescription ? " - {$oldDescription}" : '');
+            $provider->description = $oldName.($oldDescription ? " - {$oldDescription}" : '');
             $provider->save();
         }
     }

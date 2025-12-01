@@ -27,8 +27,6 @@ class IpAddress extends Model
         'assignment_type',
         'mac_address',
         'description',
-        'owner',
-        'service',
         'fleet_vnode_id',
         'ssh_host_reference',
         'allocated_at',
@@ -127,8 +125,7 @@ class IpAddress extends Model
             'hostname' => null,
             'fqdn' => null,
             'mac_address' => null,
-            'owner' => null,
-            'service' => null,
+            'description' => null,
             'allocated_at' => null,
             'fleet_vnode_id' => null,
         ]);

@@ -25,8 +25,6 @@ class SshTunnelService
      * Active SSH tunnel processes
      *
      * Format: ['{host}:{service}' => ['pid' => int, 'local_port' => int, 'created_at' => timestamp]]
-     *
-     * @var array
      */
     protected array $activeTunnels = [];
 

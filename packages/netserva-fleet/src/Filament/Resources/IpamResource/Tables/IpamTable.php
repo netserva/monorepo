@@ -13,10 +13,8 @@ use Filament\Notifications\Notification;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use NetServa\Fleet\Filament\Resources\IpamResource;
 use NetServa\Fleet\Filament\Resources\IpamResource\Schemas\NetworkForm;
@@ -80,10 +78,6 @@ class IpamTable
                     ->color(fn (int $state): string => $state > 0 ? 'warning' : 'gray')
                     ->toggleable(),
 
-                IconColumn::make('is_active')
-                    ->label('Active')
-                    ->boolean(),
-
                 TextColumn::make('updated_at')
                     ->label('Updated')
                     ->since()
@@ -101,17 +95,23 @@ class IpamTable
                         '6' => 'IPv6',
                     ]),
 
-                TernaryFilter::make('is_active')
-                    ->label('Active'),
             ])
             ->recordUrl(fn (IpNetwork $record) => IpamResource::getUrl('addresses', ['record' => $record]))
             ->recordActions([
                 EditAction::make()
                     ->hiddenLabel()
-                    ->tooltip('Edit network')
+                    ->tooltip('Edit This Network')
                     ->modalWidth(Width::Medium)
                     ->modalFooterActionsAlignment(Alignment::End)
                     ->schema(fn () => NetworkForm::getFormSchema()),
+
+                // Navigate to reservations page
+                Action::make('reservations')
+                    ->hiddenLabel()
+                    ->tooltip('Edit Reservations')
+                    ->icon(Heroicon::OutlinedBookmark)
+                    ->color('warning')
+                    ->url(fn (IpNetwork $record) => IpamResource::getUrl('reservations', ['record' => $record])),
 
                 // Scan network for live hosts
                 Action::make('discover')

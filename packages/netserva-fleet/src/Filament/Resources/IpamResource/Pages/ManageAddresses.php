@@ -22,6 +22,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use NetServa\Fleet\Filament\Resources\IpamResource;
@@ -87,16 +88,6 @@ class ManageAddresses extends ManageRelatedRecords
                 ->required()
                 ->columnSpan(1),
 
-            TextInput::make('owner')
-                ->placeholder('admin')
-                ->maxLength(255)
-                ->columnSpan(1),
-
-            TextInput::make('service')
-                ->placeholder('Web Server')
-                ->maxLength(255)
-                ->columnSpan(1),
-
             TextInput::make('mac_address')
                 ->label('MAC Address')
                 ->placeholder('00:00:00:00:00:00')
@@ -126,6 +117,13 @@ class ManageAddresses extends ManageRelatedRecords
                     ->sortable()
                     ->placeholder('-'),
 
+                TextColumn::make('description')
+                    ->limit(45)
+                    ->searchable()
+                    ->sortable()
+                    ->tooltip(fn ($record): ?string => strlen($record->description ?? '') > 45 ? $record->description : null)
+                    ->placeholder('-'),
+
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -139,16 +137,6 @@ class ManageAddresses extends ManageRelatedRecords
                         default => 'gray',
                     })
                     ->sortable(),
-
-                TextColumn::make('owner')
-                    ->searchable()
-                    ->toggleable()
-                    ->placeholder('-'),
-
-                TextColumn::make('service')
-                    ->searchable()
-                    ->toggleable()
-                    ->placeholder('-'),
 
                 TextColumn::make('mac_address')
                     ->label('MAC')
@@ -177,6 +165,13 @@ class ManageAddresses extends ManageRelatedRecords
                 SelectFilter::make('status')
                     ->options(IpAddress::STATUSES)
                     ->multiple(),
+
+                TernaryFilter::make('has_description')
+                    ->label('Has Description')
+                    ->queries(
+                        true: fn ($query) => $query->whereNotNull('description')->where('description', '!=', ''),
+                        false: fn ($query) => $query->where(fn ($q) => $q->whereNull('description')->orWhere('description', '')),
+                    ),
             ])
             ->headerActions([])
             ->header(null)
@@ -223,7 +218,7 @@ class ManageAddresses extends ManageRelatedRecords
             ->reorderable('sort_order')
             ->defaultSort('sort_order')
             ->striped()
-            ->paginated([10, 25, 50, 100]);
+            ->paginated([5, 10, 25, 50, 100]);
     }
 
     protected function getHeaderActions(): array
@@ -237,6 +232,7 @@ class ManageAddresses extends ManageRelatedRecords
                 ->url(IpamResource::getUrl()),
 
             CreateAction::make()
+                ->createAnother(false)
                 ->label('New IP Address')
                 ->icon(Heroicon::Plus)
                 ->modalWidth(Width::Large)

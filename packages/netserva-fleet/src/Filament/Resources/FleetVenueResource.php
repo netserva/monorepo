@@ -39,7 +39,7 @@ class FleetVenueResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 4;  // Alphabetical: Venues
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
