@@ -54,14 +54,30 @@ resources/docs-archive-*/
 .env.local
 .env.*.local
 
-# Claude Code Knowledge System - ALL PRIVATE (contains infrastructure details)
-# Agents, journals, and runbooks all contain sensitive IPs and server names
+# Claude Code Knowledge System
+# =============================
+# PUBLIC (tracked in git):
+#   .claude/commands/     - Generic slash command templates (except agent.md, runbook.md)
+#   .claude/roadmap/      - Future feature plans (generic specs, no secrets)
+#   .claude/plans/        - Implementation plans (code architecture, no secrets)
+#
+# PRIVATE (gitignored - contain real IPs, hostnames, domain names):
+#   .claude/agents/       - AI prompts with infrastructure context
+#   .claude/journal/      - Session history with real server details
+#   .claude/runbooks/     - Step-by-step procedures with exact commands
+#   .claude/active-context.md - Current session state
+#   .claude/project-timeline.md - Project history with infrastructure refs
+
+# Private directories (contain sensitive infrastructure details)
 .claude/agents/
 .claude/journal/
 .claude/runbooks/
+
+# Private files
 .claude/active-context.md
 .claude/project-timeline.md
-# Command templates (user-customizable, may contain infrastructure context)
+
+# Private command templates (reference private agents/runbooks)
 .claude/commands/agent.md
 .claude/commands/runbook.md
 
