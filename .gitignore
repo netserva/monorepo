@@ -82,7 +82,7 @@ resources/docs-archive-*/
 .claude/commands/runbook.md
 
 # Private documentation (contains credentials, IPs, infrastructure details)
-resources/docs/private/
+.claude/docs/
 
 # Media files (generated from source)
 *.mp3
