@@ -2,6 +2,14 @@
 
 namespace NetServa\Core;
 
+use Illuminate\Database\Console\Migrations\FreshCommand;
+use Illuminate\Database\Console\Migrations\RefreshCommand;
+use Illuminate\Database\Console\Migrations\ResetCommand;
+use Illuminate\Database\Console\WipeCommand;
+use Illuminate\Database\Events\MigrationsStarted;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use NetServa\Core\Services\BinaryLaneService;
 use NetServa\Core\Services\ConfigurationService;
@@ -84,6 +92,9 @@ class NetServaCoreServiceProvider extends ServiceProvider
 
         // Publish assets
         $this->publishAssets();
+
+        // Register database protection (auto-backup + production safeguards)
+        $this->registerDatabaseProtection();
     }
 
     /**
@@ -210,6 +221,11 @@ class NetServaCoreServiceProvider extends ServiceProvider
             \NetServa\Core\Console\Commands\ImportVmailCredentialsCommand::class,
             // VHost Validation
             \NetServa\Core\Console\Commands\ValidateCommand::class,
+
+            // Database Backup/Restore Commands
+            \NetServa\Core\Console\Commands\DbSnapshotCommand::class,
+            \NetServa\Core\Console\Commands\DbRestoreCommand::class,
+            \NetServa\Core\Console\Commands\DbListCommand::class,
         ]);
     }
 
@@ -255,6 +271,112 @@ class NetServaCoreServiceProvider extends ServiceProvider
             $this->publishes([
                 $migrationsPath => database_path('migrations'),
             ], 'netserva-core-migrations');
+        }
+    }
+
+    /**
+     * Register database protection mechanisms
+     *
+     * 1. Prohibits destructive commands (migrate:fresh, migrate:reset, db:wipe) in production
+     * 2. Auto-creates snapshot before destructive commands in development
+     */
+    protected function registerDatabaseProtection(): void
+    {
+        // Skip protection during testing
+        if ($this->app->environment('testing')) {
+            return;
+        }
+
+        // Layer 1: Prohibit destructive commands in production (Laravel 11.9+)
+        if ($this->app->environment('production')) {
+            // Use DB::prohibitDestructiveCommands() if available (Laravel 11.9+)
+            if (method_exists(DB::class, 'prohibitDestructiveCommands')) {
+                DB::prohibitDestructiveCommands();
+            } else {
+                // Fallback for older Laravel versions
+                FreshCommand::prohibit();
+                RefreshCommand::prohibit();
+                ResetCommand::prohibit();
+                WipeCommand::prohibit();
+            }
+
+            return;
+        }
+
+        // Layer 2: Auto-backup before destructive migrations in development
+        // Listen for destructive commands and create automatic backup
+        Event::listen(MigrationsStarted::class, function (MigrationsStarted $event) {
+            // Check if this is a destructive operation
+            $argv = $_SERVER['argv'] ?? [];
+            $command = implode(' ', $argv);
+
+            $isDestructive = str_contains($command, 'migrate:fresh')
+                || str_contains($command, 'migrate:refresh')
+                || str_contains($command, 'migrate:reset')
+                || str_contains($command, 'db:wipe');
+
+            if ($isDestructive) {
+                $this->createAutoBackup();
+            }
+        });
+
+        // Also hook into the commands directly for better detection
+        if ($this->app->runningInConsole()) {
+            $this->app->booted(function () {
+                $argv = $_SERVER['argv'] ?? [];
+
+                // Check if running a destructive migration command
+                $isDestructive = in_array('migrate:fresh', $argv)
+                    || in_array('migrate:refresh', $argv)
+                    || in_array('migrate:reset', $argv)
+                    || in_array('db:wipe', $argv);
+
+                if ($isDestructive) {
+                    $this->createAutoBackup();
+                }
+            });
+        }
+    }
+
+    /**
+     * Create an automatic backup before destructive operations
+     */
+    protected function createAutoBackup(): void
+    {
+        try {
+            // Only backup if database exists and has tables
+            $connection = config('database.default');
+            $driver = config("database.connections.{$connection}.driver");
+
+            // For SQLite, check if file exists
+            if ($driver === 'sqlite') {
+                $database = config("database.connections.{$connection}.database");
+                if ($database === ':memory:' || ! file_exists($database)) {
+                    return;
+                }
+            }
+
+            // Create auto-backup
+            $backupName = 'auto_'.now()->format('Y-m-d_His');
+
+            // Use output to console if available
+            if ($this->app->runningInConsole()) {
+                echo "\n";
+                echo "  \033[33m[NetServa]\033[0m Creating automatic backup before destructive migration...\n";
+            }
+
+            Artisan::call('db:snapshot', ['name' => $backupName]);
+
+            if ($this->app->runningInConsole()) {
+                echo "  \033[32m[NetServa]\033[0m Backup created: {$backupName}\n";
+                echo "  \033[36m[NetServa]\033[0m Restore with: php artisan db:restore {$backupName}\n";
+                echo "\n";
+            }
+        } catch (\Exception $e) {
+            // Log but don't block the migration
+            if ($this->app->runningInConsole()) {
+                echo "  \033[31m[NetServa]\033[0m Auto-backup failed: {$e->getMessage()}\n";
+            }
         }
     }
 }
