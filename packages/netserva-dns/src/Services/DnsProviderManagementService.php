@@ -4,7 +4,6 @@ namespace NetServa\Dns\Services;
 
 use Illuminate\Support\Collection;
 use NetServa\Dns\Models\DnsProvider;
-use NetServa\Dns\Models\DnsZone;
 
 /**
  * DNS Provider Management Service
@@ -149,10 +148,7 @@ class DnsProviderManagementService
             // Load usage statistics if requested
             if ($options['with_usage'] ?? false) {
                 $data['usage'] = [
-                    'venues' => $provider->venues()->count(),
-                    'vsites' => $provider->vsites()->count(),
-                    'vnodes' => $provider->vnodes()->count(),
-                    'vhosts' => $provider->vhosts()->count(),
+                    'zones' => $provider->zones()->count(),
                 ];
             }
 
@@ -304,23 +300,13 @@ class DnsProviderManagementService
             $zonesCount = $provider->zones()->count();
             $hasZones = $zonesCount > 0;
 
-            // Check for usage in Fleet hierarchy
-            $usage = [
-                'venues' => $provider->venues()->count(),
-                'vsites' => $provider->vsites()->count(),
-                'vnodes' => $provider->vnodes()->count(),
-                'vhosts' => $provider->vhosts()->count(),
-            ];
-            $inUse = array_sum($usage) > 0;
-
-            // Prevent deletion if zones exist or in use (unless forced)
-            if (($hasZones || $inUse) && ! ($options['force'] ?? false)) {
+            // Prevent deletion if zones exist (unless forced)
+            if ($hasZones && ! ($options['force'] ?? false)) {
                 return [
                     'success' => false,
                     'provider' => $provider,
                     'zones_count' => $zonesCount,
-                    'usage' => $usage,
-                    'message' => 'Cannot delete DNS provider - zones exist or provider is in use',
+                    'message' => 'Cannot delete DNS provider - zones exist',
                 ];
             }
 
@@ -492,13 +478,9 @@ class DnsProviderManagementService
     {
         return [
             'zones' => $provider->zones()->count(),
-            'records' => DnsZone::whereHas('zones', function ($query) use ($provider) {
+            'records' => DnsRecord::whereHas('zone', function ($query) use ($provider) {
                 $query->where('dns_provider_id', $provider->id);
             })->count(),
-            'venues' => $provider->venues()->count(),
-            'vsites' => $provider->vsites()->count(),
-            'vnodes' => $provider->vnodes()->count(),
-            'vhosts' => $provider->vhosts()->count(),
         ];
     }
 }

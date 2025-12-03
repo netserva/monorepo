@@ -120,17 +120,9 @@ class DnsProvidersTable
                 Tables\Columns\TextColumn::make('usage_summary')
                     ->label('Used By')
                     ->getStateUsing(function ($record) {
-                        $counts = [
-                            'Venues' => $record->venues()->count(),
-                            'VSites' => $record->vsites()->count(),
-                            'VNodes' => $record->vnodes()->count(),
-                            'VHosts' => $record->vhosts()->count(),
-                        ];
+                        $zoneCount = $record->zones()->count();
 
-                        return collect($counts)
-                            ->filter(fn ($count) => $count > 0)
-                            ->map(fn ($count, $type) => "{$count} {$type}")
-                            ->join(', ') ?: 'Unused';
+                        return $zoneCount > 0 ? "{$zoneCount} Zones" : 'Unused';
                     })
                     ->toggleable(),
 
