@@ -5,14 +5,12 @@ namespace NetServa\Dns\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use NetServa\Core\Models\InfrastructureNode;
 
 class DomainRegistration extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'infrastructure_node_id',
         'domain_registrar_id',
         'domain_name',
         'registration_date',
@@ -23,6 +21,8 @@ class DomainRegistration extends Model
         'registrant_contact',
         'nameservers',
         'description',
+        'tags',
+        'metadata',
     ];
 
     protected $casts = [
@@ -32,13 +32,14 @@ class DomainRegistration extends Model
         'auto_renew' => 'boolean',
         'registrant_contact' => 'array',
         'nameservers' => 'array',
+        'tags' => 'array',
+        'metadata' => 'array',
     ];
 
-    // Relationships
-    public function infrastructureNode()
-    {
-        return $this->belongsTo(InfrastructureNode::class);
-    }
+    protected $attributes = [
+        'registrant_contact' => '{}',
+        'nameservers' => '[]',
+    ];
 
     public function domainRegistrar()
     {

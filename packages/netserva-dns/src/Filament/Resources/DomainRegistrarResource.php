@@ -24,6 +24,8 @@ class DomainRegistrarResource extends Resource
 
     protected static ?int $navigationSort = 40;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function getFormSchema(): array
     {
         return [
@@ -38,13 +40,14 @@ class DomainRegistrarResource extends Resource
                 Forms\Components\Select::make('registrar_type')
                     ->required()
                     ->options([
+                        'synergywholesale' => 'SynergyWholesale',
                         'namecheap' => 'Namecheap',
                         'godaddy' => 'GoDaddy',
                         'cloudflare' => 'Cloudflare',
                         'route53' => 'Route53',
                         'other' => 'Other',
                     ])
-                    ->default('other')
+                    ->default('synergywholesale')
                     ->hintIcon('heroicon-o-question-mark-circle')
                     ->hintIconTooltip('Type of registrar API'),
             ]),
@@ -94,7 +97,8 @@ class DomainRegistrarResource extends Resource
                 ->keyLabel('Setting')
                 ->valueLabel('Value')
                 ->addActionLabel('Add setting')
-                ->reorderable(false),
+                ->reorderable(false)
+                ->default([]),
         ];
     }
 

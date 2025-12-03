@@ -3,6 +3,7 @@
 namespace NetServa\Dns\Filament\Resources;
 
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -24,11 +25,17 @@ class DomainRegistrationResource extends Resource
 {
     protected static ?string $model = DomainRegistration::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
 
     protected static UnitEnum|string|null $navigationGroup = 'Dns';
 
     protected static ?int $navigationSort = 30;
+
+    protected static ?string $navigationLabel = 'Domains';
+
+    protected static ?string $modelLabel = 'Domain';
+
+    protected static ?string $pluralModelLabel = 'Domains';
 
     public static function getFormSchema(): array
     {
@@ -47,20 +54,10 @@ class DomainRegistrationResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->createOptionForm([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('registrar_type')
-                            ->options([
-                                'cloudflare' => 'Cloudflare',
-                                'namecheap' => 'Namecheap',
-                                'godaddy' => 'GoDaddy',
-                                'gandi' => 'Gandi',
-                                'other' => 'Other',
-                            ])
-                            ->required(),
-                    ])
+                    ->createOptionForm(fn () => DomainRegistrarResource::getFormSchema())
+                    ->createOptionAction(fn (Action $action) => $action
+                        ->modalHeading('Create Domain Registrar')
+                        ->modalWidth(Width::ExtraLarge))
                     ->hintIcon('heroicon-o-question-mark-circle')
                     ->hintIconTooltip('Domain registrar managing this domain'),
             ]),
@@ -110,11 +107,13 @@ class DomainRegistrationResource extends Resource
                 ->keyLabel('Field')
                 ->valueLabel('Value')
                 ->addActionLabel('Add contact field')
+                ->default([])
                 ->hintIcon('heroicon-o-question-mark-circle')
                 ->hintIconTooltip('Contact information for domain owner'),
 
             Forms\Components\TagsInput::make('nameservers')
                 ->placeholder('e.g., ns1.example.com')
+                ->default([])
                 ->hintIcon('heroicon-o-question-mark-circle')
                 ->hintIconTooltip('Nameservers associated with this domain'),
 
@@ -147,13 +146,21 @@ class DomainRegistrationResource extends Resource
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'active' => 'success',
+                        'locked' => 'info',
                         'pending' => 'warning',
                         'expired' => 'danger',
-                        'transferred' => 'info',
+                        'transferred' => 'purple',
                         'cancelled' => 'gray',
                         default => 'gray',
                     })
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('nameservers')
+                    ->label('NS')
+                    ->getStateUsing(fn ($record) => $record->nameservers[0] ?? '-')
+                    ->limit(25)
+                    ->tooltip(fn ($record) => implode("\n", $record->nameservers ?? []))
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('expiry_date')
                     ->label('Expires')
@@ -177,11 +184,15 @@ class DomainRegistrationResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'active' => 'Active',
+                        'locked' => 'Locked',
                         'pending' => 'Pending',
                         'expired' => 'Expired',
                         'transferred' => 'Transferred',
                         'cancelled' => 'Cancelled',
                     ]),
+                Tables\Filters\Filter::make('expiring_soon')
+                    ->label('Expiring in 60 days')
+                    ->query(fn ($query) => $query->where('expiry_date', '<=', now()->addDays(60))),
                 Tables\Filters\SelectFilter::make('domain_registrar_id')
                     ->label('Registrar')
                     ->relationship('domainRegistrar', 'name'),
@@ -192,13 +203,13 @@ class DomainRegistrationResource extends Resource
             ->recordActions([
                 EditAction::make()
                     ->hiddenLabel()
-                    ->tooltip('Edit registration')
-                    ->modalWidth(Width::Medium)
+                    ->tooltip('Edit domain')
+                    ->modalWidth(Width::ExtraLarge)
                     ->modalFooterActionsAlignment(Alignment::End)
                     ->schema(fn () => self::getFormSchema()),
                 DeleteAction::make()
                     ->hiddenLabel()
-                    ->tooltip('Delete registration'),
+                    ->tooltip('Delete domain'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -221,5 +232,10 @@ class DomainRegistrationResource extends Resource
         return [
             'index' => ListDomainRegistrations::route('/'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
     }
 }

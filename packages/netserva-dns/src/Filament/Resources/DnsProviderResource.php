@@ -21,7 +21,13 @@ class DnsProviderResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = 'Dns';
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 10;
+
+    protected static ?string $navigationLabel = 'Dns';
+
+    protected static ?string $modelLabel = 'Dns Provider';
+
+    protected static ?string $pluralModelLabel = 'Dns Providers';
 
     public static function form(Schema $schema): Schema
     {

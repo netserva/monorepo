@@ -126,6 +126,9 @@ class NetServaDnsServiceProvider extends ServiceProvider
                 Console\Commands\PowerDnsManagementCommand::class,
                 Console\Commands\DnsVerifyCommand::class,
                 // Console\Commands\CheckNativeZonesCommand::class, // TODO: Implement this command
+
+                // Domain Registrar commands
+                Console\Commands\SyncDomainsCommand::class,
             ]);
         }
     }

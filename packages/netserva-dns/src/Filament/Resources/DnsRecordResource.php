@@ -28,7 +28,9 @@ class DnsRecordResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = 'Dns';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 30;
+
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function getFormSchema(): array
     {
@@ -155,7 +157,11 @@ class DnsRecordResource extends Resource
             ])
             ->defaultSort('updated_at', 'desc')
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('dns_zone_id')
+                    ->label('Zone')
+                    ->relationship('dnsZone', 'name')
+                    ->searchable()
+                    ->preload(),
             ])
             ->recordActions([
                 EditAction::make()

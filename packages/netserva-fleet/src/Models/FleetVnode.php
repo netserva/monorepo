@@ -60,6 +60,12 @@ class FleetVnode extends Model
         'is_active',
         'email_capable',
         'fcrdns_validated_at',
+        // BinaryLane fields
+        'bl_server_id',
+        'bl_size_slug',
+        'bl_region',
+        'bl_image',
+        'bl_synced_at',
     ];
 
     protected $casts = [
@@ -71,6 +77,7 @@ class FleetVnode extends Model
         'last_discovered_at' => 'datetime',
         'next_scan_at' => 'datetime',
         'fcrdns_validated_at' => 'datetime',
+        'bl_synced_at' => 'datetime',
         'is_active' => 'boolean',
         'email_capable' => 'boolean',
     ];

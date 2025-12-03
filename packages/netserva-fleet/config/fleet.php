@@ -73,4 +73,44 @@ return [
             'router' => ['networking', 'firewall'],
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | BinaryLane VPS Provider Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for BinaryLane API integration.
+    | Token can be set via BINARYLANE_API_TOKEN env var or stored
+    | encrypted in a VSite's api_credentials field.
+    |
+    */
+
+    'binarylane' => [
+        // API base URL
+        'api_url' => env('BINARYLANE_API_URL', 'https://api.binarylane.com.au/v2'),
+
+        // Default API token (optional - can also be set per-VSite)
+        'api_token' => env('BINARYLANE_API_TOKEN'),
+
+        // HTTP timeout in seconds
+        'timeout' => 30,
+
+        // Cache TTL for static data (sizes, images, regions) in seconds
+        'cache_ttl' => 3600,
+
+        // Default region for new servers
+        'default_region' => 'syd',
+
+        // Default SSH key IDs to add to all new servers (optional)
+        'default_ssh_keys' => [],
+
+        // Auto-create SSH host when syncing/creating servers
+        'auto_create_ssh_host' => true,
+
+        // Default SSH user for new servers
+        'default_ssh_user' => 'root',
+
+        // Default SSH port for new servers
+        'default_ssh_port' => 22,
+    ],
 ];

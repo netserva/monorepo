@@ -25,6 +25,10 @@ class DomainRegistrar extends Model
         'additional_config' => 'array',
     ];
 
+    protected $attributes = [
+        'additional_config' => '{}',
+    ];
+
     // Relationships
     public function domainRegistrations()
     {

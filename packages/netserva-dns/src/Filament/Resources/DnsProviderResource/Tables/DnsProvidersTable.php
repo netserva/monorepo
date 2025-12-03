@@ -6,7 +6,6 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -16,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use NetServa\Dns\Filament\Resources\DnsProviderResource\Schemas\DnsProviderForm;
+use NetServa\Dns\Filament\Resources\DnsZoneResource;
 
 class DnsProvidersTable
 {
@@ -206,13 +206,7 @@ class DnsProvidersTable
                             : $query->whereNull('connection_config->ssh_host');
                     }),
             ])
-            ->headerActions([
-                CreateAction::make()
-                    ->createAnother(false)
-                    ->modalWidth(Width::ExtraLarge)
-                    ->modalFooterActionsAlignment(Alignment::End)
-                    ->schema(fn () => DnsProviderForm::getFormSchema()),
-            ])
+            ->headerActions([])
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make()
@@ -356,6 +350,11 @@ class DnsProvidersTable
             ])
             ->defaultSort('updated_at', 'desc')
             ->striped()
-            ->paginated([5, 10, 25, 50, 100]);
+            ->paginated([5, 10, 25, 50, 100])
+            ->recordUrl(fn ($record) => DnsZoneResource::getUrl('index', [
+                'tableFilters' => [
+                    'dns_provider_id' => ['value' => $record->id],
+                ],
+            ]));
     }
 }

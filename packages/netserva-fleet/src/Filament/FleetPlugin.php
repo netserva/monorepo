@@ -84,6 +84,8 @@ class FleetPlugin extends BaseFilamentPlugin
                 'vnode_management' => true,
                 'vhost_management' => true,
                 'fleet_discovery' => true,
+                // BinaryLane VPS provider integration
+                'binarylane_management' => true,
                 // IPAM features (merged from netserva-ipam)
                 'ip_network_management' => true,
                 'ip_address_tracking' => true,

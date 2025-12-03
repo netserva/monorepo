@@ -21,7 +21,9 @@ class DnsZoneResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = 'Dns';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 20;
+
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function getFormSchema(): array
     {

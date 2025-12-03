@@ -47,53 +47,66 @@ class FleetServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'netserva-fleet');
 
         // Register commands (NetServa 3.0 CRUD pattern)
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                // Fleet Commands
-                AddfleetCommand::class,     // CREATE: Discover/register fleet infrastructure
-                ChfleetCommand::class,      // UPDATE: Sync fleet from var/ directory
-                VNodeSetupCommand::class,   // Legacy: VNode-specific setup
+        // Note: Commands registered unconditionally so Artisan::call() works from web context
+        $this->commands([
+            // Fleet Commands
+            AddfleetCommand::class,     // CREATE: Discover/register fleet infrastructure
+            ChfleetCommand::class,      // UPDATE: Sync fleet from var/ directory
+            VNodeSetupCommand::class,   // Legacy: VNode-specific setup
 
-                // Venue CRUD Commands
-                Console\Commands\AddvenueCommand::class,    // CREATE
-                Console\Commands\ShvenueCommand::class,     // READ
-                Console\Commands\ChvenueCommand::class,     // UPDATE
-                Console\Commands\DelvenueCommand::class,    // DELETE
+            // Venue CRUD Commands
+            Console\Commands\AddvenueCommand::class,    // CREATE
+            Console\Commands\ShvenueCommand::class,     // READ
+            Console\Commands\ChvenueCommand::class,     // UPDATE
+            Console\Commands\DelvenueCommand::class,    // DELETE
 
-                // VSite CRUD Commands
-                Console\Commands\AddvsiteCommand::class,    // CREATE
-                Console\Commands\ShvsiteCommand::class,     // READ
-                Console\Commands\ChvsiteCommand::class,     // UPDATE
-                Console\Commands\DelvsiteCommand::class,    // DELETE
+            // VSite CRUD Commands
+            Console\Commands\AddvsiteCommand::class,    // CREATE
+            Console\Commands\ShvsiteCommand::class,     // READ
+            Console\Commands\ChvsiteCommand::class,     // UPDATE
+            Console\Commands\DelvsiteCommand::class,    // DELETE
 
-                // VNode CRUD Commands
-                Console\Commands\AddvnodeCommand::class,    // CREATE
-                Console\Commands\ShvnodeCommand::class,     // READ
-                Console\Commands\ChvnodeCommand::class,     // UPDATE
-                Console\Commands\DelvnodeCommand::class,    // DELETE
+            // VNode CRUD Commands
+            Console\Commands\AddvnodeCommand::class,    // CREATE
+            Console\Commands\ShvnodeCommand::class,     // READ
+            Console\Commands\ChvnodeCommand::class,     // UPDATE
+            Console\Commands\DelvnodeCommand::class,    // DELETE
 
-                // VHost CRUD Commands (moved from CLI package)
-                AddvhostCommand::class,     // CREATE
-                ShvhostCommand::class,      // READ
-                ChvhostCommand::class,      // UPDATE
-                DelvhostCommand::class,     // DELETE
+            // VHost CRUD Commands (moved from CLI package)
+            AddvhostCommand::class,     // CREATE
+            ShvhostCommand::class,      // READ
+            ChvhostCommand::class,      // UPDATE
+            DelvhostCommand::class,     // DELETE
 
-                // VConf CRUD Commands (moved from CLI package)
-                AddvconfCommand::class,     // CREATE
-                ShvconfCommand::class,      // READ
-                ChvconfCommand::class,      // UPDATE
-                DelvconfCommand::class,     // DELETE
+            // VConf CRUD Commands (moved from CLI package)
+            AddvconfCommand::class,     // CREATE
+            ShvconfCommand::class,      // READ
+            ChvconfCommand::class,      // UPDATE
+            DelvconfCommand::class,     // DELETE
 
-                // VNode Configuration Commands (Non-CRUD)
-                Console\Commands\FleetIpv6PtrConfigureCommand::class,  // Configure IPv6 PTR records
+            // VNode Configuration Commands (Non-CRUD)
+            Console\Commands\FleetIpv6PtrConfigureCommand::class,  // Configure IPv6 PTR records
 
-                // Dnsmasq CRUD Commands (Infrastructure - Router/Gateway DNS)
-                Console\Commands\AddDnsmasqCommand::class,  // CREATE: Add DNS host
-                Console\Commands\ShDnsmasqCommand::class,   // READ: Show DNS hosts (--sync to refresh)
-                Console\Commands\ChDnsmasqCommand::class,   // UPDATE: Modify DNS host
-                Console\Commands\DelDnsmasqCommand::class,  // DELETE: Remove DNS host
-            ]);
-        }
+            // Dnsmasq CRUD Commands (Infrastructure - Router/Gateway DNS)
+            Console\Commands\AddDnsmasqCommand::class,  // CREATE: Add DNS host
+            Console\Commands\ShDnsmasqCommand::class,   // READ: Show DNS hosts (--sync to refresh)
+            Console\Commands\ChDnsmasqCommand::class,   // UPDATE: Modify DNS host
+            Console\Commands\DelDnsmasqCommand::class,  // DELETE: Remove DNS host
+
+            // BinaryLane VPS CRUD Commands
+            Console\Commands\AddblCommand::class,       // CREATE: Create BinaryLane server + VNode
+            Console\Commands\ShblCommand::class,        // READ: List/show BinaryLane servers
+            Console\Commands\ChblCommand::class,        // UPDATE: Power/resize/rename server
+            Console\Commands\DelblCommand::class,       // DELETE: Delete server + cleanup
+
+            // BinaryLane Reference Data Commands
+            Console\Commands\BlSizesCommand::class,     // List available VPS sizes
+            Console\Commands\BlImagesCommand::class,    // List available OS images
+            Console\Commands\BlRegionsCommand::class,   // List available regions
+            Console\Commands\BlVpcsCommand::class,      // List VPCs
+            Console\Commands\BlKeysCommand::class,      // List SSH keys
+            Console\Commands\BlSyncCommand::class,      // Sync servers to VNodes
+        ]);
 
         // Publish configuration
         $this->publishes([
