@@ -172,16 +172,6 @@ class DnsProvidersTable
                     ->query(fn (Builder $query): Builder => $query->has('zones'))
                     ->toggle(),
 
-                Tables\Filters\Filter::make('in_use')
-                    ->label('Currently In Use')
-                    ->query(fn (Builder $query): Builder => $query->where(function ($q) {
-                        $q->has('venues')
-                            ->orHas('vsites')
-                            ->orHas('vnodes')
-                            ->orHas('vhosts');
-                    }))
-                    ->toggle(),
-
                 Tables\Filters\SelectFilter::make('has_ssh')
                     ->label('SSH Tunnel')
                     ->options([
@@ -318,7 +308,7 @@ class DnsProvidersTable
                     //     ->openUrlInNewTab(),
 
                     DeleteAction::make(),
-                ])->button()->label('Actions'),
+                ]),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
