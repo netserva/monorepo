@@ -8,6 +8,7 @@ use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use NetServa\Fleet\Filament\Resources\WireguardResource;
 use NetServa\Fleet\Filament\Resources\WireguardResource\Schemas\ServerForm;
 use NetServa\Fleet\Services\WireguardKeyService;
@@ -22,6 +23,7 @@ class ListServers extends ListRecords
             CreateAction::make()
                 ->createAnother(false)
                 ->label('New Server')
+                ->icon(Heroicon::OutlinedPlus)
                 ->modalWidth(Width::Large)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => ServerForm::getFormSchema())

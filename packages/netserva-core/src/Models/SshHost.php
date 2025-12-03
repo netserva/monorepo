@@ -329,7 +329,7 @@ class SshHost extends Model
 
             switch (strtolower($directive)) {
                 case 'host':
-                    $hostData['host'] = $value;
+                    // Skip the Host directive - we use the filename as the host alias
                     break;
                 case 'hostname':
                     $hostData['hostname'] = $value;
@@ -350,7 +350,11 @@ class SshHost extends Model
                     $hostData['jump_host'] = $value;
                     break;
                 default:
-                    $hostData['custom_options'][$directive] = $value;
+                    // Only store non-standard SSH directives as custom options
+                    $standardDirectives = ['host', 'hostname', 'port', 'user', 'identityfile', 'proxycommand', 'proxyjump'];
+                    if (! in_array(strtolower($directive), $standardDirectives)) {
+                        $hostData['custom_options'][$directive] = $value;
+                    }
                     break;
             }
         }

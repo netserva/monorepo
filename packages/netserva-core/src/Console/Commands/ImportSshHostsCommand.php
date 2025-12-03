@@ -179,6 +179,9 @@ class ImportSshHostsCommand extends Command
                     case 'proxyjump':
                         $config['jump_host'] = $value;
                         break;
+                    case 'host':
+                        // Skip the Host directive - we use the filename as the host alias
+                        break;
                     default:
                         // Store other options
                         $config['custom_options'][$key] = $value;

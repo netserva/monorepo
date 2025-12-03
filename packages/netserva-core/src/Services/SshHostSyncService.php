@@ -313,7 +313,8 @@ class SshHostSyncService
 
             switch ($directive) {
                 case 'host':
-                    $hostData['host'] = $value;
+                    // Skip the Host directive - we use the filename as the host alias
+                    // Don't override hostData['host'] since it's already set from filename
                     break;
                 case 'hostname':
                     $hostData['hostname'] = $value;
@@ -336,10 +337,8 @@ class SshHostSyncService
                     $hostData['jump_host'] = $value;
                     break;
                 default:
-                    // Store other options as custom (exclude Host which is the alias)
-                    if (strtolower($parts[0]) !== 'host') {
-                        $hostData['custom_options'][$parts[0]] = $value;
-                    }
+                    // Store other options as custom
+                    $hostData['custom_options'][$parts[0]] = $value;
                     break;
             }
         }

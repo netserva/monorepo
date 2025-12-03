@@ -4,6 +4,7 @@ namespace NetServa\Dns\Filament\Resources\DnsProviderResource\Pages;
 
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Icons\Heroicon;
 use NetServa\Dns\Filament\Resources\DnsProviderResource;
 
 class ListDnsProviders extends ListRecords
@@ -14,6 +15,8 @@ class ListDnsProviders extends ListRecords
     {
         return [
             CreateAction::make()
+                ->label('New Provider')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false),
         ];
     }

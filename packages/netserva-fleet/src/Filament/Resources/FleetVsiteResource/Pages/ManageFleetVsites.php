@@ -4,6 +4,7 @@ namespace NetServa\Fleet\Filament\Resources\FleetVsiteResource\Pages;
 
 use Filament\Actions;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Support\Icons\Heroicon;
 use NetServa\Fleet\Filament\Resources\FleetVsiteResource;
 
 class ManageFleetVsites extends ManageRecords
@@ -14,6 +15,8 @@ class ManageFleetVsites extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
+                ->label('New VSite')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false),
         ];
     }

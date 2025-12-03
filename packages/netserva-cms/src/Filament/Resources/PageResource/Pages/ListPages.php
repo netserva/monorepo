@@ -16,8 +16,9 @@ class ListPages extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->createAnother(false)
-                ->icon('heroicon-o-plus'),
+                ->label('New Page')
+                ->icon('heroicon-o-plus')
+                ->createAnother(false),
         ];
     }
 }

@@ -11,14 +11,16 @@ return new class extends Migration
         // Palettes for theming
         Schema::create('palettes', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('primary_color')->nullable();
-            $table->string('secondary_color')->nullable();
-            $table->string('accent_color')->nullable();
-            $table->string('background_color')->nullable();
-            $table->string('text_color')->nullable();
-            $table->boolean('is_default')->default(false);
+            $table->string('name')->unique();
+            $table->string('label')->nullable();
+            $table->string('group')->default('colors');
+            $table->text('description')->nullable();
+            $table->json('colors')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->integer('sort_order')->default(0);
             $table->timestamps();
+
+            $table->index(['group', 'sort_order']);
         });
 
         // NetServa settings
@@ -36,10 +38,18 @@ return new class extends Migration
         Schema::create('installed_plugins', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->string('version');
+            $table->string('plugin_class')->nullable();
+            $table->string('version')->nullable();
             $table->string('description')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->json('config')->nullable();
             $table->json('settings')->nullable();
+            $table->string('package_name')->nullable();
+            $table->string('author')->nullable();
+            $table->string('source')->default('local');
+            $table->string('source_url')->nullable();
+            $table->string('category')->nullable();
+            $table->json('composer_data')->nullable();
             $table->integer('navigation_sort')->default(0);
             $table->timestamps();
         });

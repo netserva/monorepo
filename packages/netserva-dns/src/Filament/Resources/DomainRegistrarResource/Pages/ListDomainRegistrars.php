@@ -25,6 +25,8 @@ class ListDomainRegistrars extends ListRecords
                 ->url(DomainRegistrationResource::getUrl()),
 
             CreateAction::make()
+                ->label('New Registrar')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false)
                 ->modalWidth(Width::ExtraLarge)
                 ->modalFooterActionsAlignment(Alignment::End)

@@ -8,6 +8,7 @@ use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use NetServa\Cms\Filament\Resources\TagResource;
 
 class ListTags extends ListRecords
@@ -18,6 +19,8 @@ class ListTags extends ListRecords
     {
         return [
             CreateAction::make()
+                ->label('New Tag')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)

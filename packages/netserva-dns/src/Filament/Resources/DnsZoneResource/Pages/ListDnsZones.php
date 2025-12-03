@@ -39,6 +39,8 @@ class ListDnsZones extends ListRecords
                 ->url(DnsProviderResource::getUrl()),
 
             CreateAction::make()
+                ->label('New Zone')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)

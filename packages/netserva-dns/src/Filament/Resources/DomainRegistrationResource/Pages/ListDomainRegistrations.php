@@ -25,6 +25,8 @@ class ListDomainRegistrations extends ListRecords
                 ->url(DomainRegistrarResource::getUrl()),
 
             CreateAction::make()
+                ->label('New Domain')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false)
                 ->modalWidth(Width::ExtraLarge)
                 ->modalFooterActionsAlignment(Alignment::End)

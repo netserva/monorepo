@@ -48,6 +48,8 @@ class ListDnsRecords extends ListRecords
                     : DnsZoneResource::getUrl()),
 
             CreateAction::make()
+                ->label('New Record')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)

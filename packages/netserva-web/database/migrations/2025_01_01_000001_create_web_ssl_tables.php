@@ -206,6 +206,39 @@ return new class extends Migration
             $table->index('created_at');
         });
 
+        // Virtual Hosts
+        Schema::create('virtual_hosts', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->json('server_names');
+            $table->string('primary_domain');
+            $table->text('description')->nullable();
+            $table->foreignId('web_server_id')->constrained('web_servers')->cascadeOnDelete();
+            $table->unsignedBigInteger('infrastructure_node_id')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->boolean('is_default')->default(false);
+            $table->string('document_root');
+            $table->string('index_files')->default('index.php index.html index.htm');
+            $table->boolean('http_enabled')->default(true);
+            $table->integer('http_port')->default(80);
+            $table->boolean('https_enabled')->default(true);
+            $table->integer('https_port')->default(443);
+            $table->boolean('force_https')->default(true);
+            $table->boolean('ssl_enabled')->default(true);
+            $table->string('ssl_certificate_path')->nullable();
+            $table->string('ssl_private_key_path')->nullable();
+            $table->timestamp('ssl_expires_at')->nullable();
+            $table->boolean('php_enabled')->default(true);
+            $table->string('php_version')->default('8.4');
+            $table->text('custom_nginx_config')->nullable();
+            $table->text('custom_apache_config')->nullable();
+            $table->timestamps();
+
+            $table->unique(['primary_domain', 'web_server_id']);
+            $table->index(['web_server_id', 'is_active']);
+            $table->index(['primary_domain', 'is_active']);
+        });
+
         // Web Applications
         Schema::create('web_applications', function (Blueprint $table) {
             $table->id();
@@ -374,6 +407,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('web_applications');
+        Schema::dropIfExists('virtual_hosts');
         Schema::dropIfExists('web_servers');
         Schema::dropIfExists('ssl_certificate_deployments');
         Schema::dropIfExists('ssl_certificates');

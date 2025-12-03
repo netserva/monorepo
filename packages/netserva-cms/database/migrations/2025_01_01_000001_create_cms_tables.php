@@ -73,6 +73,7 @@ return new class extends Migration
             $table->string('og_image')->nullable();
             $table->string('twitter_card')->default('summary_large_image');
             $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->integer('word_count')->default(0);
             $table->timestamps();
             $table->softDeletes();
 

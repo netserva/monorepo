@@ -60,6 +60,7 @@ class ListIpam extends ListRecords
 
             CreateAction::make()
                 ->label('New Network')
+                ->icon(Heroicon::OutlinedPlus)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => NetworkForm::getFormSchema())

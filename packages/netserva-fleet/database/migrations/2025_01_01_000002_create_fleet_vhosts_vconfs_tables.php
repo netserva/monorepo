@@ -26,6 +26,7 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->foreignId('palette_id')->nullable()->constrained('palettes')->nullOnDelete();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['fleet_vnode_id', 'status']);
         });

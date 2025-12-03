@@ -16,10 +16,16 @@ class ManageFleetVnodes extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\CreateAction::make()
+                ->label('New VNode')
+                ->icon(Heroicon::OutlinedPlus)
+                ->createAnother(false),
+
             Actions\Action::make('sync_binarylane')
-                ->label('Sync from BinaryLane')
+                ->label('Sync')
+                ->tooltip('Sync from BinaryLane')
                 ->icon(Heroicon::OutlinedCloud)
-                ->color('info')
+                ->color('gray')
                 ->requiresConfirmation()
                 ->modalHeading('Sync BinaryLane Servers')
                 ->modalDescription('This will fetch all servers from BinaryLane and create/update VNodes for each one.')
@@ -59,9 +65,6 @@ class ManageFleetVnodes extends ManageRecords
                     }
                 })
                 ->visible(fn () => (bool) config('fleet.binarylane.api_token')),
-
-            Actions\CreateAction::make()
-                ->createAnother(false),
         ];
     }
 }

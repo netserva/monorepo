@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Http\Middleware\FilamentGuestMode;
 use Filament\Enums\UserMenuPosition;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -12,6 +13,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Facades\FilamentColor;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -26,6 +28,13 @@ class AdminPanelProvider extends PanelProvider
 {
     public function boot(): void
     {
+        // Add JavaScript to reset navigation groups to collapsed state on fresh install
+        // This runs once per session to ensure groups start collapsed
+        Filament::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            fn () => new \Illuminate\Support\HtmlString($this->getNavigationResetScript())
+        );
+
         // Register dynamic colors using a closure that executes AFTER authentication
         // This is the official Filament v4 way to handle user-specific colors
         FilamentColor::register(function () {
@@ -53,6 +62,18 @@ class AdminPanelProvider extends PanelProvider
 
     public function panel(Panel $panel): Panel
     {
+        // Check if system is properly configured (has plugins)
+        // If not, redirect to public site instead of causing redirect loops
+        if (! $this->hasRegisteredPlugins()) {
+            $panel = $panel
+                ->default()
+                ->id('admin')
+                ->path('admin')
+                ->homeUrl('/');  // Redirect to public site when no plugins
+
+            return $panel;
+        }
+
         // Colors are registered via FilamentColor::register() in boot() method
         // No need to set them here - the closure executes after auth middleware
         $panel = $panel
@@ -182,6 +203,44 @@ class AdminPanelProvider extends PanelProvider
     }
 
     /**
+     * Check if the system has registered plugins
+     *
+     * If the table is empty, triggers auto-discovery via PluginRegistry
+     * to handle fresh installations gracefully.
+     */
+    protected function hasRegisteredPlugins(): bool
+    {
+        try {
+            // Skip check during testing
+            if (app()->environment('testing')) {
+                return true;
+            }
+
+            // Check if table exists
+            if (! $this->tableExists('installed_plugins')) {
+                return false;
+            }
+
+            // Check if any active plugins exist (uses model scope)
+            if (InstalledPlugin::enabled()->exists()) {
+                return true;
+            }
+
+            // Table exists but is empty - trigger auto-discovery
+            // This handles fresh migrations where plugins need to be discovered
+            $registry = app(PluginRegistry::class);
+            $registry->getEnabledPluginsInOrder(); // Triggers autoDiscoverIfEmpty()
+
+            // Check again after auto-discovery
+            return InstalledPlugin::enabled()->exists();
+        } catch (\Exception $e) {
+            Log::warning('Failed to check for registered plugins: '.$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Build navigation groups dynamically from enabled plugins
      *
      * Each enabled plugin creates one navigation group.
@@ -252,5 +311,42 @@ class AdminPanelProvider extends PanelProvider
             NavigationGroup::make()->label('Web')->icon('heroicon-o-server')->collapsed(),
             NavigationGroup::make()->label('Cms')->icon('heroicon-o-document-text')->collapsed(),
         ];
+    }
+
+    /**
+     * Get JavaScript to reset navigation groups to collapsed state
+     *
+     * Checks for a version marker in localStorage. When the app version changes
+     * (e.g., after migrate:fresh), the navigation state is reset to collapsed.
+     *
+     * To force a reset: increment the nav_version in config/app.php or
+     * change the marker format below.
+     */
+    protected function getNavigationResetScript(): string
+    {
+        // Use app name + nav version to create unique marker
+        // Increment nav_version in config/app.php to force reset after migrate:fresh
+        $navVersion = config('app.nav_version', 1);
+        $versionMarker = config('app.name')."_nav_v{$navVersion}";
+
+        return <<<HTML
+<script>
+(function() {
+    const marker = '{$versionMarker}';
+    const stored = localStorage.getItem('filament_nav_version');
+
+    if (stored !== marker) {
+        // Clear all Filament navigation group states
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('isOpen') || key.includes('collapsed') || key.includes('sidebar')) {
+                localStorage.removeItem(key);
+            }
+        });
+        // Set the version marker
+        localStorage.setItem('filament_nav_version', marker);
+    }
+})();
+</script>
+HTML;
     }
 }

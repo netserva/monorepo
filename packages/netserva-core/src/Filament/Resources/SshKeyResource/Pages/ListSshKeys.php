@@ -24,6 +24,8 @@ class ListSshKeys extends ListRecords
     {
         return [
             CreateAction::make()
+                ->label('New SSH Key')
+                ->icon(Heroicon::OutlinedPlus)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => SshKeysTable::getFormSchema())
@@ -77,7 +79,8 @@ class ListSshKeys extends ListRecords
                     }
                 }),
             Action::make('importFromFilesystem')
-                ->label('Import from ~/.ssh/keys/')
+                ->label('Import')
+                ->tooltip('Import from ~/.ssh/keys/')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
                 ->action(function () {

@@ -23,12 +23,15 @@ class ListSshHosts extends ListRecords
     {
         return [
             CreateAction::make()
+                ->label('New SSH Host')
+                ->icon(Heroicon::OutlinedPlus)
                 ->modalWidth(Width::Medium)
                 ->modalFooterActionsAlignment(Alignment::End)
                 ->schema(fn () => SshHostForm::getFormSchema())
                 ->createAnother(false),
             Action::make('importFromFilesystem')
-                ->label('Import from ~/.ssh/hosts/')
+                ->label('Import')
+                ->tooltip('Import from ~/.ssh/hosts/')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
                 ->action(function () {

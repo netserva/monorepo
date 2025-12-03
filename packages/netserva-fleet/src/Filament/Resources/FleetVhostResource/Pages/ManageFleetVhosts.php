@@ -4,6 +4,7 @@ namespace NetServa\Fleet\Filament\Resources\FleetVhostResource\Pages;
 
 use Filament\Actions;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Support\Icons\Heroicon;
 use NetServa\Fleet\Filament\Resources\FleetVhostResource;
 
 class ManageFleetVhosts extends ManageRecords
@@ -14,6 +15,8 @@ class ManageFleetVhosts extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
+                ->label('New VHost')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false),
         ];
     }

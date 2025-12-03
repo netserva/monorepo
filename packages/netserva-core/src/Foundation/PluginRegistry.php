@@ -69,10 +69,19 @@ class PluginRegistry
             // Auto-discover and install plugins if table is empty
             $this->autoDiscoverIfEmpty();
 
-            // Get enabled plugins from database
-            $enabledPlugins = InstalledPlugin::where('is_enabled', true)
-                ->pluck('plugin_class', 'name')
+            // Get enabled plugins from database using model scope
+            // Standardized on 'is_active' column across all models
+            $enabledPluginNames = InstalledPlugin::enabled()
+                ->pluck('name')
                 ->toArray();
+
+            // Map names to plugin classes from available plugins
+            $enabledPlugins = [];
+            foreach ($enabledPluginNames as $name) {
+                if (isset($this->availablePlugins[$name])) {
+                    $enabledPlugins[$name] = $this->availablePlugins[$name];
+                }
+            }
 
             // Filter to only include available plugins
             $availableEnabled = array_intersect_key($enabledPlugins, $this->availablePlugins);
@@ -103,10 +112,15 @@ class PluginRegistry
                 return;
             }
 
-            Log::info('IPAM: installed_plugins table is empty, auto-discovering plugins...');
+            Log::info('PluginRegistry: installed_plugins table is empty, auto-discovering plugins...');
+
+            // Sort plugins alphabetically for predictable default order
+            // This scales well as plugin count grows (30+ plugins in future)
+            $sortedPlugins = $this->availablePlugins;
+            ksort($sortedPlugins);
 
             $navigationSort = 1;
-            foreach ($this->availablePlugins as $pluginId => $pluginClass) {
+            foreach ($sortedPlugins as $pluginId => $pluginClass) {
                 try {
                     $plugin = new $pluginClass;
 
@@ -116,7 +130,7 @@ class PluginRegistry
                     InstalledPlugin::create([
                         'name' => $pluginId,
                         'plugin_class' => $pluginClass,
-                        'is_enabled' => true,
+                        'is_active' => true,
                         'navigation_sort' => $navigationSort++,
                         'version' => $composerData['version'] ?? (method_exists($plugin, 'getVersion') ? $plugin->getVersion() : '1.0.0'),
                         'config' => method_exists($plugin, 'getDefaultConfig') ? $plugin->getDefaultConfig() : [],
@@ -146,7 +160,7 @@ class PluginRegistry
      */
     public function getEnabledPlugins(): Collection
     {
-        return InstalledPlugin::where('is_enabled', true)
+        return InstalledPlugin::enabled()
             ->whereIn('name', $this->getAvailablePluginIds())
             ->get();
     }
@@ -156,7 +170,7 @@ class PluginRegistry
      */
     public function getDisabledPlugins(): Collection
     {
-        return InstalledPlugin::where('is_enabled', false)
+        return InstalledPlugin::disabled()
             ->whereIn('name', $this->getAvailablePluginIds())
             ->get();
     }
@@ -194,7 +208,7 @@ class PluginRegistry
                 ['name' => $pluginId],
                 [
                     'plugin_class' => $pluginClass,
-                    'is_enabled' => $enable,
+                    'is_active' => $enable,
                     'version' => $composerData['version'] ?? (method_exists($plugin, 'getVersion') ? $plugin->getVersion() : '1.0.0'),
                     'config' => method_exists($plugin, 'getDefaultConfig') ? $plugin->getDefaultConfig() : [],
                     'package_name' => $composerData['name'] ?? null,
@@ -408,7 +422,7 @@ class PluginRegistry
                 return false;
             }
 
-            $plugin->update(['is_enabled' => true]);
+            $plugin->update(['is_active' => true]);
             $this->clearCache();
 
             Log::info("Plugin {$pluginId} enabled successfully");
@@ -437,7 +451,7 @@ class PluginRegistry
 
             $plugin = InstalledPlugin::where('name', $pluginId)->first();
             if ($plugin) {
-                $plugin->update(['is_enabled' => false]);
+                $plugin->update(['is_active' => false]);
                 $this->clearCache();
             }
 

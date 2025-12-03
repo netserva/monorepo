@@ -2,11 +2,11 @@
 
 namespace NetServa\Core;
 
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Database\Console\Migrations\RefreshCommand;
 use Illuminate\Database\Console\Migrations\ResetCommand;
 use Illuminate\Database\Console\WipeCommand;
-use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -278,7 +278,10 @@ class NetServaCoreServiceProvider extends ServiceProvider
      * Register database protection mechanisms
      *
      * 1. Prohibits destructive commands (migrate:fresh, migrate:reset, db:wipe) in production
-     * 2. Auto-creates snapshot before destructive commands in development
+     * 2. Auto-creates snapshot BEFORE destructive commands in development
+     *
+     * CRITICAL: Uses CommandStarting event which fires BEFORE the command runs,
+     * ensuring we capture data before migrate:fresh wipes the database.
      */
     protected function registerDatabaseProtection(): void
     {
@@ -303,39 +306,22 @@ class NetServaCoreServiceProvider extends ServiceProvider
             return;
         }
 
-        // Layer 2: Auto-backup before destructive migrations in development
-        // Listen for destructive commands and create automatic backup
-        Event::listen(MigrationsStarted::class, function (MigrationsStarted $event) {
-            // Check if this is a destructive operation
-            $argv = $_SERVER['argv'] ?? [];
-            $command = implode(' ', $argv);
+        // Layer 2: Auto-backup BEFORE destructive migrations in development
+        // CommandStarting fires IMMEDIATELY BEFORE the command runs
+        // This is critical - MigrationsStarted fires AFTER the database is wiped!
+        Event::listen(CommandStarting::class, function (CommandStarting $event) {
+            // List of destructive commands that need auto-backup
+            $destructiveCommands = [
+                'migrate:fresh',
+                'migrate:refresh',
+                'migrate:reset',
+                'db:wipe',
+            ];
 
-            $isDestructive = str_contains($command, 'migrate:fresh')
-                || str_contains($command, 'migrate:refresh')
-                || str_contains($command, 'migrate:reset')
-                || str_contains($command, 'db:wipe');
-
-            if ($isDestructive) {
+            if (in_array($event->command, $destructiveCommands)) {
                 $this->createAutoBackup();
             }
         });
-
-        // Also hook into the commands directly for better detection
-        if ($this->app->runningInConsole()) {
-            $this->app->booted(function () {
-                $argv = $_SERVER['argv'] ?? [];
-
-                // Check if running a destructive migration command
-                $isDestructive = in_array('migrate:fresh', $argv)
-                    || in_array('migrate:refresh', $argv)
-                    || in_array('migrate:reset', $argv)
-                    || in_array('db:wipe', $argv);
-
-                if ($isDestructive) {
-                    $this->createAutoBackup();
-                }
-            });
-        }
     }
 
     /**

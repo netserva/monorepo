@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Navigation Version (for resetting collapsed state)
+    |--------------------------------------------------------------------------
+    |
+    | Increment this value after migrate:fresh to force all navigation groups
+    | to collapse for all users. The browser localStorage will be cleared
+    | when this version changes.
+    |
+    */
+
+    'nav_version' => env('APP_NAV_VERSION', 1),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

@@ -4,6 +4,7 @@ namespace NetServa\Fleet\Filament\Resources\FleetVenueResource\Pages;
 
 use Filament\Actions;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Support\Icons\Heroicon;
 use NetServa\Fleet\Filament\Resources\FleetVenueResource;
 
 class ManageFleetVenues extends ManageRecords
@@ -14,6 +15,8 @@ class ManageFleetVenues extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
+                ->label('New Venue')
+                ->icon(Heroicon::OutlinedPlus)
                 ->createAnother(false),
         ];
     }

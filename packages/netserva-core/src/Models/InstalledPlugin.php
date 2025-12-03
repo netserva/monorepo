@@ -24,8 +24,7 @@ class InstalledPlugin extends Model
         'package_name',
         'path',
         'namespace',
-        'is_enabled',
-        'enabled', // Keep for backward compatibility
+        'is_active',
         'navigation_sort',
         'navigation_group',
         'navigation_icon',
@@ -44,8 +43,7 @@ class InstalledPlugin extends Model
     ];
 
     protected $casts = [
-        'is_enabled' => 'boolean',
-        'enabled' => 'boolean', // Keep for backward compatibility
+        'is_active' => 'boolean',
         'navigation_sort' => 'integer',
         'config' => 'array',
         'dependencies' => 'array',
@@ -83,7 +81,7 @@ class InstalledPlugin extends Model
     protected function statusText(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->is_enabled ? 'Enabled' : 'Disabled'
+            get: fn () => $this->is_active ? 'Enabled' : 'Disabled'
         );
     }
 
@@ -92,7 +90,7 @@ class InstalledPlugin extends Model
      */
     public function scopeEnabled($query)
     {
-        return $query->where('is_enabled', true);
+        return $query->where('is_active', true);
     }
 
     /**
@@ -100,7 +98,7 @@ class InstalledPlugin extends Model
      */
     public function scopeDisabled($query)
     {
-        return $query->where('is_enabled', false);
+        return $query->where('is_active', false);
     }
 
     /**

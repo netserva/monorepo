@@ -16,8 +16,9 @@ class ListPosts extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->createAnother(false)
-                ->icon('heroicon-o-plus'),
+                ->label('New Post')
+                ->icon('heroicon-o-plus')
+                ->createAnother(false),
         ];
     }
 }

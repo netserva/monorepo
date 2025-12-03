@@ -16,8 +16,9 @@ class ListMenus extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->createAnother(false)
-                ->icon('heroicon-o-plus'),
+                ->label('New Menu')
+                ->icon('heroicon-o-plus')
+                ->createAnother(false),
         ];
     }
 }
