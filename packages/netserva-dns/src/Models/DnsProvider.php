@@ -110,11 +110,6 @@ class DnsProvider extends Model
         return $this->hasMany(DnsZone::class);
     }
 
-    public function servers(): HasMany
-    {
-        return $this->hasMany(DnsServer::class);
-    }
-
     // Scopes
     public function scopeActive($query)
     {

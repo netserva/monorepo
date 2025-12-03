@@ -11,34 +11,42 @@ class DomainRegistration extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'domain_registrar_id',
         'domain_name',
+        'domain_registrar_id',
+        'status',
         'registration_date',
         'expiry_date',
-        'renewal_date',
         'auto_renew',
-        'status',
         'registrant_contact',
+        'admin_contact',
+        'tech_contact',
+        'billing_contact',
         'nameservers',
-        'description',
-        'tags',
+        'privacy_enabled',
+        'lock_enabled',
+        'dns_config',
         'metadata',
+        'notes',
+        'last_synced_at',
     ];
 
     protected $casts = [
         'registration_date' => 'date',
         'expiry_date' => 'date',
-        'renewal_date' => 'date',
         'auto_renew' => 'boolean',
-        'registrant_contact' => 'array',
         'nameservers' => 'array',
-        'tags' => 'array',
+        'privacy_enabled' => 'boolean',
+        'lock_enabled' => 'boolean',
+        'dns_config' => 'array',
         'metadata' => 'array',
+        'last_synced_at' => 'datetime',
     ];
 
     protected $attributes = [
-        'registrant_contact' => '{}',
-        'nameservers' => '[]',
+        'status' => 'unknown',
+        'auto_renew' => false,
+        'privacy_enabled' => false,
+        'lock_enabled' => true,
     ];
 
     public function domainRegistrar()
@@ -67,6 +75,6 @@ class DomainRegistration extends Model
      */
     protected static function newFactory()
     {
-        return \Ns\Domain\Database\Factories\DomainRegistrationFactory::new();
+        return \NetServa\Dns\Database\Factories\DomainRegistrationFactory::new();
     }
 }

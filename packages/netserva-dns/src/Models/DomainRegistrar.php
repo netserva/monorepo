@@ -51,6 +51,6 @@ class DomainRegistrar extends Model
      */
     protected static function newFactory()
     {
-        return \Ns\Domain\Database\Factories\DomainRegistrarFactory::new();
+        return \NetServa\Dns\Database\Factories\DomainRegistrarFactory::new();
     }
 }

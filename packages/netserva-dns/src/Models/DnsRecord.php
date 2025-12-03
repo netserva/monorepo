@@ -31,8 +31,10 @@ class DnsRecord extends Model
         'priority',
         'disabled',
         'auth',
+        'ordername',
         'comment',
         'provider_data',
+        'last_synced',
         'sort_order',
     ];
 
@@ -42,6 +44,7 @@ class DnsRecord extends Model
         'ttl' => 'integer',
         'priority' => 'integer',
         'provider_data' => 'array',
+        'last_synced' => 'datetime',
         'sort_order' => 'integer',
     ];
 
