@@ -56,11 +56,14 @@ class SshKeySyncService
             $publicKeyPath = "{$this->keysDir}/{$key->name}.pub";
 
             // Write private key with strict permissions
-            File::put($privateKeyPath, $key->private_key);
+            // CRITICAL: Ensure trailing newline - OpenSSL 3.x requires it!
+            $privateContent = rtrim($key->private_key)."\n";
+            File::put($privateKeyPath, $privateContent);
             chmod($privateKeyPath, 0600);
 
-            // Write public key
-            File::put($publicKeyPath, $key->public_key);
+            // Write public key with trailing newline
+            $publicContent = rtrim($key->public_key)."\n";
+            File::put($publicKeyPath, $publicContent);
             chmod($publicKeyPath, 0644);
 
             Log::info('SSH key synced to filesystem', [
