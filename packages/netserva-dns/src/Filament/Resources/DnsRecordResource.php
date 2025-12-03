@@ -134,7 +134,7 @@ class DnsRecordResource extends Resource
                         $state === null || $state === 0 => 'Auto',
                         default => (string) $state,
                     }),
-                Tables\Columns\TextColumn::make('dnsZone.name')
+                Tables\Columns\TextColumn::make('zone.name')
                     ->label('Zone')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('priority')
@@ -159,7 +159,7 @@ class DnsRecordResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('dns_zone_id')
                     ->label('Zone')
-                    ->relationship('dnsZone', 'name')
+                    ->relationship('zone', 'name')
                     ->searchable()
                     ->preload(),
             ])

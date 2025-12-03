@@ -41,7 +41,7 @@ class DnsRecordsTable
                         $state === null || $state === 0 => 'Auto',
                         default => (string) $state,
                     }),
-                TextColumn::make('dnsZone.name')
+                TextColumn::make('zone.name')
                     ->label('Zone')
                     ->sortable(),
                 TextColumn::make('priority')

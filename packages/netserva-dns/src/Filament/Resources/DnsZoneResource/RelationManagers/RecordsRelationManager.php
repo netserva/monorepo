@@ -24,7 +24,7 @@ class RecordsRelationManager extends RelationManager
 
         // Remove the zone column since we're already in the zone context
         $columns = collect($table->getColumns())
-            ->filter(fn ($column) => $column->getName() !== 'dnsZone.name')
+            ->filter(fn ($column) => $column->getName() !== 'zone.name')
             ->all();
 
         return $table
