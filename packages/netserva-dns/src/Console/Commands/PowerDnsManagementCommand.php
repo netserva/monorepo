@@ -588,8 +588,8 @@ class PowerDnsManagementCommand extends Command
             return $providers->find($providerId);
         }
 
-        $provider = DnsProvider::where('provider', 'powerdns')
-            ->where('is_active', true)
+        $provider = DnsProvider::where('type', 'powerdns')
+            ->where('active', true)
             ->where(function ($query) use ($providerInput) {
                 $query->where('id', $providerInput)
                     ->orWhere('name', $providerInput);

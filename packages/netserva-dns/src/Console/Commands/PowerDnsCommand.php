@@ -441,8 +441,8 @@ class PowerDnsCommand extends Command
         }
 
         // Try to find by ID first, then by name
-        $provider = DnsProvider::where('provider', 'powerdns')
-            ->where('is_active', true)
+        $provider = DnsProvider::where('type', 'powerdns')
+            ->where('active', true)
             ->where(function ($query) use ($providerInput) {
                 $query->where('id', $providerInput)
                     ->orWhere('name', $providerInput);
