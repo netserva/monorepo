@@ -83,6 +83,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->profile(\App\Filament\Pages\Auth\EditProfile::class)
             ->brandName(fn () => config('app.name'))  // Dynamic brand from config (overridden by CMS if available)
+            ->viteTheme('resources/css/filament/admin/theme.css')  // Custom Filament theme compiled with Bun
             ->topbar(false)  // Disable topbar entirely (Filament v4 method)
             ->globalSearch(false)  // Disable global search (not configured)
             ->sidebarCollapsibleOnDesktop(true)  // Enable sidebar collapse (required for brand name to show)
