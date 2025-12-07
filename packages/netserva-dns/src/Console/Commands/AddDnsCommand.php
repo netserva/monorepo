@@ -41,16 +41,22 @@ class AddDnsCommand extends Command
         {--access-key= : AWS access key ID (Route53)}
         {--secret-key= : AWS secret access key (Route53)}
         {--no-test : Skip connection test after creation}
-        {--dry-run : Show what would be created without creating}';
+        {--dry-run : Show what would be created without creating}
+        {--discover : Auto-discover API key from remote server via SSH (PowerDNS only)}';
 
     protected $description = 'Add a new DNS provider (NetServa CRUD pattern)';
 
     protected DnsProviderManagementService $providerService;
 
-    public function __construct(DnsProviderManagementService $providerService)
-    {
+    protected \NetServa\Dns\Services\PowerDnsService $powerDnsService;
+
+    public function __construct(
+        DnsProviderManagementService $providerService,
+        \NetServa\Dns\Services\PowerDnsService $powerDnsService
+    ) {
         parent::__construct();
         $this->providerService = $providerService;
+        $this->powerDnsService = $powerDnsService;
     }
 
     public function handle(): int
@@ -221,8 +227,7 @@ class AddDnsCommand extends Command
 
         // Show next steps
         $this->newLine();
-        $this->info('💡 Next steps:');
-        $this->line('   - Assign to venue: See FleetVenueResource in Filament UI');
+        $this->info('Next steps:');
         $this->line("   - Create zone: addzone example.com {$provider->id}");
         $this->line("   - View provider: shdns {$provider->id}");
         $this->line("   - Update provider: chdns {$provider->id} --endpoint=...");
@@ -273,29 +278,7 @@ class AddDnsCommand extends Command
     {
         $config = [];
 
-        // API endpoint
-        $config['api_endpoint'] = $this->option('endpoint');
-        if (! $config['api_endpoint']) {
-            $config['api_endpoint'] = text(
-                label: 'API endpoint',
-                placeholder: 'http://192.168.1.1:8081',
-                required: true,
-                hint: 'PowerDNS API endpoint URL'
-            );
-        }
-
-        // API key
-        $config['api_key'] = $this->option('api-key');
-        if (! $config['api_key']) {
-            $config['api_key'] = password(
-                label: 'API key',
-                placeholder: 'your-api-key-here',
-                required: true,
-                hint: 'PowerDNS API-Key header value'
-            );
-        }
-
-        // SSH host (optional)
+        // SSH host (needed first for --discover)
         $config['ssh_host'] = $this->option('ssh-host');
         if (! $config['ssh_host'] && ! $this->option('ssh-host')) {
             $useSsh = confirm(
@@ -310,6 +293,59 @@ class AddDnsCommand extends Command
                     placeholder: 'ns1.example.com',
                     required: true,
                     hint: 'SSH host for tunnel access'
+                );
+            }
+        }
+
+        // API key - auto-discover or manual
+        $config['api_key'] = $this->option('api-key');
+        if (! $config['api_key']) {
+            // Try auto-discovery if --discover flag is set and we have an SSH host
+            if ($this->option('discover') && $config['ssh_host']) {
+                $this->line('');
+                $this->line('🔍 Discovering API key from remote server...');
+
+                $discoverResult = $this->powerDnsService->discoverApiKey($config['ssh_host']);
+
+                if ($discoverResult['success']) {
+                    $config['api_key'] = $discoverResult['api_key'];
+                    $this->info('✅ API key discovered successfully');
+                    $this->line('   Key: <fg=gray>'.substr($config['api_key'], 0, 16).'...</>');
+                } else {
+                    $this->warn('⚠️  Auto-discovery failed: '.$discoverResult['message']);
+                    $this->line('   Falling back to manual entry...');
+
+                    $config['api_key'] = password(
+                        label: 'API key',
+                        placeholder: 'your-api-key-here',
+                        required: true,
+                        hint: 'PowerDNS API-Key header value'
+                    );
+                }
+            } else {
+                // Manual entry
+                $config['api_key'] = password(
+                    label: 'API key',
+                    placeholder: 'your-api-key-here',
+                    required: true,
+                    hint: 'PowerDNS API-Key header value'
+                );
+            }
+        }
+
+        // API endpoint - default to localhost via tunnel
+        $config['api_endpoint'] = $this->option('endpoint');
+        if (! $config['api_endpoint']) {
+            // If SSH host is set, default to localhost (tunnel will handle routing)
+            if ($config['ssh_host']) {
+                $config['api_endpoint'] = 'http://127.0.0.1:8081';
+                $this->line('   Endpoint: <fg=cyan>'.$config['api_endpoint'].'</> (via SSH tunnel)');
+            } else {
+                $config['api_endpoint'] = text(
+                    label: 'API endpoint',
+                    placeholder: 'http://192.168.1.1:8081',
+                    required: true,
+                    hint: 'PowerDNS API endpoint URL'
                 );
             }
         }

@@ -24,12 +24,13 @@ use function Laravel\Prompts\warning;
  * Usage:
  *   chpw vnode mgo cloudflare default     # Update Cloudflare API key for mgo
  *   chpw vhost example.com dovecot admin@example.com  # Update email password
- *   chpw --rotate-all --days=90            # Rotate all credentials older than 90 days
+ *   chpw --import < backup.txt            # Import from shpw --export backup
+ *   chpw --import=/path/to/backup.txt     # Import from file path
  *
  * NetServa 3.0 Security Architecture:
  * - Updates encrypted credentials on workstation vault
  * - Supports password rotation tracking
- * - Optionally updates remote server hashes (for VMAIL)
+ * - Import/export for disaster recovery
  */
 class ChpwCommand extends Command
 {
@@ -42,12 +43,18 @@ class ChpwCommand extends Command
                             {--disable : Disable credential without deleting}
                             {--enable : Enable disabled credential}
                             {--rotate : Mark as rotated (update pdate)}
-                            {--expiry= : Set new expiration date (YYYY-MM-DD)}';
+                            {--expiry= : Set new expiration date (YYYY-MM-DD)}
+                            {--import=? : Import from shpw --export (file path or stdin)}';
 
     protected $description = 'Update credentials in unified vault (UPDATE)';
 
     public function handle(): int
     {
+        // Handle import mode
+        if ($this->option('import') !== null) {
+            return $this->importCredentials();
+        }
+
         try {
             // Get credential to update
             $ownerType = $this->argument('owner_type');
@@ -186,5 +193,107 @@ class ChpwCommand extends Command
             'vhost' => FleetVhost::where('fqdn', $name)->first(),
             default => null,
         };
+    }
+
+    /**
+     * Find owner by fully qualified class name and identifier
+     */
+    private function findOwnerByClass(string $ownerType, string $ownerName): ?object
+    {
+        // Extract short type from class name (FleetVenue -> venue)
+        $shortType = match (true) {
+            str_contains($ownerType, 'FleetVenue') => 'venue',
+            str_contains($ownerType, 'FleetVsite') => 'vsite',
+            str_contains($ownerType, 'FleetVnode') => 'vnode',
+            str_contains($ownerType, 'FleetVhost') => 'vhost',
+            default => strtolower(class_basename($ownerType)),
+        };
+
+        return $this->findOwner($shortType, $ownerName);
+    }
+
+    /**
+     * Import credentials from shpw --csv format
+     * Format: owner_type,owner_name,ptype,pserv,pname,pdata,pmeta_json
+     */
+    private function importCredentials(): int
+    {
+        $filePath = $this->option('import');
+
+        // Read from file or stdin
+        if ($filePath && $filePath !== true && file_exists($filePath)) {
+            $handle = fopen($filePath, 'r');
+        } elseif (! posix_isatty(STDIN)) {
+            $handle = STDIN;
+        } else {
+            error('No input file or stdin provided');
+            $this->line('Usage: php artisan chpw --import < backup.csv');
+            $this->line('   or: php artisan chpw --import=/path/to/backup.csv');
+
+            return Command::FAILURE;
+        }
+
+        $imported = 0;
+        $skipped = 0;
+        $errors = 0;
+        $lineNum = 0;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $lineNum++;
+
+            // Skip header row
+            if ($lineNum === 1 && ($row[0] ?? '') === 'owner_type') {
+                continue;
+            }
+
+            // Skip empty rows
+            if (empty($row) || empty($row[0])) {
+                continue;
+            }
+
+            if (count($row) < 6) {
+                warning("Line {$lineNum}: Invalid format (expected 6-7 fields)");
+                $errors++;
+
+                continue;
+            }
+
+            [$ownerType, $ownerName, $ptype, $pserv, $pname, $pdata] = $row;
+            $pmeta = isset($row[6]) && $row[6] ? json_decode($row[6], true) : null;
+
+            // Find owner
+            $owner = $this->findOwnerByClass($ownerType, $ownerName);
+            if (! $owner) {
+                warning("Line {$lineNum}: Owner not found: {$ownerType} '{$ownerName}' - skipped");
+                $skipped++;
+
+                continue;
+            }
+
+            try {
+                VPass::findOrCreate(
+                    owner: $owner,
+                    pserv: $pserv,
+                    pname: $pname,
+                    ptype: $ptype,
+                    pdata: $pdata,
+                    pmeta: $pmeta
+                );
+                $imported++;
+                $this->line("Imported: {$pserv}/{$pname} for {$ownerName}");
+            } catch (Exception $e) {
+                warning("Line {$lineNum}: {$e->getMessage()}");
+                $errors++;
+            }
+        }
+
+        if ($handle !== STDIN) {
+            fclose($handle);
+        }
+
+        $this->line('');
+        info("Import complete: {$imported} imported, {$skipped} skipped, {$errors} errors");
+
+        return $errors > 0 ? Command::FAILURE : Command::SUCCESS;
     }
 }

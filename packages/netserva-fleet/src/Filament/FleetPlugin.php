@@ -4,7 +4,6 @@ namespace NetServa\Fleet\Filament;
 
 use Filament\Panel;
 use NetServa\Core\Foundation\BaseFilamentPlugin;
-use NetServa\Fleet\Filament\Resources\FleetVenueResource;
 use NetServa\Fleet\Filament\Resources\FleetVhostResource;
 use NetServa\Fleet\Filament\Resources\FleetVnodeResource;
 use NetServa\Fleet\Filament\Resources\FleetVsiteResource;
@@ -14,18 +13,17 @@ use NetServa\Fleet\Filament\Resources\WireguardResource;
 /**
  * NetServa Fleet Plugin
  *
- * Provides fleet-wide management of Venues, VSites, VNodes, VHosts, IP address
+ * Provides fleet-wide management of VSites, VNodes, VHosts, IP address
  * management (IPAM), and WireGuard VPN across the NetServa infrastructure.
  *
  * Features:
- * - Venue (infrastructure location) management
- * - VSite (site group) management
- * - VNode (server node) management
- * - VHost (virtual host) management
+ * - VSite (site group) management with provider/location/owner
+ * - VNode (server node) management with ssh_host/hostname/fqdn
+ * - VHost (virtual host) management with uid/gid/ssl
  * - Fleet-wide discovery and monitoring
  * - IPAM (unified IP network, address, and reservation management)
- * - WireGuard VPN server management (merged from WG)
- * - WireGuard peer management (merged from WG)
+ * - WireGuard VPN server management
+ * - WireGuard peer management
  */
 class FleetPlugin extends BaseFilamentPlugin
 {
@@ -39,8 +37,7 @@ class FleetPlugin extends BaseFilamentPlugin
     protected function registerResources(Panel $panel): void
     {
         $panel->resources([
-            // Fleet resources
-            FleetVenueResource::class,
+            // Fleet resources (vsite → vnode → vhost hierarchy)
             FleetVsiteResource::class,
             FleetVnodeResource::class,
             FleetVhostResource::class,
@@ -63,10 +60,7 @@ class FleetPlugin extends BaseFilamentPlugin
 
     protected function registerNavigationItems(Panel $panel): void
     {
-        // TODO: Navigation groups should be defined in Resource classes as protected static properties
-        // This is the Filament 4.x pattern. For now, resources will use default navigation.
-        //
-        // Planned groups: Fleet Management
+        // Navigation groups are defined in Resource classes
     }
 
     public function getVersion(): string
@@ -79,18 +73,17 @@ class FleetPlugin extends BaseFilamentPlugin
         return [
             'version' => $this->getVersion(),
             'enabled_features' => [
-                'venue_management' => true,
                 'vsite_management' => true,
                 'vnode_management' => true,
                 'vhost_management' => true,
                 'fleet_discovery' => true,
                 // BinaryLane VPS provider integration
                 'binarylane_management' => true,
-                // IPAM features (merged from netserva-ipam)
+                // IPAM features
                 'ip_network_management' => true,
                 'ip_address_tracking' => true,
                 'ip_reservations' => true,
-                // WireGuard features (merged from netserva-wg)
+                // WireGuard features
                 'wireguard_servers' => true,
                 'wireguard_peers' => true,
             ],

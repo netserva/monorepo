@@ -12,6 +12,7 @@ use NetServa\Core\Filament\Resources\PluginResource;
 use NetServa\Core\Filament\Resources\SettingResource;
 use NetServa\Core\Filament\Resources\SshHostResource;
 use NetServa\Core\Filament\Resources\SshKeyResource;
+use NetServa\Core\Filament\Resources\VPassResource;
 use NetServa\Core\Filament\Widgets\InfrastructureOverview;
 use NetServa\Core\Filament\Widgets\ServiceHealthStatus;
 use NetServa\Core\Filament\Widgets\SystemStatsOverview;
@@ -45,6 +46,7 @@ class CorePlugin implements Plugin
 
         // Register Core resources
         $panel->resources([
+            VPassResource::class,
             SshHostResource::class,
             SshKeyResource::class,
             SettingResource::class,

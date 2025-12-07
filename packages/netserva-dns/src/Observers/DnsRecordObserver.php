@@ -140,8 +140,11 @@ class DnsRecordObserver
                 $content = $record->priority.' '.$content;
             }
 
+            // PowerDNS requires FQDN format with trailing dot
+            $canonicalName = str_ends_with($record->name, '.') ? $record->name : $record->name.'.';
+
             $rrsets = [[
-                'name' => $record->name,
+                'name' => $canonicalName,
                 'type' => $record->type,
                 'ttl' => $record->ttl ?? 300,
                 'changetype' => 'REPLACE',
@@ -172,8 +175,11 @@ class DnsRecordObserver
                 ]);
             }
         } elseif ($action === 'delete') {
+            // PowerDNS requires FQDN format with trailing dot
+            $canonicalName = str_ends_with($record->name, '.') ? $record->name : $record->name.'.';
+
             $rrsets = [[
-                'name' => $record->name,
+                'name' => $canonicalName,
                 'type' => $record->type,
                 'changetype' => 'DELETE',
             ]];

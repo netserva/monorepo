@@ -24,12 +24,14 @@ use function Laravel\Prompts\warning;
  * CRUD: Create - Add new credential to unified vault
  *
  * Usage:
- *   addpw                              # Interactive mode (prompts for all)
- *   addpw vnode mgo cloudflare         # Add Cloudflare API key for mgo vnode
- *   addpw vhost example.com dovecot    # Add Dovecot password for vhost
+ *   addpw                                                  # Interactive mode (prompts for all)
+ *   addpw venue default cloudflare --ptype=APKEY --pname=global_api_key --pdata=xxx
+ *   addpw venue default synergywholesale --ptype=APKEY --pname=api_key --pdata=xxx
+ *   addpw vnode mgo mysql --ptype=DBPWD --pname=root --pdata=xxx
+ *   addpw vhost example.com dovecot --ptype=VMAIL --pname=admin@example.com --pdata=xxx
  *
  * NetServa 3.0 Security Architecture:
- * - ALL credentials stored on workstation only (encrypted at rest)
+ * - ALL credentials stored on workstation only (encrypted at rest via APP_KEY)
  * - Polymorphic ownership: venue/vsite/vnode/vhost
  * - Hierarchical inheritance resolution
  * - Supports: VMAIL, APKEY, DBPWD, SSLKY, OAUTH
@@ -37,9 +39,9 @@ use function Laravel\Prompts\warning;
 class AddpwCommand extends Command
 {
     protected $signature = 'addpw
-                            {name? : VNode name, domain, or vnode+domain}
-                            {service_or_domain? : Service provider OR domain (if first arg is vnode)}
-                            {pserv? : Service provider (if first two args are vnode+domain)}
+                            {owner_type? : Owner type (venue, vsite, vnode, vhost)}
+                            {owner_name? : Owner name (venue-name, vnode-name, domain.com)}
+                            {pserv? : Service provider (cloudflare, synergywholesale, dovecot, mysql, custom)}
                             {--ptype= : Password type (VMAIL, APKEY, DBPWD, SSLKY, OAUTH)}
                             {--pname= : Identifier name (email, key name, username, default)}
                             {--pdata= : Secret data (password, API key, token)}
@@ -85,11 +87,13 @@ class AddpwCommand extends Command
                 label: 'Service provider',
                 options: [
                     'cloudflare' => 'Cloudflare (DNS, CDN)',
+                    'synergywholesale' => 'SynergyWholesale (Domain Registrar)',
                     'binarylane' => 'BinaryLane (Cloud)',
                     'proxmox' => 'Proxmox (Virtualization)',
                     'dovecot' => 'Dovecot (Mail)',
                     'mysql' => 'MySQL/MariaDB (Database)',
                     'postgresql' => 'PostgreSQL (Database)',
+                    'wordpress' => 'WordPress (CMS)',
                     'redis' => 'Redis (Cache)',
                     'custom' => 'Custom service',
                 ],

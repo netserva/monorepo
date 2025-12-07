@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# Deploy renewed Let's Encrypt wildcard certificate to PVE/PBS hosts
+# Called by acme.sh --reloadcmd after successful renewal
+#
+# Usage: deploy-goldcoast-cert
+#
+# Author: NetServa 3.0
+# Date: 2025-12-05
+
+set -euo pipefail
+
+DOMAIN="goldcoast.org"
+WILDCARD="*.${DOMAIN}"
+ACME_HOME="${HOME}/.acme.sh"
+CERT_DIR="${ACME_HOME}/${WILDCARD}_ecc"
+LOG_FILE="${HOME}/.ns/logs/cert-deploy.log"
+
+# Target hosts
+PBS_HOSTS="pbs2 pbs3 pbs4"
+PVE_HOSTS="pve2 pve3 pve4"
+
+mkdir -p "$(dirname "$LOG_FILE")"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+}
+
+log "Starting certificate deployment for ${WILDCARD}"
+
+# Deploy to PBS hosts
+for host in ${PBS_HOSTS}; do
+    log "Deploying to ${host}..."
+    if scp -q "${CERT_DIR}/fullchain.cer" "${host}:/etc/proxmox-backup/proxy.pem" && \
+       scp -q "${CERT_DIR}/${WILDCARD}.key" "${host}:/etc/proxmox-backup/proxy.key" && \
+       ssh "${host}" 'chmod 640 /etc/proxmox-backup/proxy.pem /etc/proxmox-backup/proxy.key && \
+                      chown root:backup /etc/proxmox-backup/proxy.pem /etc/proxmox-backup/proxy.key && \
+                      systemctl reload proxmox-backup-proxy'; then
+        log "  ${host}: OK"
+    else
+        log "  ${host}: FAILED"
+    fi
+done
+
+# Deploy to PVE hosts
+for host in ${PVE_HOSTS}; do
+    log "Deploying to ${host}..."
+    if scp -q "${CERT_DIR}/fullchain.cer" "${host}:/etc/pve/local/pveproxy-ssl.pem" && \
+       scp -q "${CERT_DIR}/${WILDCARD}.key" "${host}:/etc/pve/local/pveproxy-ssl.key" && \
+       ssh "${host}" 'systemctl reload pveproxy'; then
+        log "  ${host}: OK"
+    else
+        log "  ${host}: FAILED"
+    fi
+done
+
+log "Certificate deployment complete"

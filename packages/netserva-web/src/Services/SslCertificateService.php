@@ -50,13 +50,6 @@ class SslCertificateService
             'status' => 'pending',
         ]);
 
-            'certificate_created',
-            "SSL certificate requested for {$data['common_name']}",
-            $certificate,
-            ['ca' => $ca->name, 'type' => $certificateType],
-            'medium'
-        );
-
         return $certificate;
     }
 
@@ -71,12 +64,6 @@ class SslCertificateService
             if (! $ca->isHealthy()) {
                 throw new Exception('Certificate authority is not healthy');
             }
-
-                'certificate_issuing',
-                "Starting certificate issuance for {$certificate->common_name}",
-                $certificate,
-                ['ca' => $ca->name, 'method' => $ca->ca_type]
-            );
 
             switch ($ca->ca_type) {
                 case 'letsencrypt':
@@ -95,13 +82,6 @@ class SslCertificateService
             $certificate->update([
                 'status' => 'failed',
             ]);
-
-                'certificate_failed',
-                "Certificate issuance failed for {$certificate->common_name}: ".$e->getMessage(),
-                $certificate,
-                ['error' => $e->getMessage()],
-                'high'
-            );
 
             return false;
         }
@@ -149,13 +129,6 @@ class SslCertificateService
         // Schedule next renewal
         $renewalDate = $validTo->subDays($certificate->renew_days_before_expiry ?? 30);
         $certificate->scheduleRenewal($renewalDate);
-
-            'certificate_issued',
-            "SSL certificate successfully issued for {$certificate->common_name}",
-            $certificate,
-            ['valid_until' => $validTo->toDateString()],
-            'low'
-        );
 
         return true;
     }
@@ -211,13 +184,6 @@ class SslCertificateService
             'status' => 'active',
         ]);
 
-            'certificate_issued',
-            "Self-signed SSL certificate created for {$certificate->common_name}",
-            $certificate,
-            ['valid_until' => $validTo->toDateString()],
-            'low'
-        );
-
         return true;
     }
 
@@ -236,12 +202,6 @@ class SslCertificateService
             $success = $this->issueCertificate($certificate);
 
             if ($success) {
-                    'certificate_renewed',
-                    "SSL certificate renewed for {$certificate->common_name}",
-                    $certificate,
-                    ['new_expiry' => $certificate->not_valid_after->toDateString()]
-                );
-
                 return true;
             }
 
@@ -283,15 +243,6 @@ class SslCertificateService
                 $results['failed']++;
                 $results['errors'][] = "Error renewing {$certificate->common_name}: ".$e->getMessage();
             }
-        }
-
-        if ($results['processed'] > 0) {
-                'certificate_renewal_batch',
-                "Processed {$results['processed']} certificate renewals ({$results['successful']} successful, {$results['failed']} failed)",
-                'medium',
-                $results,
-                'ns-ssl-manager'
-            );
         }
 
         return $results;
@@ -421,15 +372,6 @@ class SslCertificateService
             ->where('not_valid_after', '>', now())
             ->update(['status' => 'active']);
         $updated += $reactivatedCount;
-
-        if ($updated > 0) {
-                'certificate_status_update',
-                "Updated status for {$updated} certificates ({$expiredCount} expired, {$reactivatedCount} reactivated)",
-                'low',
-                ['expired' => $expiredCount, 'reactivated' => $reactivatedCount],
-                'ns-ssl-manager'
-            );
-        }
 
         return $updated;
     }

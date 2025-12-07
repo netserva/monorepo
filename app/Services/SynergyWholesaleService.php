@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use SoapClient;
 use SoapFault;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Synergy Wholesale API Service
@@ -17,8 +17,11 @@ use Illuminate\Support\Facades\Log;
 class SynergyWholesaleService
 {
     private SoapClient $client;
+
     private string $resellerID;
+
     private string $apiKey;
+
     private const API_ENDPOINT = 'https://api.synergywholesale.com/server.php?wsdl';
 
     public function __construct()
@@ -79,10 +82,31 @@ class SynergyWholesaleService
 
     /**
      * List all domains under this reseller account
+     *
+     * @param  string|null  $status  Filter by status: 'ok', 'clientTransferProhibited', 'transferredaway', etc.
+     * @param  int  $page  Page number (1-indexed)
+     * @param  int  $limit  Results per page (max 500)
      */
-    public function listDomains(): array
+    public function listDomains(?string $status = null, int $page = 1, int $limit = 500): array
     {
-        return $this->execute('listDomains');
+        $params = [
+            'page' => $page,
+            'limit' => $limit,
+        ];
+
+        if ($status !== null) {
+            $params['status'] = $status;
+        }
+
+        return $this->execute('listDomains', $params);
+    }
+
+    /**
+     * List only active domains (clientTransferProhibited status)
+     */
+    public function listActiveDomains(int $page = 1, int $limit = 500): array
+    {
+        return $this->listDomains('clientTransferProhibited', $page, $limit);
     }
 
     /**
@@ -108,8 +132,7 @@ class SynergyWholesaleService
     /**
      * Update nameservers for a domain
      *
-     * @param string $domain
-     * @param array $nameservers Array of nameserver hostnames (ns1.example.com, etc)
+     * @param  array  $nameservers  Array of nameserver hostnames (ns1.example.com, etc)
      */
     public function updateNameservers(string $domain, array $nameservers): array
     {
@@ -122,9 +145,9 @@ class SynergyWholesaleService
     /**
      * Add a child host (glue record)
      *
-     * @param string $domainName The domain name (e.g., netserva.org)
-     * @param string $host Hostname (e.g., ns1.netserva.org)
-     * @param array $ips Array of IP addresses
+     * @param  string  $domainName  The domain name (e.g., netserva.org)
+     * @param  string  $host  Hostname (e.g., ns1.netserva.org)
+     * @param  array  $ips  Array of IP addresses
      */
     public function addChildHost(string $domainName, string $host, array $ips): array
     {
@@ -149,8 +172,8 @@ class SynergyWholesaleService
     /**
      * Delete a glue record for a specific domain
      *
-     * @param string $domainName The domain name (e.g., netserva.org)
-     * @param string $hostname The hostname to delete (e.g., ns1.netserva.org)
+     * @param  string  $domainName  The domain name (e.g., netserva.org)
+     * @param  string  $hostname  The hostname to delete (e.g., ns1.netserva.org)
      */
     public function deleteGlueRecord(string $domainName, string $hostname): array
     {
@@ -190,6 +213,7 @@ class SynergyWholesaleService
     public function getNameservers(string $domain): array
     {
         $info = $this->getDomainInfo($domain);
+
         return $info['nameServers'] ?? [];
     }
 
@@ -199,6 +223,7 @@ class SynergyWholesaleService
     public function isUsingCustomNameservers(string $domain): bool
     {
         $info = $this->getDomainInfo($domain);
+
         return ($info['dnsConfigType'] ?? 0) == 1; // 1 = Custom nameservers
     }
 

@@ -43,18 +43,22 @@ class DovecotPasswordService
             throw new \RuntimeException('SHA512-CRYPT hashing failed');
         }
 
-        return $hash;
+        // Include {SHA512-CRYPT} prefix for Dovecot compatibility
+        return '{SHA512-CRYPT}'.$hash;
     }
 
     /**
      * Verify password against SHA512-CRYPT hash
      *
      * @param  string  $password  Cleartext password to verify
-     * @param  string  $hash  SHA512-CRYPT hash to verify against
+     * @param  string  $hash  SHA512-CRYPT hash to verify against (with or without prefix)
      * @return bool True if password matches hash
      */
     public function verify(string $password, string $hash): bool
     {
+        // Strip {SHA512-CRYPT} prefix if present
+        $hash = str_replace('{SHA512-CRYPT}', '', $hash);
+
         if (! str_starts_with($hash, '$6$')) {
             return false; // Not SHA512-CRYPT format
         }
@@ -66,12 +70,12 @@ class DovecotPasswordService
     /**
      * Check if hash is SHA512-CRYPT format
      *
-     * @param  string  $hash  Hash to check
+     * @param  string  $hash  Hash to check (with or without prefix)
      * @return bool True if SHA512-CRYPT format
      */
     public function isValidFormat(string $hash): bool
     {
-        return str_starts_with($hash, '$6$');
+        return str_starts_with($hash, '{SHA512-CRYPT}$6$') || str_starts_with($hash, '$6$');
     }
 
     /**

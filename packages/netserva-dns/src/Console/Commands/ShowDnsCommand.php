@@ -28,6 +28,8 @@ class ShowDnsCommand extends Command
         {--test : Test connection}
         {--sync-remote : Show zones from remote server (live count)}
         {--import-zones : Import remote zones to local database}
+        {--sync : Full sync - import zones AND records from remote (PowerDNS)}
+        {--sync-records : Import records for existing zones from remote}
         {--zones : Show zones for provider(s) using shzone under the hood}
         {--records : Show records for provider(s) using shrec under the hood}
         {--json : Output as JSON}
@@ -39,13 +41,17 @@ class ShowDnsCommand extends Command
 
     protected \NetServa\Dns\Services\PowerDnsTunnelService $tunnelService;
 
+    protected \NetServa\Dns\Services\PowerDnsService $powerDnsService;
+
     public function __construct(
         DnsProviderManagementService $providerService,
-        \NetServa\Dns\Services\PowerDnsTunnelService $tunnelService
+        \NetServa\Dns\Services\PowerDnsTunnelService $tunnelService,
+        \NetServa\Dns\Services\PowerDnsService $powerDnsService
     ) {
         parent::__construct();
         $this->providerService = $providerService;
         $this->tunnelService = $tunnelService;
+        $this->powerDnsService = $powerDnsService;
     }
 
     public function handle(): int
@@ -422,6 +428,66 @@ class ShowDnsCommand extends Command
             }
         }
 
+        // Full sync (zones + records) using service layer
+        if ($this->option('sync')) {
+            if ($provider->type !== 'powerdns') {
+                $this->error('❌ --sync is only supported for PowerDNS providers');
+
+                return self::FAILURE;
+            }
+
+            $this->newLine();
+            $this->info('🔄 Full sync - importing zones and records from remote...');
+
+            $progressCallback = function (string $type, string $name, int $imported, int $skipped) {
+                if ($type === 'zone') {
+                    $this->line("   Zone: <fg=cyan>{$name}</>");
+                } else {
+                    $this->line("   {$name}: <fg=green>{$imported} imported</>, <fg=yellow>{$skipped} skipped</>");
+                }
+            };
+
+            $result = $this->powerDnsService->syncAllFromRemote($provider, $progressCallback);
+
+            $this->newLine();
+            if ($result['success']) {
+                $this->info('✅ '.$result['message']);
+                $this->line("   Zones: <fg=cyan>{$result['zones']['imported']} imported, {$result['zones']['skipped']} skipped</>");
+                $this->line("   Records: <fg=cyan>{$result['records']['imported']} imported, {$result['records']['skipped']} skipped</>");
+            } else {
+                $this->error('❌ Sync failed: '.$result['message']);
+
+                return self::FAILURE;
+            }
+        }
+
+        // Sync records only (for existing zones)
+        if ($this->option('sync-records')) {
+            if ($provider->type !== 'powerdns') {
+                $this->error('❌ --sync-records is only supported for PowerDNS providers');
+
+                return self::FAILURE;
+            }
+
+            $this->newLine();
+            $this->info('📥 Importing records for existing zones...');
+
+            $progressCallback = function (string $type, string $name, int $imported, int $skipped) {
+                $this->line("   {$name}: <fg=green>{$imported} imported</>, <fg=yellow>{$skipped} skipped</>");
+            };
+
+            $result = $this->powerDnsService->syncRecordsFromRemote($provider, $progressCallback);
+
+            $this->newLine();
+            if ($result['success']) {
+                $this->info('✅ '.$result['message']);
+            } else {
+                $this->error('❌ Sync failed: '.$result['message']);
+
+                return self::FAILURE;
+            }
+        }
+
         return self::SUCCESS;
     }
 
@@ -509,7 +575,7 @@ class ShowDnsCommand extends Command
             $config = $provider->connection_config ?? [];
             $connection = match ($provider->type) {
                 'powerdns' => isset($config['ssh_host'])
-                    ? "SSH: {$config['ssh_host']} → :{$config['api_port']}"
+                    ? "SSH: {$config['ssh_host']} → :".($config['api_port'] ?? 8081)
                     : ($config['api_endpoint'] ?? 'Not configured'),
                 'dnsmasq' => isset($config['ssh_host'])
                     ? "SSH: {$config['ssh_host']} (manual config)"

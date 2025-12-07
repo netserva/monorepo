@@ -58,9 +58,9 @@ class VmailManagementService
                 ];
             }
 
-            // Check if vhost exists in fleet_vhosts
+            // Check if vhost exists in fleet_vhosts (Fix #1: use 'domain' not 'fqdn')
             $vhost = FleetVhost::where('vnode_id', $vnode->id)
-                ->where('fqdn', $domain)
+                ->where('domain', $domain)
                 ->first();
 
             if (! $vhost) {
@@ -70,16 +70,21 @@ class VmailManagementService
                 ];
             }
 
-            // SQLite database on remote vnode
-            $sqlCmd = 'sqlite3 /var/lib/sqlite/sysadm/sysadm.db';
+            // Fix #2: Detect database type from vnode
+            $sqlCmd = $this->getSqlCommand($vnode);
 
             // Check if domain exists in vhosts table (remote database)
-            if (! $this->domainExistsInVhosts($vnodeName, $domain, $sqlCmd)) {
+            // Fix #4: Also get uid/gid from remote vhosts table
+            $vhostData = $this->getVhostFromRemote($vnodeName, $domain, $sqlCmd);
+            if (! $vhostData) {
                 return [
                     'success' => false,
                     'error' => "Domain {$domain} not found in vhosts table on {$vnodeName}",
                 ];
             }
+
+            $uid = $vhostData['uid'];
+            $gid = $vhostData['gid'];
 
             // Check if user already exists
             if ($this->vmailExists($vnodeName, $email, $sqlCmd)) {
@@ -90,10 +95,10 @@ class VmailManagementService
             }
 
             // Create database entries (dual-database: remote hash + local cleartext)
-            $this->createVmailDatabaseEntries($vnodeName, $email, $password, $domain, $localpart, $vhost->uid, $vhost->gid, $vhost->id, $sqlCmd);
+            $this->createVmailDatabaseEntries($vnodeName, $email, $password, $domain, $localpart, $uid, $gid, $vhost->id, $sqlCmd);
 
             // Create mailbox directory structure
-            $this->createMailboxStructure($vnodeName, $domain, $localpart, $vhost->uid, $vhost->gid);
+            $this->createMailboxStructure($vnodeName, $domain, $localpart, $uid, $gid);
 
             return [
                 'success' => true,
@@ -119,17 +124,52 @@ class VmailManagementService
     }
 
     /**
-     * Check if domain exists in vhosts table
+     * Get SQL command based on vnode database type (Fix #2)
+     *
+     * Detects MariaDB vs SQLite based on vnode configuration
      */
-    private function domainExistsInVhosts(string $vnode, string $domain, string $sqlCmd): bool
+    private function getSqlCommand(FleetVnode $vnode): string
+    {
+        // Check vnode's database_type field first
+        $dbType = $vnode->database_type ?? 'mysql';
+
+        if ($dbType === 'sqlite') {
+            return 'sqlite3 /var/lib/sqlite/sysadm/sysadm.db';
+        }
+
+        // Default to MariaDB (most common in NS 3.0)
+        return 'mariadb -BN sysadm';
+    }
+
+    /**
+     * Get vhost data from remote database (Fix #4)
+     *
+     * Returns uid/gid from remote vhosts table since FleetVhost doesn't store them
+     */
+    private function getVhostFromRemote(string $vnode, string $domain, string $sqlCmd): ?array
     {
         $sql = "cat <<EOS | {$sqlCmd}
-SELECT COUNT(*) FROM vhosts WHERE domain = '{$domain}' AND active = 1
+SELECT uid, gid FROM vhosts WHERE domain = '{$domain}' AND active = 1
 EOS";
 
         $result = $this->remoteExecution->executeAsRoot($vnode, $sql);
 
-        return $result['success'] && trim($result['output']) === '1';
+        if (! $result['success'] || empty(trim($result['output']))) {
+            return null;
+        }
+
+        // Parse output (tab-separated for MariaDB, pipe for SQLite)
+        $output = trim($result['output']);
+        $parts = preg_split('/[\t|]/', $output);
+
+        if (count($parts) >= 2) {
+            return [
+                'uid' => (int) $parts[0],
+                'gid' => (int) $parts[1],
+            ];
+        }
+
+        return null;
     }
 
     /**
@@ -171,12 +211,16 @@ EOS";
         // 1. Generate SHA512-CRYPT hash locally (Dovecot compatible)
         $passwordHash = $this->passwordService->generateHash($password);
 
+        // Escape $ characters in hash for bash heredoc (prevents variable expansion)
+        $escapedHash = str_replace('$', '\\$', $passwordHash);
+
         // 2. Store HASH ONLY on remote server (NO CLEARTEXT!)
+        // Fix #3: Use correct column names (pass, home) matching remote vmails table
         $vmailsSql = "cat <<EOS | {$sqlCmd}
 INSERT INTO vmails (
     user,
-    password,
-    maildir,
+    pass,
+    home,
     uid,
     gid,
     active,
@@ -184,7 +228,7 @@ INSERT INTO vmails (
     updated_at
 ) VALUES (
     '{$email}',
-    '{$passwordHash}',
+    '{$escapedHash}',
     '{$maildir}',
     {$uid},
     {$gid},

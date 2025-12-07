@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use NetServa\Dns\Models\DnsProvider;
 use NetServa\Fleet\Database\Factories\FleetVsiteFactory;
+use NetServa\Fleet\FleetServiceProvider;
 
 /**
  * Fleet Vsite Model
@@ -30,16 +31,18 @@ class FleetVsite extends Model
     protected $table = 'fleet_vsites';
 
     protected $fillable = [
-        'venue_id',
         'name',
         'slug',
         'provider',
         'technology',
         'location',
+        'owner',  // self, customer-acme, etc.
+        'customer_id',  // CRM integration (optional)
         'dns_provider_id',
         'palette_id',
         'api_endpoint',
         'api_credentials',
+        'network_cidr',
         'capabilities',
         'description',
         'status',
@@ -66,14 +69,6 @@ class FleetVsite extends Model
                 $vsite->slug = Str::slug($vsite->name);
             }
         });
-    }
-
-    /**
-     * Get the venue this vsite belongs to
-     */
-    public function venue(): BelongsTo
-    {
-        return $this->belongsTo(FleetVenue::class, 'venue_id');
     }
 
     /**
@@ -106,6 +101,30 @@ class FleetVsite extends Model
     public function palette(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Palette::class);
+    }
+
+    /**
+     * Get the customer that owns this vsite (if CRM package is installed)
+     *
+     * Returns an empty relationship if CRM is not available to maintain
+     * compatibility when the netserva-crm package is not installed.
+     */
+    public function customer(): BelongsTo
+    {
+        if (! FleetServiceProvider::hasCrmIntegration()) {
+            // Return empty relationship if CRM not available
+            return $this->belongsTo(self::class, 'id')->whereRaw('1=0');
+        }
+
+        return $this->belongsTo(\NetServa\Crm\Models\CrmCustomer::class, 'customer_id');
+    }
+
+    /**
+     * Check if this vsite has CRM integration available
+     */
+    public function hasCrmIntegration(): bool
+    {
+        return FleetServiceProvider::hasCrmIntegration();
     }
 
     /**
@@ -220,14 +239,13 @@ class FleetVsite extends Model
     }
 
     /**
-     * Get effective DNS provider (with inheritance from venue)
+     * Get effective DNS provider
      *
      * Resolution order:
      * 1. Explicit vsite assignment (dns_provider_id)
-     * 2. Inherit from venue
-     * 3. Default provider from config
-     * 4. First active PowerDNS provider (if auto-select enabled)
-     * 5. null (no DNS provider available)
+     * 2. Default provider from config
+     * 3. First active PowerDNS provider (if auto-select enabled)
+     * 4. null (no DNS provider available)
      */
     public function getEffectiveDnsProvider(): ?DnsProvider
     {
@@ -236,18 +254,13 @@ class FleetVsite extends Model
             return $this->dnsProvider;
         }
 
-        // 2. Inherit from venue
-        if ($this->venue) {
-            return $this->venue->getEffectiveDnsProvider();
-        }
-
-        // 3. Default from config
+        // 2. Default from config
         $defaultId = config('dns-manager.default_provider_id');
         if ($defaultId) {
             return DnsProvider::find($defaultId);
         }
 
-        // 4. Auto-select first active PowerDNS provider
+        // 3. Auto-select first active PowerDNS provider
         if (config('dns-manager.auto_select_powerdns', true)) {
             return DnsProvider::active()
                 ->where('type', 'powerdns')
@@ -291,10 +304,34 @@ class FleetVsite extends Model
     }
 
     /**
-     * Check if DNS provider is inherited from venue
+     * Check if DNS provider is using default (not explicitly set)
      */
-    public function inheritsDnsProvider(): bool
+    public function usesDefaultDnsProvider(): bool
     {
-        return $this->dns_provider_id === null && $this->venue?->dns_provider_id !== null;
+        return $this->dns_provider_id === null;
+    }
+
+    /**
+     * Scope by owner
+     */
+    public function scopeByOwner($query, string $owner)
+    {
+        return $query->where('owner', $owner);
+    }
+
+    /**
+     * Scope for self-owned vsites
+     */
+    public function scopeSelfOwned($query)
+    {
+        return $query->where('owner', 'self');
+    }
+
+    /**
+     * Scope for customer-owned vsites
+     */
+    public function scopeCustomerOwned($query)
+    {
+        return $query->where('owner', '!=', 'self');
     }
 }

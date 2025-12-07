@@ -3,7 +3,6 @@
 namespace NetServa\Fleet\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 
@@ -20,73 +19,97 @@ class FleetVhostFactory extends Factory
 
         return [
             'domain' => $domain,
-            'slug' => Str::slug($domain),
             'vnode_id' => FleetVnode::factory(),
-            'instance_type' => fake()->randomElement(['vm', 'ct', 'lxc', 'docker']),
-            'cpu_cores' => fake()->numberBetween(1, 8),
-            'memory_mb' => fake()->randomElement([512, 1024, 2048, 4096, 8192]),
-            'disk_gb' => fake()->randomElement([10, 20, 50, 100, 200]),
-            'ip_addresses' => [fake()->ipv4()],
-            'services' => ['nginx'],
-            'environment_vars' => [],
+
+            // Legacy NS 1.0 compatibility
+            'uid' => 1000,
+            'gid' => 1000,
+            'document_root' => "/srv/{$domain}/web",
+            'php_version' => '8.4',
+            'ssl_enabled' => true,
+            'ssl_type' => 'letsencrypt',
+
+            // Domain classification
+            'is_primary' => false,
+            'is_mail_domain' => false,
+
+            // Unix username (derived from uid if null)
+            'unix_username' => null,
+
+            // Application info
+            'app_type' => fake()->optional()->randomElement(['wordpress', 'laravel', 'static']),
+            'app_version' => null,
+            'cms_admin_user' => null,
+
+            // Database
+            'db_name' => null,
+            'db_user' => null,
+
+            // Contact
+            'admin_email' => fake()->optional()->safeEmail(),
+
+            // Status
             'status' => 'active',
-            'is_active' => true,
-            'migration_status' => 'pending',
-            'rollback_available' => false,
-            'migration_attempts' => 0,
+            'description' => fake()->optional()->sentence(),
+            'dns_provider' => null,
+            'metadata' => null,
         ];
     }
 
     public function inactive(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_active' => false,
             'status' => 'inactive',
         ]);
     }
 
-    public function withServices(array $services): static
+    public function wordpress(): static
     {
         return $this->state(fn (array $attributes) => [
-            'services' => array_merge(['nginx'], $services),
+            'app_type' => 'wordpress',
+            'app_version' => '6.7',
+            'cms_admin_user' => 'admin',
+            'db_name' => 'wp_'.fake()->word(),
+            'db_user' => 'wp_'.fake()->word(),
         ]);
     }
 
-    public function webServer(): static
+    public function laravel(): static
     {
         return $this->state(fn (array $attributes) => [
-            'services' => ['nginx', 'php-fpm', 'mysql'],
+            'app_type' => 'laravel',
+            'app_version' => '12.0',
+            'db_name' => 'app_'.fake()->word(),
+            'db_user' => 'app_'.fake()->word(),
         ]);
     }
 
-    public function mailServer(): static
+    public function mailDomain(): static
     {
         return $this->state(fn (array $attributes) => [
-            'services' => ['postfix', 'dovecot'],
+            'is_mail_domain' => true,
         ]);
     }
 
-    public function discovered(): static
+    public function primary(): static
     {
         return $this->state(fn (array $attributes) => [
-            'last_discovered_at' => now()->subHours(2),
-            'discovered_at' => now()->subDays(7),
+            'is_primary' => true,
         ]);
     }
 
-    public function migrated(): static
+    public function selfSigned(): static
     {
         return $this->state(fn (array $attributes) => [
-            'migration_status' => 'completed',
-            'migrated_at' => now()->subDays(1),
-            'rollback_available' => true,
+            'ssl_type' => 'self-signed',
         ]);
     }
 
-    public function withEnvironmentVars(array $vars): static
+    public function noSsl(): static
     {
         return $this->state(fn (array $attributes) => [
-            'environment_vars' => $vars,
+            'ssl_enabled' => false,
+            'ssl_type' => 'none',
         ]);
     }
 }

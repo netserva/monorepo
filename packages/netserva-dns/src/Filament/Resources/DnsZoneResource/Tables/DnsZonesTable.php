@@ -140,7 +140,7 @@ class DnsZonesTable
             ->defaultSort('updated_at', 'desc')
             ->paginated([5, 10, 25, 50, 100])
             ->recordUrl(fn ($record) => DnsRecordResource::getUrl('index', [
-                'tableFilters' => [
+                'filters' => [
                     'dns_zone_id' => ['value' => $record->id],
                 ],
             ]));

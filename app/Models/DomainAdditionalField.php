@@ -31,12 +31,19 @@ class DomainAdditionalField extends Model
      * Common .au domain field names
      */
     public const AU_REGISTRANT_NAME = 'Registrant Name';
+
     public const AU_REGISTRANT_ID = 'Registrant ID';
+
     public const AU_REGISTRANT_ID_TYPE = 'Registrant ID Type';
+
     public const AU_ELIGIBILITY_NAME = 'Eligibility Name';
+
     public const AU_ELIGIBILITY_TYPE = 'Eligibility Type';
+
     public const AU_ELIGIBILITY_ID = 'Eligibility ID';
+
     public const AU_ELIGIBILITY_ID_TYPE = 'Eligibility ID Type';
+
     public const AU_ELIGIBILITY_REASON = 'Eligibility Reason';
 
     /**

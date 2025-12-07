@@ -10,28 +10,29 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "filament/filament": "^4.2.1",
-        "filament/spatie-laravel-media-library-plugin": "^4.2.1",
-        "laravel/framework": "^12.37.0",
-        "laravel/tinker": "^2.10.1",
+        "filament/filament": "^4.3.0",
+        "filament/spatie-laravel-media-library-plugin": "^4.3.0",
+        "laravel/framework": "^12.41.1",
+        "laravel/tinker": "^2.10.2",
         "netserva/cms": "@dev",
         "netserva/core": "@dev",
         "netserva/dns": "@dev",
         "netserva/fleet": "@dev",
         "netserva/mail": "@dev",
+        "netserva/crm": "@dev",
         "netserva/platform": "@dev",
         "netserva/web": "@dev",
         "phpseclib/phpseclib": "^3.0.47"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
-        "laravel/boost": "^1.8.0",
-        "laravel/pail": "^1.2.3",
-        "laravel/pint": "^1.25.1",
-        "laravel/sail": "^1.47",
+        "laravel/boost": "^1.8.4",
+        "laravel/pail": "^1.2.4",
+        "laravel/pint": "^1.26.0",
+        "laravel/sail": "^1.50",
         "mockery/mockery": "^1.6.12",
-        "nunomaduro/collision": "^8.8.2",
-        "pestphp/pest": "^4.1.3@dev",
+        "nunomaduro/collision": "^8.8.3",
+        "pestphp/pest": "^4.1.6@dev",
         "pestphp/pest-plugin-browser": "^4.1.1",
         "pestphp/pest-plugin-laravel": "^4.0"
     },
@@ -45,7 +46,8 @@
             "NetServa\\Dns\\Database\\Factories\\": "packages/netserva-dns/database/factories/",
             "NetServa\\Fleet\\Database\\Factories\\": "packages/netserva-fleet/database/factories/",
             "NetServa\\Mail\\Database\\Factories\\": "packages/netserva-mail/database/factories/",
-            "NetServa\\Web\\Database\\Factories\\": "packages/netserva-web/database/factories/"
+            "NetServa\\Web\\Database\\Factories\\": "packages/netserva-web/database/factories/",
+            "NetServa\\Crm\\Database\\Factories\\": "packages/netserva-crm/database/factories/"
         }
     },
     "autoload-dev": {
@@ -73,7 +75,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
+            "trap 'kill 0' EXIT; php artisan serve & bun run dev & wait"
         ],
         "test": [
             "@php artisan config:clear --ansi",
@@ -170,6 +172,15 @@
             "options": {
                 "versions": {
                     "netserva/platform": "0.0.3"
+                }
+            }
+        },
+        "netserva/crm": {
+            "type": "path",
+            "url": "./packages/netserva-crm",
+            "options": {
+                "versions": {
+                    "netserva/crm": "0.0.1"
                 }
             }
         }

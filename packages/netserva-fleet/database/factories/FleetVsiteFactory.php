@@ -4,7 +4,6 @@ namespace NetServa\Fleet\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
-use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVsite;
 
 /**
@@ -19,12 +18,12 @@ class FleetVsiteFactory extends Factory
         $name = fake()->unique()->domainWord();
 
         return [
-            'venue_id' => FleetVenue::factory(),
             'name' => $name,
             'slug' => Str::slug($name),
-            'provider' => fake()->randomElement(['local', 'hetzner', 'digitalocean', 'aws', 'proxmox', 'incus']),
+            'provider' => fake()->randomElement(['binarylane', 'proxmox', 'incus', 'digitalocean', 'vultr', 'bare-metal']),
             'technology' => fake()->randomElement(['proxmox', 'incus', 'docker', 'kvm']),
-            'location' => fake()->optional()->city(),
+            'location' => fake()->randomElement(['sydney', 'brisbane', 'melbourne', 'goldcoast', 'vpc']),
+            'owner' => fake()->randomElement(['self', 'customer-1', 'customer-2']),
             'capabilities' => ['virtualization', 'storage', 'networking'],
             'description' => fake()->optional()->sentence(),
             'status' => 'active',

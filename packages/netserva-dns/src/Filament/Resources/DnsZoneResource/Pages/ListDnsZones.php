@@ -18,7 +18,7 @@ class ListDnsZones extends ListRecords
 
     public function getTitle(): string
     {
-        $providerId = request()->input('tableFilters.dns_provider_id.value');
+        $providerId = request()->input('filters.dns_provider_id.value');
         if ($providerId) {
             $provider = DnsProvider::find($providerId);
             if ($provider) {

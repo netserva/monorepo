@@ -106,7 +106,7 @@ class ChswCommand extends Command
         if (empty($nameservers) && ! $this->option('no-interaction')) {
             $this->line('Enter nameservers (leave empty to finish):');
             while (count($nameservers) < 13) {
-                $ns = text("Nameserver ".(count($nameservers) + 1).' (optional):');
+                $ns = text('Nameserver '.(count($nameservers) + 1).' (optional):');
                 if (empty($ns)) {
                     break;
                 }

@@ -1,0 +1,74 @@
+{
+    "name": "netserva/crm",
+    "description": "Professional Laravel CRM - standalone deployable with optional NetServa integration",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "filament",
+        "crm",
+        "customer-management",
+        "contacts",
+        "standalone"
+    ],
+    "authors": [
+        {
+            "name": "NetServa",
+            "email": "info@netserva.com"
+        }
+    ],
+    "homepage": "https://netserva.org",
+    "support": {
+        "issues": "https://github.com/netserva/monorepo/issues",
+        "source": "https://github.com/netserva/monorepo"
+    },
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^12.0",
+        "filament/filament": "^4.0",
+        "spatie/laravel-sluggable": "^3.6"
+    },
+    "require-dev": {
+        "pestphp/pest": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0",
+        "laravel/pint": "^1.13"
+    },
+    "suggest": {
+        "netserva/core": "Enables plugin discovery and settings management",
+        "netserva/fleet": "Enables linking customers to VSites/VNodes/VHosts",
+        "netserva/dns": "Enables linking customers to domains"
+    },
+    "autoload": {
+        "psr-4": {
+            "NetServa\\Crm\\": "src/",
+            "NetServa\\Crm\\Database\\Factories\\": "database/factories/",
+            "NetServa\\Crm\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NetServa\\Crm\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NetServa\\Crm\\CrmServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "@php -r \"echo '\\n\\033[32mNetServa CRM installed successfully!\\033[0m\\n';\"",
+            "@php -r \"echo '\\033[33mRun: php artisan crm:install\\033[0m to complete setup.\\n\\n';\""
+        ],
+        "post-update-cmd": [
+            "@php artisan filament:upgrade --no-interaction 2>/dev/null || true"
+        ],
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

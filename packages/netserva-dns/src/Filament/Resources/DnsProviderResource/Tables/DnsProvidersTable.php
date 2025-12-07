@@ -334,7 +334,7 @@ class DnsProvidersTable
             ->striped()
             ->paginated([5, 10, 25, 50, 100])
             ->recordUrl(fn ($record) => DnsZoneResource::getUrl('index', [
-                'tableFilters' => [
+                'filters' => [
                     'dns_provider_id' => ['value' => $record->id],
                 ],
             ]));

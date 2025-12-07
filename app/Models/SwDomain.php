@@ -3,11 +3,10 @@
 namespace App\Models;
 
 use App\Services\SynergyWholesaleService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Casts\AsArrayObject;
-use Carbon\Carbon;
 
 /**
  * Synergy Wholesale Domain Cache Model
@@ -113,7 +112,7 @@ class SwDomain extends Model
             if (isset($data['nameServers'])) {
                 $nsArray = is_array($data['nameServers']) ? $data['nameServers'] : [$data['nameServers']];
                 $nameservers = array_map(
-                    fn($ns) => is_object($ns) ? $ns->nameServer : $ns,
+                    fn ($ns) => is_object($ns) ? $ns->nameServer : $ns,
                     $nsArray
                 );
             }
@@ -128,18 +127,18 @@ class SwDomain extends Model
 
             // Parse categories
             $categories = [];
-            if (isset($data['categories']) && !empty($data['categories'])) {
+            if (isset($data['categories']) && ! empty($data['categories'])) {
                 $categories = is_array($data['categories']) ? $data['categories'] : [$data['categories']];
             }
 
             // Parse DNSSEC data
             $dsData = [];
-            if (isset($data['DSData']) && !empty($data['DSData'])) {
+            if (isset($data['DSData']) && ! empty($data['DSData'])) {
                 $dsData = is_array($data['DSData']) ? $data['DSData'] : [$data['DSData']];
             }
 
             // Helper function to parse dates safely
-            $parseDate = function($value) {
+            $parseDate = function ($value) {
                 if (empty($value) || $value === 'N/A' || $value === 'null') {
                     return null;
                 }
@@ -207,19 +206,23 @@ class SwDomain extends Model
 
     /**
      * Sync all domains from SW API
+     *
+     * Only syncs active domains (clientTransferProhibited status) from the API.
+     * This filters at the API level to avoid fetching 150+ transferred_away domains.
      */
     public static function syncAllFromAPI(SynergyWholesaleService $sw, ?callable $progressCallback = null): array
     {
-        $listResult = $sw->listDomains();
+        // Use filtered API call - only fetch active domains
+        $listResult = $sw->listActiveDomains();
 
-        if (!isset($listResult['domainList'])) {
+        if (! isset($listResult['domainList'])) {
             throw new \RuntimeException('Unable to fetch domain list from Synergy Wholesale');
         }
 
         $domains = is_array($listResult['domainList']) ? $listResult['domainList'] : [$listResult['domainList']];
         $total = count($domains);
         $synced = 0;
-        $failed = 0;
+        $errors = 0;
 
         foreach ($domains as $index => $domain) {
             $domainName = is_object($domain) ? $domain->domainName : ($domain['domainName'] ?? $domain);
@@ -229,7 +232,7 @@ class SwDomain extends Model
             if ($result->is_active) {
                 $synced++;
             } else {
-                $failed++;
+                $errors++;
             }
 
             if ($progressCallback) {
@@ -240,7 +243,7 @@ class SwDomain extends Model
         return [
             'total' => $total,
             'synced' => $synced,
-            'failed' => $failed,
+            'errors' => $errors,
         ];
     }
 
@@ -348,7 +351,7 @@ class SwDomain extends Model
             return 'N/A';
         }
 
-        return implode(', ', array_slice($this->nameservers, 0, 2)) .
+        return implode(', ', array_slice($this->nameservers, 0, 2)).
                (count($this->nameservers) > 2 ? '...' : '');
     }
 
@@ -357,7 +360,7 @@ class SwDomain extends Model
      */
     public function getDaysUntilExpiryAttribute(): ?int
     {
-        if (!$this->domain_expiry) {
+        if (! $this->domain_expiry) {
             return null;
         }
 
@@ -382,7 +385,7 @@ class SwDomain extends Model
      */
     private static function categorizeErrorStatus(string $status, string $errorMessage): string
     {
-        return match(true) {
+        return match (true) {
             // Domain transferred to another registrar
             str_contains($errorMessage, 'Does Not Exist') => 'Transferred Away',
 
@@ -411,7 +414,7 @@ class SwDomain extends Model
      */
     private static function categorizeErrorToLifecycle(string $status, string $errorMessage): string
     {
-        return match(true) {
+        return match (true) {
             str_contains($errorMessage, 'Does Not Exist') => 'transferred_away',
             str_contains($errorMessage, 'Expired') => 'expired',
             str_contains($errorMessage, 'Pending') => 'pending_transfer',
@@ -433,7 +436,7 @@ class SwDomain extends Model
             return 'active';
         }
 
-        return match(true) {
+        return match (true) {
             // Active/locked states
             str_contains($domainStatus, 'clientTransferProhibited') => 'active',
             str_contains($domainStatus, 'serverTransferProhibited') => 'active',
@@ -497,6 +500,7 @@ class SwDomain extends Model
     public function getMeta(string $key, $default = null)
     {
         $meta = $this->metadata()->where('key', $key)->first();
+
         return $meta ? $meta->value : $default;
     }
 
@@ -545,9 +549,10 @@ class SwDomain extends Model
         try {
             $result = $sw->listAllHosts($this->domain_name);
 
-            if (!isset($result['hosts'])) {
+            if (! isset($result['hosts'])) {
                 // No hosts returned - delete all non-stale glue records
                 $this->glueRecords()->where('is_stale', false)->delete();
+
                 return 0;
             }
 
@@ -557,7 +562,7 @@ class SwDomain extends Model
 
             foreach ($hosts as $host) {
                 $hostname = is_object($host) ? $host->hostName : $host['hostName'];
-                $ips = is_object($host) ? (array)$host->ip : ($host['ip'] ?? []);
+                $ips = is_object($host) ? (array) $host->ip : ($host['ip'] ?? []);
 
                 // Check if this glue record is marked as stale
                 $existingGlue = $this->glueRecords()->where('hostname', $hostname)->first();
@@ -566,6 +571,7 @@ class SwDomain extends Model
                     // Preserve stale glue records but don't update them
                     // User should delete these via SW web interface
                     $syncedHostnames[] = $hostname;
+
                     continue;
                 }
 

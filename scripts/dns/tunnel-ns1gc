@@ -1,0 +1,20 @@
+#!/bin/bash
+# Pre-hook: Create SSH tunnel to ns1gc for PowerDNS API access
+# Called by acme.sh before DNS validation
+
+TUNNEL_PORT=18081
+TUNNEL_HOST="ns1gc"
+
+# Kill any existing tunnel
+pkill -f "ssh.*-L ${TUNNEL_PORT}:localhost:8081.*${TUNNEL_HOST}" 2>/dev/null || true
+sleep 1
+
+# Create tunnel
+ssh -f -N -L ${TUNNEL_PORT}:localhost:8081 ${TUNNEL_HOST}
+sleep 2
+
+# Export PDNS vars for acme.sh
+export PDNS_Url="http://localhost:${TUNNEL_PORT}"
+export PDNS_ServerId="localhost"
+export PDNS_Token="pdns_api_ns1gc_d5eeaf3798da9ba265c6415720de444c"
+export PDNS_Ttl=60

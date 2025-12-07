@@ -378,9 +378,11 @@ class ShswCommand extends Command
         $this->newLine(2);
 
         $this->info('✓ Sync complete!');
-        $this->line("  Total: {$stats['total']}");
-        $this->line("  Active/Synced: {$stats['synced']}");
-        $this->line("  Errors/Inactive: {$stats['failed']}");
+        $this->line("  Active domains: {$stats['total']}");
+        $this->line("  Synced: {$stats['synced']}");
+        if ($stats['errors'] > 0) {
+            $this->line("  Errors: {$stats['errors']}");
+        }
 
         return 0;
     }

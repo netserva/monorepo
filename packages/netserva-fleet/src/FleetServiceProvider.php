@@ -23,6 +23,17 @@ use NetServa\Fleet\Services\VhostManagementService;
  */
 class FleetServiceProvider extends ServiceProvider
 {
+    /**
+     * Check if CRM integration is available
+     *
+     * Returns true if NetServa CRM package is installed and the
+     * CrmCustomer model exists.
+     */
+    public static function hasCrmIntegration(): bool
+    {
+        return class_exists(\NetServa\Crm\Models\CrmCustomer::class);
+    }
+
     public function register(): void
     {
         // Merge package config
@@ -53,12 +64,6 @@ class FleetServiceProvider extends ServiceProvider
             AddfleetCommand::class,     // CREATE: Discover/register fleet infrastructure
             ChfleetCommand::class,      // UPDATE: Sync fleet from var/ directory
             VNodeSetupCommand::class,   // Legacy: VNode-specific setup
-
-            // Venue CRUD Commands
-            Console\Commands\AddvenueCommand::class,    // CREATE
-            Console\Commands\ShvenueCommand::class,     // READ
-            Console\Commands\ChvenueCommand::class,     // UPDATE
-            Console\Commands\DelvenueCommand::class,    // DELETE
 
             // VSite CRUD Commands
             Console\Commands\AddvsiteCommand::class,    // CREATE

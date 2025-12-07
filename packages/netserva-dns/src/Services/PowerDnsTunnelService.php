@@ -47,23 +47,22 @@ class PowerDnsTunnelService
             $tunnelEndpoint = $tunnelResult['endpoint'];
             $apiUrl = $tunnelEndpoint.'/api/v1'.$endpoint;
 
-            Log::info('PowerDNS API call through tunnel', [
+            Log::debug('PowerDNS API call through tunnel', [
                 'provider' => $provider->name,
                 'endpoint' => $endpoint,
                 'method' => $method,
-                'tunnel_endpoint' => $tunnelEndpoint,
-                'api_url' => $apiUrl,
             ]);
 
             // Make the API request through the SSH tunnel
+            // Use short timeout since tunnel is already established and API is local
             $config = $provider->connection_config ?? $provider->config ?? [];
             $response = Http::withHeaders([
                 'X-API-Key' => $config['api_key'] ?? '',
                 'Content-Type' => 'application/json',
                 'User-Agent' => 'NS-DNS-Manager/1.0',
             ])
-                ->timeout($provider->timeout ?? 30)
-                ->retry(3, 1000) // Retry 3 times with 1 second delay
+                ->connectTimeout(5)  // Fast connect - tunnel is local
+                ->timeout(10)        // 10 seconds max for API response
                 ->$method($apiUrl, $data);
 
             if ($response->successful()) {
@@ -75,10 +74,8 @@ class PowerDnsTunnelService
                     'tunnel_endpoint' => $tunnelEndpoint,
                 ];
 
-                Log::info('PowerDNS API call successful', [
-                    'provider' => $provider->name,
+                Log::debug('PowerDNS API call successful', [
                     'endpoint' => $endpoint,
-                    'status_code' => $response->status(),
                 ]);
 
                 return $result;

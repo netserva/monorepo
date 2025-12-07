@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\SwDomain;
 use App\Models\GlueRecord;
+use App\Models\SwDomain;
 
 beforeEach(function () {
     // Create test domains

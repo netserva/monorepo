@@ -18,7 +18,7 @@ class ListDnsRecords extends ListRecords
 
     public function getTitle(): string
     {
-        $zoneId = request()->input('tableFilters.dns_zone_id.value');
+        $zoneId = request()->input('filters.dns_zone_id.value');
         if ($zoneId) {
             $zone = DnsZone::find($zoneId);
             if ($zone) {
@@ -31,7 +31,7 @@ class ListDnsRecords extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        $zoneId = request()->input('tableFilters.dns_zone_id.value');
+        $zoneId = request()->input('filters.dns_zone_id.value');
         $zone = $zoneId ? DnsZone::find($zoneId) : null;
 
         return [
@@ -41,7 +41,7 @@ class ListDnsRecords extends ListRecords
                 ->color('gray')
                 ->url(fn () => $zone?->dns_provider_id
                     ? DnsZoneResource::getUrl('index', [
-                        'tableFilters' => [
+                        'filters' => [
                             'dns_provider_id' => ['value' => $zone->dns_provider_id],
                         ],
                     ])

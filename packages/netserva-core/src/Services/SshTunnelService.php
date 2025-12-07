@@ -68,29 +68,43 @@ class SshTunnelService
         string $remoteHost = 'localhost'
     ): array {
         $tunnelKey = "{$sshHost}:{$service}";
+        $localPort = $this->generateLocalPort($sshHost, $service);
 
-        // Check if tunnel already exists and is active
-        if (isset($this->activeTunnels[$tunnelKey])) {
-            $tunnel = $this->activeTunnels[$tunnelKey];
-
-            if ($this->isTunnelActive($sshHost, $tunnel['local_port'])) {
-                Log::debug('SSH tunnel already active', [
+        // FIRST: Check if the port is already listening (fastest check)
+        // This catches tunnels that exist but aren't in our in-memory state
+        if ($this->isPortListening($localPort)) {
+            // Update in-memory state if not already tracked
+            if (! isset($this->activeTunnels[$tunnelKey])) {
+                $this->activeTunnels[$tunnelKey] = [
+                    'pid' => $this->findTunnelPid($localPort),
+                    'local_port' => $localPort,
+                    'remote_port' => $remotePort,
+                    'remote_host' => $remoteHost,
+                    'created_at' => time(),
                     'ssh_host' => $sshHost,
                     'service' => $service,
-                    'local_port' => $tunnel['local_port'],
-                ]);
-
-                return [
-                    'success' => true,
-                    'local_port' => $tunnel['local_port'],
-                    'remote_port' => $remotePort,
-                    'endpoint' => "http://localhost:{$tunnel['local_port']}",
-                    'created' => false,
-                    'message' => 'Using existing tunnel',
                 ];
+                $this->savePidFile($tunnelKey, $this->activeTunnels[$tunnelKey]);
             }
 
-            // Tunnel is dead, clean it up
+            Log::debug('SSH tunnel already active (port listening)', [
+                'ssh_host' => $sshHost,
+                'service' => $service,
+                'local_port' => $localPort,
+            ]);
+
+            return [
+                'success' => true,
+                'local_port' => $localPort,
+                'remote_port' => $remotePort,
+                'endpoint' => "http://localhost:{$localPort}",
+                'created' => false,
+                'message' => 'Using existing tunnel',
+            ];
+        }
+
+        // Port not listening - clean up any stale in-memory state
+        if (isset($this->activeTunnels[$tunnelKey])) {
             $this->cleanupTunnel($tunnelKey);
         }
 
@@ -124,16 +138,16 @@ class SshTunnelService
             // Generate deterministic local port
             $localPort = $this->generateLocalPort($sshHost, $service);
 
-            // Build SSH tunnel command
-            $identityFile = str_replace('~', getenv('HOME'), $sshHostModel->identity_file);
+            // Build SSH tunnel command using SSH host alias
+            // This leverages ~/.ssh/config settings including ControlMaster for connection reuse
+            // The host alias (e.g., 'ns1gc') picks up all config from ~/.ssh/hosts/{alias}
+            // and global settings from ~/.ssh/config (ControlMaster auto, ControlPath ~/.ssh/mux/...)
             $command = sprintf(
-                'ssh -f -N -L %d:%s:%d -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i %s %s@%s',
+                'ssh -f -N -L %d:%s:%d %s',
                 $localPort,
                 $remoteHost,
                 $remotePort,
-                escapeshellarg($identityFile),
-                $sshHostModel->user,
-                $sshHostModel->hostname
+                escapeshellarg($sshHost)  // Use the host alias, not user@hostname
             );
 
             Log::info('Creating SSH tunnel', [

@@ -34,7 +34,10 @@ class FleetVnode extends Model
     protected $fillable = [
         'name',
         'slug',
-        'fqdn',
+        'ssh_host',  // Unique CLI identifier for sx (e.g., "mrn", "gw")
+        'hostname',  // Actual server hostname (e.g., "mail", "gw")
+        'fqdn',  // Public FQDN with PTR (e.g., "mail.renta.net")
+        'fqdn_internal',  // For dual-homed servers (e.g., "gw.goldcoast.org")
         'vsite_id',
         'ssh_host_id',
         'dns_provider_id',
@@ -43,13 +46,16 @@ class FleetVnode extends Model
         'mail_db_path',
         'role',
         'environment',
-        'ip_address',
+        'ipv4_public',  // Renamed from ip_address
+        'ipv4_private',  // Internal/VPC IP
         'operating_system',
         'kernel_version',
         'cpu_cores',
         'memory_mb',
         'disk_gb',
-        'services',
+        'services',  // Comma-separated: "nginx,postfix,dovecot,php-fpm"
+        'ssh_user',  // SSH username (default: root)
+        'ssh_port',  // SSH port (default: 22)
         'discovery_method',
         'last_discovered_at',
         'last_error',
@@ -58,6 +64,7 @@ class FleetVnode extends Model
         'description',
         'status',
         'is_active',
+        'is_critical',  // For alerting
         'email_capable',
         'fcrdns_validated_at',
         // BinaryLane fields
@@ -69,16 +76,17 @@ class FleetVnode extends Model
     ];
 
     protected $casts = [
-        'services' => 'array',
         'cpu_cores' => 'integer',
         'memory_mb' => 'integer',
         'disk_gb' => 'integer',
+        'ssh_port' => 'integer',
         'scan_frequency_hours' => 'integer',
         'last_discovered_at' => 'datetime',
         'next_scan_at' => 'datetime',
         'fcrdns_validated_at' => 'datetime',
         'bl_synced_at' => 'datetime',
         'is_active' => 'boolean',
+        'is_critical' => 'boolean',
         'email_capable' => 'boolean',
     ];
 
@@ -89,6 +97,9 @@ class FleetVnode extends Model
         'scan_frequency_hours' => 24,
         'status' => 'active',
         'is_active' => true,
+        'is_critical' => false,
+        'ssh_user' => 'root',
+        'ssh_port' => 22,
     ];
 
     protected static function boot()
@@ -270,7 +281,7 @@ class FleetVnode extends Model
     }
 
     /**
-     * Check if a service is running
+     * Check if a service is running (works with comma-separated string)
      */
     public function hasService(string $service): bool
     {
@@ -278,7 +289,59 @@ class FleetVnode extends Model
             return false;
         }
 
-        return in_array($service, $this->services);
+        $serviceList = $this->getServicesArray();
+
+        return in_array($service, $serviceList);
+    }
+
+    /**
+     * Get services as array (handles both comma-separated string and JSON)
+     */
+    public function getServicesArray(): array
+    {
+        if (! $this->services) {
+            return [];
+        }
+
+        // If it's already an array (JSON cast from legacy), return it
+        if (is_array($this->services)) {
+            return $this->services;
+        }
+
+        // Otherwise split comma-separated string
+        return array_map('trim', explode(',', $this->services));
+    }
+
+    /**
+     * Set services from array (stores as comma-separated string)
+     */
+    public function setServicesFromArray(array $services): void
+    {
+        $this->services = implode(',', array_filter($services));
+    }
+
+    /**
+     * Find vnode by ssh_host (primary CLI lookup)
+     */
+    public static function findBySshHost(string $sshHost): ?self
+    {
+        return static::where('ssh_host', $sshHost)->first();
+    }
+
+    /**
+     * Scope by ssh_host
+     */
+    public function scopeBySshHost($query, string $sshHost)
+    {
+        return $query->where('ssh_host', $sshHost);
+    }
+
+    /**
+     * Scope for critical nodes
+     */
+    public function scopeCritical($query)
+    {
+        return $query->where('is_critical', true);
     }
 
     /**

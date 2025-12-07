@@ -1156,4 +1156,327 @@ class PowerDnsService
 
         return null;
     }
+
+    // =========================================================================
+    // SYNC METHODS - Import zones and records from remote PowerDNS to database
+    // =========================================================================
+
+    /**
+     * Discover PowerDNS API key from remote server via SSH
+     *
+     * Fetches the api-key from /etc/pdns/pdns.conf on the remote server.
+     * Requires SSH access to the server (via ssh_host in connection_config).
+     *
+     * @param  string  $sshHost  SSH host alias (must exist in ssh_hosts table or ~/.ssh/config)
+     * @return array Result with api_key or error
+     */
+    public function discoverApiKey(string $sshHost): array
+    {
+        try {
+            // Use RemoteExecutionService for SSH
+            $remoteService = app(\NetServa\Core\Services\RemoteExecutionService::class);
+
+            // Fetch API key from PowerDNS config
+            $script = "grep -E '^api-key=' /etc/pdns/pdns.conf 2>/dev/null | cut -d'=' -f2 | tr -d ' '";
+            $result = $remoteService->executeScript($sshHost, $script);
+
+            if (! $result['success']) {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to execute SSH command: '.($result['error'] ?? 'Unknown error'),
+                ];
+            }
+
+            $apiKey = trim($result['output'] ?? '');
+
+            if (empty($apiKey)) {
+                return [
+                    'success' => false,
+                    'message' => 'API key not found in /etc/pdns/pdns.conf - check if api-key is configured',
+                ];
+            }
+
+            Log::info('PowerDNS API key discovered', [
+                'ssh_host' => $sshHost,
+                'key_length' => strlen($apiKey),
+            ]);
+
+            return [
+                'success' => true,
+                'api_key' => $apiKey,
+                'message' => 'API key discovered successfully',
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to discover API key: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Sync zones from remote PowerDNS to local database
+     *
+     * Fetches all zones from the PowerDNS API and imports them into the
+     * dns_zones table. Skips zones that already exist.
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  callable|null  $progressCallback  Optional callback for progress updates
+     * @return array Sync result with imported/skipped counts
+     */
+    public function syncZonesFromRemote(DnsProvider $provider, ?callable $progressCallback = null): array
+    {
+        try {
+            // Get zones from remote
+            $remoteZones = $this->tunnelService->getZones($provider);
+
+            if (! is_array($remoteZones) || empty($remoteZones)) {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to fetch zones from remote or no zones found',
+                ];
+            }
+
+            $imported = 0;
+            $skipped = 0;
+
+            foreach ($remoteZones as $remoteZone) {
+                $zoneName = $remoteZone['name'] ?? null;
+
+                if (! $zoneName) {
+                    continue;
+                }
+
+                // Check if zone already exists
+                $existingZone = \NetServa\Dns\Models\DnsZone::where('dns_provider_id', $provider->id)
+                    ->where('name', $zoneName)
+                    ->first();
+
+                if ($existingZone) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                // Map PowerDNS kind to database kind
+                $kind = $remoteZone['kind'] ?? 'Native';
+                $kindMap = [
+                    'Master' => 'Primary',
+                    'Slave' => 'Secondary',
+                    'Primary' => 'Primary',
+                    'Secondary' => 'Secondary',
+                    'Native' => 'Native',
+                    'Forwarded' => 'Forwarded',
+                ];
+                $kind = $kindMap[$kind] ?? 'Native';
+
+                // Import zone
+                \NetServa\Dns\Models\DnsZone::create([
+                    'dns_provider_id' => $provider->id,
+                    'external_id' => $remoteZone['id'] ?? $zoneName,
+                    'name' => $zoneName,
+                    'kind' => $kind,
+                    'serial' => $remoteZone['serial'] ?? null,
+                    'masters' => $remoteZone['masters'] ?? null,
+                    'active' => true,
+                    'provider_data' => $remoteZone,
+                    'last_synced' => now(),
+                ]);
+
+                $imported++;
+
+                if ($progressCallback) {
+                    $progressCallback('zone', $zoneName, $imported, $skipped);
+                }
+            }
+
+            Log::info('PowerDNS zones synced', [
+                'provider' => $provider->name,
+                'imported' => $imported,
+                'skipped' => $skipped,
+            ]);
+
+            return [
+                'success' => true,
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'total' => count($remoteZones),
+                'message' => "Zone sync complete: {$imported} imported, {$skipped} skipped",
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Zone sync failed: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Sync records from remote PowerDNS to local database
+     *
+     * Fetches all records for all zones from the PowerDNS API and imports
+     * them into the dns_records table. Skips records that already exist.
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  callable|null  $progressCallback  Optional callback for progress updates
+     * @return array Sync result with imported/skipped counts per zone
+     */
+    public function syncRecordsFromRemote(DnsProvider $provider, ?callable $progressCallback = null): array
+    {
+        try {
+            // Get all zones for this provider
+            $zones = \NetServa\Dns\Models\DnsZone::where('dns_provider_id', $provider->id)->get();
+
+            if ($zones->isEmpty()) {
+                return [
+                    'success' => false,
+                    'message' => 'No zones found for this provider - run zone sync first',
+                ];
+            }
+
+            $totalImported = 0;
+            $totalSkipped = 0;
+            $zoneResults = [];
+
+            foreach ($zones as $zone) {
+                $zoneName = $zone->name;
+
+                // Ensure zone name ends with dot for API call
+                if (! str_ends_with($zoneName, '.')) {
+                    $zoneName .= '.';
+                }
+
+                // Get zone data with records from PowerDNS
+                $zoneData = $this->tunnelService->getZone($provider, $zoneName);
+
+                if (! $zoneData || ! isset($zoneData['rrsets'])) {
+                    $zoneResults[$zone->name] = [
+                        'imported' => 0,
+                        'skipped' => 0,
+                        'error' => 'Failed to fetch zone data',
+                    ];
+
+                    continue;
+                }
+
+                $zoneImported = 0;
+                $zoneSkipped = 0;
+
+                foreach ($zoneData['rrsets'] as $rrset) {
+                    // Skip SOA records (managed by PowerDNS)
+                    if ($rrset['type'] === 'SOA') {
+                        continue;
+                    }
+
+                    foreach ($rrset['records'] as $record) {
+                        // Normalize name - remove trailing dot for storage consistency
+                        $normalizedName = rtrim($rrset['name'], '.');
+
+                        // Check if record already exists (using normalized name)
+                        $existing = \NetServa\Dns\Models\DnsRecord::where('dns_zone_id', $zone->id)
+                            ->where('name', $normalizedName)
+                            ->where('type', $rrset['type'])
+                            ->where('content', $record['content'])
+                            ->first();
+
+                        if ($existing) {
+                            $zoneSkipped++;
+
+                            continue;
+                        }
+
+                        // Import record without triggering observer (records already exist in PowerDNS)
+                        \NetServa\Dns\Models\DnsRecord::withoutEvents(function () use ($zone, $normalizedName, $rrset, $record) {
+                            \NetServa\Dns\Models\DnsRecord::create([
+                                'dns_zone_id' => $zone->id,
+                                'name' => $normalizedName,
+                                'type' => $rrset['type'],
+                                'content' => $record['content'],
+                                'ttl' => $rrset['ttl'] ?? 3600,
+                                'disabled' => $record['disabled'] ?? false,
+                                'last_synced' => now(),
+                            ]);
+                        });
+
+                        $zoneImported++;
+                    }
+                }
+
+                // Update zone record count
+                $zone->records_count = \NetServa\Dns\Models\DnsRecord::where('dns_zone_id', $zone->id)->count();
+                $zone->last_synced = now();
+                $zone->save();
+
+                $totalImported += $zoneImported;
+                $totalSkipped += $zoneSkipped;
+
+                $zoneResults[$zone->name] = [
+                    'imported' => $zoneImported,
+                    'skipped' => $zoneSkipped,
+                ];
+
+                if ($progressCallback) {
+                    $progressCallback('records', $zone->name, $zoneImported, $zoneSkipped);
+                }
+            }
+
+            Log::info('PowerDNS records synced', [
+                'provider' => $provider->name,
+                'zones' => $zones->count(),
+                'total_imported' => $totalImported,
+                'total_skipped' => $totalSkipped,
+            ]);
+
+            return [
+                'success' => true,
+                'zones_processed' => $zones->count(),
+                'total_imported' => $totalImported,
+                'total_skipped' => $totalSkipped,
+                'zone_results' => $zoneResults,
+                'message' => "Record sync complete: {$totalImported} imported, {$totalSkipped} skipped across {$zones->count()} zones",
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Record sync failed: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Full sync: zones AND records from remote PowerDNS
+     *
+     * Convenience method that calls both syncZonesFromRemote and
+     * syncRecordsFromRemote in sequence.
+     *
+     * @param  DnsProvider  $provider  DNS provider configuration
+     * @param  callable|null  $progressCallback  Optional callback for progress updates
+     * @return array Combined sync result
+     */
+    public function syncAllFromRemote(DnsProvider $provider, ?callable $progressCallback = null): array
+    {
+        // First sync zones
+        $zoneResult = $this->syncZonesFromRemote($provider, $progressCallback);
+
+        if (! $zoneResult['success']) {
+            return $zoneResult;
+        }
+
+        // Then sync records
+        $recordResult = $this->syncRecordsFromRemote($provider, $progressCallback);
+
+        return [
+            'success' => $recordResult['success'],
+            'zones' => [
+                'imported' => $zoneResult['imported'],
+                'skipped' => $zoneResult['skipped'],
+            ],
+            'records' => [
+                'imported' => $recordResult['total_imported'] ?? 0,
+                'skipped' => $recordResult['total_skipped'] ?? 0,
+                'zone_results' => $recordResult['zone_results'] ?? [],
+            ],
+            'message' => "Full sync complete: {$zoneResult['imported']} zones, {$recordResult['total_imported']} records imported",
+        ];
+    }
 }

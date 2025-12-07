@@ -125,18 +125,27 @@ class AdminPanelProvider extends PanelProvider
     protected function registerEnabledPlugins(Panel $panel): void
     {
         try {
-            // During testing, register test plugins directly
-            if (app()->environment('testing')) {
-                $this->registerTestPlugins($panel);
+            $enabledPluginClasses = [];
 
-                return;
+            // Try to load from database
+            if ($this->tableExists('installed_plugins')) {
+                $registry = app(PluginRegistry::class);
+                $enabledPluginClasses = $registry->getEnabledPluginsInOrder();
             }
 
-            // Get plugin registry
-            $registry = app(PluginRegistry::class);
-
-            // Load plugins in dependency order (returns plugin classes)
-            $enabledPluginClasses = $registry->getEnabledPluginsInOrder();
+            // Fall back to hardcoded plugins when database isn't available
+            // (e.g., during testing with in-memory SQLite before migrations)
+            if (empty($enabledPluginClasses)) {
+                $enabledPluginClasses = [
+                    \NetServa\Core\CorePlugin::class,
+                    \NetServa\Cms\NetServaCmsPlugin::class,
+                    \NetServa\Fleet\Filament\FleetPlugin::class,
+                    \NetServa\Dns\Filament\NetServaDnsPlugin::class,
+                    \NetServa\Web\Filament\NetServaWebPlugin::class,
+                    \NetServa\Mail\Filament\NetServaMailPlugin::class,
+                    \NetServa\Crm\NetServaCrmPlugin::class,
+                ];
+            }
 
             $plugins = [];
             foreach ($enabledPluginClasses as $pluginClass) {
@@ -156,38 +165,10 @@ class AdminPanelProvider extends PanelProvider
             // Register all plugins at once
             if (! empty($plugins)) {
                 $panel->plugins($plugins);
-            } else {
-                Log::warning('No plugins found in database - check installed_plugins table');
             }
 
         } catch (\Exception $e) {
             Log::error('Failed to register plugins: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
-        }
-    }
-
-    /**
-     * Register plugins for testing environment (no database dependency)
-     */
-    protected function registerTestPlugins(Panel $panel): void
-    {
-        // Minimal plugins needed for testing - Core and CMS
-        $testPlugins = [
-            \NetServa\Core\CorePlugin::class,
-            \NetServa\Cms\NetServaCmsPlugin::class,
-        ];
-
-        foreach ($testPlugins as $pluginClass) {
-            if (class_exists($pluginClass)) {
-                try {
-                    if (method_exists($pluginClass, 'make')) {
-                        $panel->plugin($pluginClass::make());
-                    } else {
-                        $panel->plugin(new $pluginClass);
-                    }
-                } catch (\Exception $e) {
-                    Log::warning("Failed to register test plugin {$pluginClass}: ".$e->getMessage());
-                }
-            }
         }
     }
 
@@ -206,39 +187,13 @@ class AdminPanelProvider extends PanelProvider
     /**
      * Check if the system has registered plugins
      *
-     * If the table is empty, triggers auto-discovery via PluginRegistry
-     * to handle fresh installations gracefully.
+     * Always returns true now because we fall back to hardcoded plugins
+     * when the database isn't available (e.g., during testing).
      */
     protected function hasRegisteredPlugins(): bool
     {
-        try {
-            // Skip check during testing
-            if (app()->environment('testing')) {
-                return true;
-            }
-
-            // Check if table exists
-            if (! $this->tableExists('installed_plugins')) {
-                return false;
-            }
-
-            // Check if any active plugins exist (uses model scope)
-            if (InstalledPlugin::enabled()->exists()) {
-                return true;
-            }
-
-            // Table exists but is empty - trigger auto-discovery
-            // This handles fresh migrations where plugins need to be discovered
-            $registry = app(PluginRegistry::class);
-            $registry->getEnabledPluginsInOrder(); // Triggers autoDiscoverIfEmpty()
-
-            // Check again after auto-discovery
-            return InstalledPlugin::enabled()->exists();
-        } catch (\Exception $e) {
-            Log::warning('Failed to check for registered plugins: '.$e->getMessage());
-
-            return false;
-        }
+        // Always return true - registerEnabledPlugins() handles fallback
+        return true;
     }
 
     /**
@@ -306,6 +261,7 @@ class AdminPanelProvider extends PanelProvider
     {
         return [
             NavigationGroup::make()->label('Core')->icon('heroicon-o-cog-8-tooth')->collapsed(),
+            NavigationGroup::make()->label('CRM')->icon('heroicon-o-user-group')->collapsed(),
             NavigationGroup::make()->label('Fleet')->icon('heroicon-o-rocket-launch')->collapsed(),
             NavigationGroup::make()->label('Dns')->icon('heroicon-o-globe-alt')->collapsed(),
             NavigationGroup::make()->label('Mail')->icon('heroicon-o-envelope')->collapsed(),

@@ -304,7 +304,10 @@ class BashScriptBuilder
         # 8. Final commands (if shell functions are available)
         echo ">>> Step 8: Finalization"
         if [[ -f ~/.rc/_shrc ]]; then
-            source ~/.rc/_shrc
+            # Temporarily disable strict mode for source (non-interactive shell compatibility)
+            set +euo pipefail
+            source ~/.rc/_shrc 2>/dev/null || true
+            set -euo pipefail
 
             # Update logging
             if command -v logging &>/dev/null; then

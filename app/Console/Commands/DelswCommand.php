@@ -43,7 +43,7 @@ class DelswCommand extends Command
             return 1;
         }
 
-        $this->warn("⚠️  DANGER: Domain deletion");
+        $this->warn('⚠️  DANGER: Domain deletion');
         $this->newLine();
         $this->line("Domain: {$domain->domain_name}");
         $this->line("Status: {$domain->lifecycle_status}");

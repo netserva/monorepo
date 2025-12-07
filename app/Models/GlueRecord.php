@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\SynergyWholesaleService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Services\SynergyWholesaleService;
 
 /**
  * Glue Record (Child Host) Model
@@ -97,7 +97,7 @@ class GlueRecord extends Model
      */
     public function needsSync(): bool
     {
-        if (!$this->is_synced) {
+        if (! $this->is_synced) {
             return true;
         }
 

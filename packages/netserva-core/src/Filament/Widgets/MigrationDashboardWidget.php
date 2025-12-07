@@ -65,7 +65,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->descriptionIcon('heroicon-o-check-badge')
                 ->color('success')
                 ->url(route('filament.admin.resources.fleet-vhosts.index', [
-                    'tableFilters' => ['migration_status' => ['value' => 'native']],
+                    'filters' => ['migration_status' => ['value' => 'native']],
                 ])),
 
             // Discovered
@@ -74,7 +74,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->descriptionIcon('heroicon-o-magnifying-glass')
                 ->color('info')
                 ->url(route('filament.admin.resources.fleet-vhosts.index', [
-                    'tableFilters' => ['migration_status' => ['value' => 'discovered']],
+                    'filters' => ['migration_status' => ['value' => 'discovered']],
                 ])),
 
             // Validated
@@ -83,7 +83,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->descriptionIcon('heroicon-o-clipboard-document-check')
                 ->color('warning')
                 ->url(route('filament.admin.resources.fleet-vhosts.index', [
-                    'tableFilters' => ['migration_status' => ['value' => 'validated']],
+                    'filters' => ['migration_status' => ['value' => 'validated']],
                 ])),
 
             // Migrated
@@ -92,7 +92,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->descriptionIcon('heroicon-o-arrow-path')
                 ->color('success')
                 ->url(route('filament.admin.resources.fleet-vhosts.index', [
-                    'tableFilters' => ['migration_status' => ['value' => 'migrated']],
+                    'filters' => ['migration_status' => ['value' => 'migrated']],
                 ])),
 
             // Failed
@@ -101,7 +101,7 @@ class MigrationDashboardWidget extends BaseWidget
                 ->descriptionIcon('heroicon-o-x-circle')
                 ->color('danger')
                 ->url(route('filament.admin.resources.fleet-vhosts.index', [
-                    'tableFilters' => ['migration_status' => ['value' => 'failed']],
+                    'filters' => ['migration_status' => ['value' => 'failed']],
                 ])),
 
             // Success Rate
