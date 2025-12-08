@@ -261,7 +261,7 @@ class AdminPanelProvider extends PanelProvider
     {
         return [
             NavigationGroup::make()->label('Core')->icon('heroicon-o-cog-8-tooth')->collapsed(),
-            NavigationGroup::make()->label('CRM')->icon('heroicon-o-user-group')->collapsed(),
+            NavigationGroup::make()->label('Crm')->icon('heroicon-o-user-group')->collapsed(),
             NavigationGroup::make()->label('Fleet')->icon('heroicon-o-rocket-launch')->collapsed(),
             NavigationGroup::make()->label('Dns')->icon('heroicon-o-globe-alt')->collapsed(),
             NavigationGroup::make()->label('Mail')->icon('heroicon-o-envelope')->collapsed(),
