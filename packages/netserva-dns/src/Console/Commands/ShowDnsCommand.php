@@ -589,7 +589,6 @@ class ShowDnsCommand extends Command
             // Add Used By column when --all or --with-usage
             if ($this->option('all') || $this->option('with-usage')) {
                 $counts = [
-                    'Venues' => $provider->venues->count(),
                     'VSites' => $provider->vsites->count(),
                     'VNodes' => $provider->vnodes->count(),
                     'VHosts' => $provider->vhosts->count(),

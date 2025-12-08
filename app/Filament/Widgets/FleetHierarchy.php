@@ -33,7 +33,6 @@ class FleetHierarchy extends BaseWidget
             ->query(
                 FleetVsite::query()
                     ->withCount(['vnodes', 'vhosts'])
-                    ->with(['venue'])
             )
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -42,12 +41,6 @@ class FleetHierarchy extends BaseWidget
                     ->sortable()
                     ->icon('heroicon-o-building-office')
                     ->description(fn (FleetVsite $record) => $record->description),
-
-                Tables\Columns\TextColumn::make('venue.name')
-                    ->label('Venue')
-                    ->sortable()
-                    ->toggleable()
-                    ->placeholder('No venue'),
 
                 Tables\Columns\TextColumn::make('provider')
                     ->badge()

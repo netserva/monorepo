@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Palette;
-use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Models\FleetVsite;
@@ -13,7 +12,7 @@ use NetServa\Fleet\Models\FleetVsite;
  *
  * Resolution order:
  * 1. Session override (demos, previews)
- * 2. Fleet context (vhost → vnode → vsite → venue)
+ * 2. Fleet context (vhost → vnode → vsite)
  * 3. User preference
  * 4. System default (slate)
  */
@@ -69,7 +68,7 @@ class PaletteResolver
 
     /**
      * Resolve palette from fleet context.
-     * Hierarchy: vhost → vnode → vsite → venue
+     * Hierarchy: vhost → vnode → vsite
      */
     protected function resolveFromContext(array $context): ?Palette
     {
@@ -84,14 +83,13 @@ class PaletteResolver
             'vhost' => $this->resolveFromVhost($id),
             'vnode' => $this->resolveFromVnode($id),
             'vsite' => $this->resolveFromVsite($id),
-            'venue' => $this->resolveFromVenue($id),
             default => null,
         };
     }
 
     /**
      * Resolve palette starting from vhost.
-     * Checks: vhost → vnode → vsite → venue
+     * Checks: vhost → vnode → vsite
      */
     protected function resolveFromVhost(int $vhostId): ?Palette
     {
@@ -118,7 +116,7 @@ class PaletteResolver
 
     /**
      * Resolve palette starting from vnode.
-     * Checks: vnode → vsite → venue
+     * Checks: vnode → vsite
      */
     protected function resolveFromVnode(int $vnodeId): ?Palette
     {
@@ -145,7 +143,6 @@ class PaletteResolver
 
     /**
      * Resolve palette starting from vsite.
-     * Checks: vsite → venue
      */
     protected function resolveFromVsite(int $vsiteId): ?Palette
     {
@@ -159,31 +156,13 @@ class PaletteResolver
             return $vsite->palette;
         }
 
-        // Check venue palette
-        if ($vsite->venue_id) {
-            return $this->resolveFromVenue($vsite->venue_id);
-        }
-
         return null;
-    }
-
-    /**
-     * Resolve palette from venue.
-     */
-    protected function resolveFromVenue(int $venueId): ?Palette
-    {
-        $venue = FleetVenue::find($venueId);
-        if (! $venue) {
-            return null;
-        }
-
-        return $venue->palette_id ? $venue->palette : null;
     }
 
     /**
      * Set the current fleet context for palette resolution.
      *
-     * @param  string  $type  Entity type: 'vhost', 'vnode', 'vsite', 'venue'
+     * @param  string  $type  Entity type: 'vhost', 'vnode', 'vsite'
      * @param  int  $id  Entity ID
      */
     public function setContext(string $type, int $id): void
@@ -197,7 +176,7 @@ class PaletteResolver
     /**
      * Get current context information for UI display.
      *
-     * @return array|null ['type' => 'Venue', 'name' => 'Acme', 'icon' => '🏢']
+     * @return array|null ['type' => 'VSite', 'name' => 'Prod', 'icon' => '🌐']
      */
     public function getCurrentContext(): ?array
     {
@@ -214,11 +193,6 @@ class PaletteResolver
         }
 
         return match ($type) {
-            'venue' => [
-                'type' => 'Venue',
-                'name' => FleetVenue::find($id)?->name ?? 'Unknown',
-                'icon' => '🏢',
-            ],
             'vsite' => [
                 'type' => 'VSite',
                 'name' => FleetVsite::find($id)?->name ?? 'Unknown',
@@ -249,7 +223,6 @@ class PaletteResolver
         }
 
         return match ($context['type'] ?? null) {
-            'venue' => 'Venue',
             'vsite' => 'VSite',
             'vnode' => 'VNode',
             'vhost' => 'VHost',

@@ -225,11 +225,6 @@ class Palette extends Model
         return $this->hasMany(\App\Models\User::class);
     }
 
-    public function venues(): HasMany
-    {
-        return $this->hasMany(\NetServa\Fleet\Models\FleetVenue::class);
-    }
-
     public function vsites(): HasMany
     {
         return $this->hasMany(\NetServa\Fleet\Models\FleetVsite::class);

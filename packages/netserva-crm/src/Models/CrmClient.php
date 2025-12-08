@@ -111,18 +111,13 @@ class CrmClient extends Model
 
     /**
      * Generate display name from available fields
+     * Priority: first_name + last_name, never company_name
      */
     public function generateDisplayName(): string
     {
-        // Prefer company name if set
-        if (! empty($this->company_name)) {
-            return $this->company_name;
-        }
-
-        // Fall back to personal name
         $name = trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
 
-        return $name ?: 'Unnamed Client';
+        return $name ?: ($this->first_name ?? $this->last_name ?? 'Unnamed Client');
     }
 
     /**

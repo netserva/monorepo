@@ -90,6 +90,7 @@ class SshHostForm
                         ->keyLabel('Option')
                         ->valueLabel('Value')
                         ->addActionLabel('Add Option')
+                        ->default([])
                         ->hintIcon('heroicon-o-question-mark-circle')
                         ->hintIconTooltip('Additional SSH config options'),
 

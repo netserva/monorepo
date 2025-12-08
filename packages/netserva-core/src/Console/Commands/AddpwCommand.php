@@ -5,7 +5,6 @@ namespace NetServa\Core\Console\Commands;
 use Exception;
 use Illuminate\Console\Command;
 use NetServa\Core\Models\VPass;
-use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Models\FleetVsite;
@@ -24,84 +23,79 @@ use function Laravel\Prompts\warning;
  * CRUD: Create - Add new credential to unified vault
  *
  * Usage:
- *   addpw                                                  # Interactive mode (prompts for all)
- *   addpw venue default cloudflare --ptype=APKEY --pname=global_api_key --pdata=xxx
- *   addpw venue default synergywholesale --ptype=APKEY --pname=api_key --pdata=xxx
- *   addpw vnode mgo mysql --ptype=DBPWD --pname=root --pdata=xxx
- *   addpw vhost example.com dovecot --ptype=VMAIL --pname=admin@example.com --pdata=xxx
+ *   addpw                           # Interactive mode
+ *   addpw mrn                       # Add to vnode (no dots = vnode)
+ *   addpw example.com               # Add to vhost (has dots = domain)
+ *   addpw --service=cloudflare      # Pre-set service type
+ *
+ * Smart Resolution:
+ *   - No dots = VNode (mrn, gw, ns1gc)
+ *   - Has dots = VHost (example.com)
  *
  * NetServa 3.0 Security Architecture:
  * - ALL credentials stored on workstation only (encrypted at rest via APP_KEY)
- * - Polymorphic ownership: venue/vsite/vnode/vhost
- * - Hierarchical inheritance resolution
- * - Supports: VMAIL, APKEY, DBPWD, SSLKY, OAUTH
+ * - Linked to vsite/vnode/vhost via FK relationships
  */
 class AddpwCommand extends Command
 {
     protected $signature = 'addpw
-                            {owner_type? : Owner type (venue, vsite, vnode, vhost)}
-                            {owner_name? : Owner name (venue-name, vnode-name, domain.com)}
-                            {pserv? : Service provider (cloudflare, synergywholesale, dovecot, mysql, custom)}
-                            {--ptype= : Password type (VMAIL, APKEY, DBPWD, SSLKY, OAUTH)}
-                            {--pname= : Identifier name (email, key name, username, default)}
-                            {--pdata= : Secret data (password, API key, token)}
-                            {--pmeta= : Metadata JSON}
-                            {--pnote= : Admin notes}
-                            {--pexpd= : Expiration date (YYYY-MM-DD)}';
+                            {name? : VNode name (no dots) or domain (has dots)}
+                            {--service= : Service type (cloudflare, mysql, dovecot, etc.)}
+                            {--name= : Credential name/identifier}
+                            {--username= : Username (optional)}
+                            {--password= : Secret data (password, API key)}
+                            {--url= : URL endpoint (optional)}
+                            {--port= : Port number (optional)}
+                            {--notes= : Admin notes (optional)}
+                            {--import= : Import from CSV file (from shpw --csv backup)}';
 
-    protected $description = 'Add credential to unified vault (VMAIL, APKEY, DBPWD, SSLKY, OAUTH)';
+    protected $description = 'Add credential to unified vault (CREATE)';
 
     public function handle(): int
     {
+        // Handle import mode
+        if ($importFile = $this->option('import')) {
+            return $this->importFromCsv($importFile);
+        }
+
         try {
-            // Get or prompt for owner
-            $ownerType = $this->argument('owner_type') ?: select(
-                label: 'Owner type',
-                options: ['venue', 'vsite', 'vnode', 'vhost'],
-                default: 'vnode',
-                hint: 'Where to store this credential'
-            );
-
-            $ownerName = $this->argument('owner_name') ?: text(
-                label: 'Owner name',
-                placeholder: match ($ownerType) {
-                    'venue' => 'venue-name',
-                    'vsite' => 'vsite-name',
-                    'vnode' => 'vnode-name (e.g., mgo, syd, cachyos)',
-                    'vhost' => 'domain.com',
-                },
+            // Smart owner resolution
+            $ownerName = $this->argument('name') ?: text(
+                label: 'Owner (vnode or domain)',
+                placeholder: 'mrn or example.com',
                 required: true,
-                hint: 'The entity that owns this credential'
+                hint: 'No dots = VNode, has dots = VHost'
             );
 
-            // Find owner model
-            $owner = $this->findOwner($ownerType, $ownerName);
+            $owner = $this->resolveOwner($ownerName);
             if (! $owner) {
-                error("{$ownerType} not found: {$ownerName}");
-
                 return Command::FAILURE;
             }
 
+            $ownerType = $this->getOwnerType($owner);
+            $ownerDisplay = $this->getOwnerDisplay($owner);
+
             // Get or prompt for service
-            $pserv = $this->argument('pserv') ?: select(
-                label: 'Service provider',
+            $service = $this->option('service') ?: select(
+                label: 'Service type',
                 options: [
                     'cloudflare' => 'Cloudflare (DNS, CDN)',
                     'synergywholesale' => 'SynergyWholesale (Domain Registrar)',
                     'binarylane' => 'BinaryLane (Cloud)',
-                    'proxmox' => 'Proxmox (Virtualization)',
-                    'dovecot' => 'Dovecot (Mail)',
                     'mysql' => 'MySQL/MariaDB (Database)',
                     'postgresql' => 'PostgreSQL (Database)',
+                    'dovecot' => 'Dovecot (Mail)',
+                    'roundcube' => 'Roundcube (Webmail)',
                     'wordpress' => 'WordPress (CMS)',
-                    'redis' => 'Redis (Cache)',
+                    'ssh' => 'SSH (Remote Access)',
+                    'api' => 'API (Generic)',
                     'custom' => 'Custom service',
                 ],
                 hint: 'The service this credential is for'
             );
 
-            if ($pserv === 'custom') {
-                $pserv = text(
+            if ($service === 'custom') {
+                $service = text(
                     label: 'Custom service name',
                     placeholder: 'service-name',
                     required: true,
@@ -109,29 +103,14 @@ class AddpwCommand extends Command
                 );
             }
 
-            // Get or prompt for password type
-            $ptype = $this->option('ptype') ?: select(
-                label: 'Credential type',
-                options: [
-                    'APKEY' => 'API Key (default)',
-                    'VMAIL' => 'Email Password',
-                    'DBPWD' => 'Database Password',
-                    'SSLKY' => 'SSL Private Key',
-                    'OAUTH' => 'OAuth Token',
-                ],
-                default: 'APKEY',
-                hint: 'Type of credential'
-            );
-
-            // Get or prompt for identifier name
-            $pname = $this->option('pname') ?: text(
-                label: 'Identifier name',
-                placeholder: match ($ptype) {
-                    'VMAIL' => 'user@domain.com',
-                    'APKEY' => 'api-key-name or default',
-                    'DBPWD' => 'database-name or username',
-                    'SSLKY' => 'domain.com',
-                    'OAUTH' => 'oauth-provider',
+            // Get credential name/identifier
+            $name = $this->option('name') ?: text(
+                label: 'Credential name',
+                placeholder: match ($service) {
+                    'dovecot' => 'user@domain.com',
+                    'mysql', 'postgresql' => 'database_user',
+                    'cloudflare', 'synergywholesale', 'binarylane' => 'api_key or default',
+                    'wordpress' => 'admin or domain.com',
                     default => 'default',
                 },
                 default: 'default',
@@ -139,10 +118,11 @@ class AddpwCommand extends Command
                 hint: 'Unique identifier for this credential'
             );
 
-            // Check if credential already exists
-            $existing = VPass::byOwner($owner)
-                ->where('pserv', $pserv)
-                ->where('pname', $pname)
+            // Check for existing credential
+            $ownerKey = $this->getOwnerKey($owner);
+            $existing = VPass::where($ownerKey, $owner->id)
+                ->where('service', $service)
+                ->where('name', $name)
                 ->first();
 
             if ($existing) {
@@ -157,72 +137,61 @@ class AddpwCommand extends Command
                 }
             }
 
-            // Get or prompt for secret data
-            $pdata = $this->option('pdata') ?: password(
-                label: match ($ptype) {
-                    'VMAIL' => 'Email password',
-                    'APKEY' => 'API key',
-                    'DBPWD' => 'Database password',
-                    'SSLKY' => 'SSL private key',
-                    'OAUTH' => 'OAuth token',
-                    default => 'Secret',
+            // Get username (optional)
+            $username = $this->option('username') ?: text(
+                label: 'Username (optional)',
+                placeholder: 'admin@example.com',
+                hint: 'Press Enter to skip'
+            );
+
+            // Get password/secret
+            $secret = $this->option('password') ?: password(
+                label: match ($service) {
+                    'dovecot' => 'Email password',
+                    'mysql', 'postgresql' => 'Database password',
+                    'cloudflare', 'synergywholesale', 'binarylane', 'api' => 'API key',
+                    default => 'Password/Secret',
                 },
                 required: true,
                 hint: 'Will be encrypted at rest with APP_KEY'
             );
 
-            // Optional metadata
-            $pmeta = null;
-            if ($this->option('pmeta')) {
-                $pmeta = json_decode($this->option('pmeta'), true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    error('Invalid JSON in --pmeta option');
+            // Get optional URL
+            $url = $this->option('url') ?: text(
+                label: 'URL endpoint (optional)',
+                placeholder: 'https://api.example.com',
+                hint: 'Press Enter to skip'
+            );
 
-                    return Command::FAILURE;
-                }
+            // Get optional port
+            $port = $this->option('port');
+            if (! $port) {
+                $portInput = text(
+                    label: 'Port number (optional)',
+                    placeholder: '3306, 443, etc.',
+                    hint: 'Press Enter to skip'
+                );
+                $port = $portInput ? (int) $portInput : null;
             }
 
-            // Optional notes
-            $pnote = $this->option('pnote') ?: text(
+            // Get optional notes
+            $notes = $this->option('notes') ?: text(
                 label: 'Admin notes (optional)',
                 placeholder: 'Created for production access',
                 hint: 'Press Enter to skip'
             );
 
-            // Optional expiration
-            $pexpd = null;
-            if ($this->option('pexpd')) {
-                $pexpd = $this->option('pexpd');
-            } elseif (confirm(
-                label: 'Set expiration date?',
-                default: false,
-                hint: 'Useful for rotating credentials'
-            )) {
-                $pexpd = text(
-                    label: 'Expiration date',
-                    placeholder: 'YYYY-MM-DD',
-                    validate: fn ($value) => strtotime($value) ? null : 'Invalid date format'
-                );
-            }
-
-            // Create or update credential
-            $credential = VPass::findOrCreate(
+            // Create or update credential using VPass::store()
+            $credential = VPass::store(
                 owner: $owner,
-                pserv: $pserv,
-                pname: $pname,
-                ptype: $ptype,
-                pdata: $pdata,
-                pmeta: $pmeta
+                service: $service,
+                name: $name,
+                password: $secret,
+                username: $username ?: null,
+                url: $url ?: null,
+                port: $port,
+                notes: $notes ?: null
             );
-
-            // Update optional fields
-            if ($pnote) {
-                $credential->pnote = $pnote;
-            }
-            if ($pexpd) {
-                $credential->pexpd = $pexpd;
-            }
-            $credential->save();
 
             // Success message
             info('Credential saved successfully');
@@ -230,14 +199,13 @@ class AddpwCommand extends Command
             $this->table(
                 ['Field', 'Value'],
                 [
-                    ['Owner', "{$credential->owner_type_display}: {$ownerName}"],
-                    ['Service', $pserv],
-                    ['Type', $credential->type_display],
-                    ['Name', $pname],
-                    ['Status', $credential->pstat ? '✓ Active' : '✗ Disabled'],
+                    ['Owner', "{$ownerType}: {$ownerDisplay}"],
+                    ['Service', $credential->service_display],
+                    ['Name', $credential->name],
+                    ['Username', $credential->username ?: '-'],
+                    ['URL', $credential->url ?: '-'],
+                    ['Port', $credential->port ?: '-'],
                     ['Created', $credential->created_at->format('Y-m-d H:i:s')],
-                    ['Rotated', $credential->pdate?->format('Y-m-d H:i:s') ?? 'Never'],
-                    ['Expires', $credential->pexpd?->format('Y-m-d H:i:s') ?? 'Never'],
                 ]
             );
 
@@ -256,16 +224,201 @@ class AddpwCommand extends Command
     }
 
     /**
-     * Find owner model by type and name
+     * Smart owner resolution: dots = domain = VHost, no dots = VNode
      */
-    private function findOwner(string $type, string $name): ?object
+    private function resolveOwner(string $name): ?object
     {
-        return match ($type) {
-            'venue' => FleetVenue::where('name', $name)->first(),
-            'vsite' => FleetVsite::where('name', $name)->first(),
-            'vnode' => FleetVnode::where('name', $name)->first(),
-            'vhost' => FleetVhost::where('fqdn', $name)->first(),
-            default => null,
+        if (str_contains($name, '.')) {
+            // Has dots = domain = VHost
+            $vhost = FleetVhost::where('domain', $name)->first();
+            if (! $vhost) {
+                error("VHost not found: {$name}");
+
+                return null;
+            }
+
+            return $vhost;
+        }
+
+        // No dots = VNode
+        $vnode = FleetVnode::where('name', $name)->first();
+        if (! $vnode) {
+            error("VNode not found: {$name}");
+
+            return null;
+        }
+
+        return $vnode;
+    }
+
+    /**
+     * Get owner type display name
+     */
+    private function getOwnerType(object $owner): string
+    {
+        return match (true) {
+            $owner instanceof FleetVhost => 'VHost',
+            $owner instanceof FleetVnode => 'VNode',
+            $owner instanceof FleetVsite => 'VSite',
+            default => 'Unknown',
         };
+    }
+
+    /**
+     * Get owner display name
+     */
+    private function getOwnerDisplay(object $owner): string
+    {
+        return match (true) {
+            $owner instanceof FleetVhost => $owner->domain,
+            $owner instanceof FleetVnode => $owner->name,
+            $owner instanceof FleetVsite => $owner->name,
+            default => $owner->id,
+        };
+    }
+
+    /**
+     * Get FK column name for owner
+     */
+    private function getOwnerKey(object $owner): string
+    {
+        return match (true) {
+            $owner instanceof FleetVhost => 'fleet_vhost_id',
+            $owner instanceof FleetVnode => 'fleet_vnode_id',
+            $owner instanceof FleetVsite => 'fleet_vsite_id',
+            default => throw new Exception('Invalid owner type'),
+        };
+    }
+
+    /**
+     * Import credentials from CSV backup file
+     *
+     * CSV format (from shpw --csv):
+     * name, service, username, password, url, port, notes, vsite, vnode, vhost
+     */
+    private function importFromCsv(string $filePath): int
+    {
+        // Expand ~ to home directory
+        if (str_starts_with($filePath, '~/')) {
+            $filePath = ($_SERVER['HOME'] ?? getenv('HOME')).substr($filePath, 1);
+        }
+
+        if (! file_exists($filePath)) {
+            error("File not found: {$filePath}");
+
+            return Command::FAILURE;
+        }
+
+        $handle = fopen($filePath, 'r');
+        if (! $handle) {
+            error("Cannot open file: {$filePath}");
+
+            return Command::FAILURE;
+        }
+
+        // Read and validate header
+        $header = fgetcsv($handle);
+        $expectedHeader = ['name', 'service', 'username', 'password', 'url', 'port', 'notes', 'vsite', 'vnode', 'vhost'];
+
+        if ($header !== $expectedHeader) {
+            error('Invalid CSV format. Expected header: '.implode(', ', $expectedHeader));
+            fclose($handle);
+
+            return Command::FAILURE;
+        }
+
+        info("Importing credentials from: {$filePath}");
+        $this->line('');
+
+        $imported = 0;
+        $skipped = 0;
+        $errors = 0;
+        $lineNum = 1;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $lineNum++;
+
+            if (count($row) !== 10) {
+                warning("Line {$lineNum}: Invalid column count, skipping");
+                $errors++;
+
+                continue;
+            }
+
+            [$name, $service, $username, $password, $url, $port, $notes, $vsiteName, $vnodeName, $vhostDomain] = $row;
+
+            // Resolve owner - priority: vhost > vnode > vsite
+            $owner = null;
+
+            if ($vhostDomain) {
+                $owner = FleetVhost::where('domain', $vhostDomain)->first();
+                if (! $owner) {
+                    warning("Line {$lineNum}: VHost '{$vhostDomain}' not found, skipping");
+                    $skipped++;
+
+                    continue;
+                }
+            } elseif ($vnodeName) {
+                $owner = FleetVnode::where('name', $vnodeName)->first();
+                if (! $owner) {
+                    warning("Line {$lineNum}: VNode '{$vnodeName}' not found, skipping");
+                    $skipped++;
+
+                    continue;
+                }
+            } elseif ($vsiteName) {
+                $owner = FleetVsite::where('name', $vsiteName)->first();
+                if (! $owner) {
+                    warning("Line {$lineNum}: VSite '{$vsiteName}' not found, skipping");
+                    $skipped++;
+
+                    continue;
+                }
+            }
+
+            try {
+                if ($owner) {
+                    // Credential with owner - use VPass::store()
+                    VPass::store(
+                        owner: $owner,
+                        service: $service,
+                        name: $name,
+                        password: $password,
+                        username: $username ?: null,
+                        url: $url ?: null,
+                        port: $port ? (int) $port : null,
+                        notes: $notes ?: null
+                    );
+                    $ownerDisplay = $vhostDomain ?: $vnodeName ?: $vsiteName;
+                } else {
+                    // Global credential (no owner) - create directly
+                    VPass::updateOrCreate(
+                        ['service' => $service, 'name' => $name],
+                        [
+                            'password' => $password,
+                            'username' => $username ?: null,
+                            'url' => $url ?: null,
+                            'port' => $port ? (int) $port : null,
+                            'notes' => $notes ?: null,
+                        ]
+                    );
+                    $ownerDisplay = 'Global';
+                }
+
+                $this->line("  ✓ {$service}/{$name} → {$ownerDisplay}");
+                $imported++;
+
+            } catch (Exception $e) {
+                warning("Line {$lineNum}: Import failed - {$e->getMessage()}");
+                $errors++;
+            }
+        }
+
+        fclose($handle);
+
+        $this->line('');
+        info("Import complete: {$imported} imported, {$skipped} skipped, {$errors} errors");
+
+        return $errors > 0 ? Command::FAILURE : Command::SUCCESS;
     }
 }

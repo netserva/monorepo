@@ -40,7 +40,7 @@ class ShvnodeCommand extends Command
     protected function showSingleVNode(string $name, string $format): int
     {
         $vnode = FleetVnode::where('name', $name)
-            ->with(['vsite.venue', 'sshHost', 'vhosts'])
+            ->with(['vsite', 'sshHost', 'vhosts'])
             ->first();
 
         if (! $vnode) {
@@ -63,7 +63,7 @@ class ShvnodeCommand extends Command
             [
                 ['Name', $vnode->name],
                 ['VSite', $vnode->vsite->name],
-                ['Venue', $vnode->vsite->venue->name],
+                ['Provider', $vnode->vsite->provider ?? 'N/A'],
                 ['Role', $vnode->role],
                 ['Environment', $vnode->environment],
                 ['IP Address', $vnode->ip_address ?? 'N/A'],

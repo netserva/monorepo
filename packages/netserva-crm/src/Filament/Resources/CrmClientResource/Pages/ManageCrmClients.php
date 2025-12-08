@@ -6,6 +6,7 @@ namespace NetServa\Crm\Filament\Resources\CrmClientResource\Pages;
 
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Support\Icons\Heroicon;
 use NetServa\Crm\Filament\Resources\CrmClientResource;
 use NetServa\Crm\Models\CrmClient;
 
@@ -17,24 +18,21 @@ class ManageCrmClients extends ManageRecords
     {
         return [
             CreateAction::make()
+                ->icon(Heroicon::OutlinedPlus)
+                ->createAnother(false)
+                ->modalFooterActionsAlignment('end')
+                ->modalSubmitActionLabel('Create')
+                ->modalCancelActionLabel('Cancel')
                 ->mutateFormDataUsing(function (array $data): array {
-                    // Auto-populate name based on available fields
                     if (empty($data['name'])) {
-                        if (! empty($data['company_name'])) {
-                            $data['name'] = $data['company_name'];
-                        } else {
-                            $data['name'] = trim(($data['first_name'] ?? '').' '.($data['last_name'] ?? ''));
-                        }
+                        // Name is always first + last name, never company
+                        $name = trim(($data['first_name'] ?? '').' '.($data['last_name'] ?? ''));
+                        $data['name'] = $name ?: ($data['first_name'] ?? $data['last_name'] ?? 'Unknown');
                     }
 
                     return $data;
                 }),
         ];
-    }
-
-    protected function mutateFormDataBeforeFill(array $data): array
-    {
-        return $data;
     }
 
     public function getTitle(): string

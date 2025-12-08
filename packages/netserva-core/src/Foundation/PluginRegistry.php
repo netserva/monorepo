@@ -528,6 +528,9 @@ class PluginRegistry
 
     /**
      * Discover available plugins from the packages directory
+     *
+     * Scans netserva-* packages for Plugin implementations.
+     * This allows dynamic discovery without maintaining a hardcoded list.
      */
     public function discoverPlugins(): void
     {
@@ -537,87 +540,82 @@ class PluginRegistry
             return;
         }
 
-        $pluginFiles = File::glob($packagesPath.'/ns-*/src/*Plugin.php');
+        // Scan netserva-* packages (top-level and nested src directories)
+        $patterns = [
+            $packagesPath.'/netserva-*/src/*Plugin.php',
+            $packagesPath.'/netserva-*/src/**/*Plugin.php',
+        ];
+
+        $pluginFiles = [];
+        foreach ($patterns as $pattern) {
+            $pluginFiles = array_merge($pluginFiles, File::glob($pattern));
+        }
+
+        // Remove duplicates (in case of overlapping patterns)
+        $pluginFiles = array_unique($pluginFiles);
 
         foreach ($pluginFiles as $file) {
             try {
-                $className = $this->extractClassName($file);
+                $className = $this->extractClassNameFromFile($file);
 
                 if ($className && class_exists($className) && is_subclass_of($className, Plugin::class)) {
                     $reflection = new \ReflectionClass($className);
                     if (! $reflection->isAbstract()) {
                         $plugin = new $className;
-                        $this->availablePlugins[$plugin->getId()] = $className;
+                        $pluginId = $plugin->getId();
+                        // Only add if not already in the list (hardcoded takes precedence)
+                        if (! isset($this->availablePlugins[$pluginId])) {
+                            $this->availablePlugins[$pluginId] = $className;
+                        }
                     }
                 }
             } catch (\Exception $e) {
                 Log::warning("Failed to load plugin from {$file}: ".$e->getMessage());
             }
         }
-
-        // Plugin discovery completed silently
-        // (Logging removed to prevent noise on every request)
     }
 
     /**
-     * Load predefined available plugins
+     * Load available plugins via filesystem discovery
+     *
+     * Scans packages/netserva-* for Plugin implementations.
+     * No hardcoded list - fully dynamic discovery.
      */
     protected function loadAvailablePlugins(): void
     {
-        // Only include plugins that actually implement the Plugin interface
-        // NOTE: After package consolidation, active packages are:
-        // core, cms, fleet (includes IPAM + WireGuard), dns, web, mail
-        // Removed: config (unused), ops (enterprise bloat)
-        $potentialPlugins = [
-            // Core foundation (includes CLI resources)
-            'netserva-core' => \NetServa\Core\CorePlugin::class,
-            // Content Management
-            'netserva-cms' => \NetServa\Cms\NetServaCmsPlugin::class,
-            // Infrastructure (Fleet includes IPAM + WireGuard)
-            'netserva-fleet' => \NetServa\Fleet\Filament\FleetPlugin::class,
-            // Services
-            'netserva-dns' => \NetServa\Dns\Filament\NetServaDnsPlugin::class,
-            'netserva-web' => \NetServa\Web\Filament\NetServaWebPlugin::class,
-            'netserva-mail' => \NetServa\Mail\Filament\NetServaMailPlugin::class,
-        ];
-
-        // Verify each plugin class exists and implements Plugin interface
-        foreach ($potentialPlugins as $id => $class) {
-            if (class_exists($class) && is_subclass_of($class, Plugin::class)) {
-                try {
-                    $reflection = new \ReflectionClass($class);
-                    if (! $reflection->isAbstract()) {
-                        $this->availablePlugins[$id] = $class;
-                    }
-                } catch (\Exception $e) {
-                    Log::warning("Failed to load plugin {$id}: ".$e->getMessage());
-                }
-            }
-        }
-
-        // Also discover from filesystem
         $this->discoverPlugins();
     }
 
     /**
-     * Extract class name from file path
+     * Extract fully qualified class name from a PHP file
+     *
+     * Parses the file to find namespace and class declarations.
      */
-    protected function extractClassName(string $filePath): ?string
+    protected function extractClassNameFromFile(string $filePath): ?string
     {
-        $relativePath = str_replace(base_path().'/', '', $filePath);
-        $parts = explode('/', $relativePath);
-
-        if (count($parts) < 4 || ! str_starts_with($parts[1], 'ns-')) {
+        if (! File::exists($filePath)) {
             return null;
         }
 
-        $packageName = $parts[1]; // ns-core, ns-ssh, etc.
-        $fileName = pathinfo($parts[array_key_last($parts)], PATHINFO_FILENAME);
+        $content = File::get($filePath);
 
-        // Convert package name to namespace
-        $namespace = 'Ns\\'.ucfirst(str_replace('ns-', '', $packageName));
+        // Extract namespace
+        $namespace = null;
+        if (preg_match('/namespace\s+([^;]+);/', $content, $matches)) {
+            $namespace = trim($matches[1]);
+        }
 
-        return $namespace.'\\'.$fileName;
+        // Extract class name
+        $className = null;
+        if (preg_match('/class\s+(\w+)/', $content, $matches)) {
+            $className = trim($matches[1]);
+        }
+
+        if (! $className) {
+            return null;
+        }
+
+        return $namespace ? $namespace.'\\'.$className : $className;
     }
 
     /**

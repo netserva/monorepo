@@ -23,6 +23,11 @@ return new class extends Migration
             $table->index(['group', 'sort_order']);
         });
 
+        // Add FK constraint to users table now that palettes exists
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('palette_id')->references('id')->on('palettes')->nullOnDelete();
+        });
+
         // NetServa settings
         Schema::create('netserva_settings', function (Blueprint $table) {
             $table->id();
@@ -57,6 +62,9 @@ return new class extends Migration
 
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['palette_id']);
+        });
         Schema::dropIfExists('installed_plugins');
         Schema::dropIfExists('netserva_settings');
         Schema::dropIfExists('palettes');

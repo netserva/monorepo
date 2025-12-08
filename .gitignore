@@ -95,3 +95,4 @@ resources/docs-archive-*/
 *.webm
 resources/media/obs-ctl/node_modules/
 /backups/
+.env.mysql

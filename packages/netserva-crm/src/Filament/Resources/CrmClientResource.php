@@ -17,7 +17,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -37,7 +36,7 @@ class CrmClientResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'CRM';
+    protected static string|\UnitEnum|null $navigationGroup = 'Crm';
 
     protected static ?string $modelLabel = 'Client';
 
@@ -48,114 +47,73 @@ class CrmClientResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(3)
             ->components([
-                Section::make('Client Details')
-                    ->schema([
-                        // Personal details
-                        TextInput::make('first_name')
-                            ->label('First Name')
-                            ->maxLength(255),
+                TextInput::make('first_name')
+                    ->label('First Name')
+                    ->maxLength(255),
 
-                        TextInput::make('last_name')
-                            ->label('Last Name')
-                            ->maxLength(255),
+                TextInput::make('last_name')
+                    ->label('Last Name')
+                    ->maxLength(255),
 
-                        // Business details (optional)
-                        TextInput::make('company_name')
-                            ->label('Company Name')
-                            ->helperText('Optional - for business clients')
-                            ->maxLength(255),
+                TextInput::make('email')
+                    ->email()
+                    ->required()
+                    ->unique(ignoreRecord: true)
+                    ->maxLength(255),
 
-                        TextInput::make('abn')
-                            ->label('ABN')
-                            ->placeholder('XX XXX XXX XXX')
-                            ->maxLength(14),
+                TextInput::make('home_phone')
+                    ->label('Phone')
+                    ->tel()
+                    ->maxLength(20),
 
-                        TextInput::make('acn')
-                            ->label('ACN')
-                            ->placeholder('XXX XXX XXX')
-                            ->maxLength(11),
+                TextInput::make('company_name')
+                    ->label('Company')
+                    ->maxLength(255),
 
-                        // Contact
-                        TextInput::make('email')
-                            ->email()
-                            ->required()
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(255),
+                TextInput::make('abn')
+                    ->label('ABN')
+                    ->placeholder('XX XXX XXX XXX')
+                    ->maxLength(14),
 
-                        TextInput::make('home_phone')
-                            ->label('Home Phone')
-                            ->tel()
-                            ->maxLength(20),
+                TextInput::make('address_line_1')
+                    ->label('Street Address')
+                    ->maxLength(255),
 
-                        TextInput::make('work_phone')
-                            ->label('Work Phone')
-                            ->tel()
-                            ->maxLength(20),
+                TextInput::make('city')
+                    ->maxLength(255),
 
-                        // Status in main section
-                        Select::make('status')
-                            ->options([
-                                'active' => 'Active',
-                                'prospect' => 'Prospect',
-                                'suspended' => 'Suspended',
-                                'cancelled' => 'Cancelled',
-                            ])
-                            ->default('active')
-                            ->required(),
+                TextInput::make('state')
+                    ->label('State')
+                    ->maxLength(50),
+
+                TextInput::make('postcode')
+                    ->maxLength(20),
+
+                Select::make('country')
+                    ->options([
+                        'AU' => 'Australia',
+                        'NZ' => 'New Zealand',
+                        'US' => 'United States',
+                        'GB' => 'United Kingdom',
+                        'CA' => 'Canada',
                     ])
-                    ->columns(2),
+                    ->default('AU'),
 
-                Section::make('Address')
-                    ->schema([
-                        TextInput::make('address_line_1')
-                            ->label('Street Address')
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-
-                        TextInput::make('address_line_2')
-                            ->label('Address Line 2')
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-
-                        TextInput::make('city')
-                            ->maxLength(255),
-
-                        TextInput::make('state')
-                            ->label('State/Territory')
-                            ->maxLength(50),
-
-                        TextInput::make('postcode')
-                            ->maxLength(20),
-
-                        Select::make('country')
-                            ->options([
-                                'AU' => 'Australia',
-                                'NZ' => 'New Zealand',
-                                'US' => 'United States',
-                                'GB' => 'United Kingdom',
-                                'CA' => 'Canada',
-                            ])
-                            ->default('AU')
-                            ->searchable(),
+                Select::make('status')
+                    ->options([
+                        'active' => 'Active',
+                        'prospect' => 'Prospect',
+                        'suspended' => 'Suspended',
+                        'cancelled' => 'Cancelled',
                     ])
-                    ->columns(4)
-                    ->collapsible(),
+                    ->default('active')
+                    ->required(),
 
-                Section::make('Additional Information')
-                    ->schema([
-                        Textarea::make('notes')
-                            ->rows(3)
-                            ->columnSpanFull(),
-
-                        TextInput::make('external_id')
-                            ->label('External System ID')
-                            ->helperText('Link to WHMCS or other external system')
-                            ->maxLength(255),
-                    ])
-                    ->columns(2)
-                    ->collapsible()
-                    ->collapsed(),
+                Textarea::make('notes')
+                    ->rows(2)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -164,17 +122,23 @@ class CrmClientResource extends Resource
         $columns = [
             TextColumn::make('name')
                 ->searchable()
-                ->sortable(),
+                ->sortable()
+                ->limit(22)
+                ->tooltip(fn ($record) => strlen($record->name) > 22 ? $record->name : null),
 
             TextColumn::make('company_name')
                 ->label('Company')
                 ->searchable()
-                ->toggleable(),
+                ->toggleable()
+                ->limit(22)
+                ->tooltip(fn ($record) => strlen($record->company_name ?? '') > 22 ? $record->company_name : null),
 
             TextColumn::make('email')
                 ->searchable()
                 ->copyable()
-                ->copyMessage('Email copied'),
+                ->copyMessage('Email copied')
+                ->limit(22)
+                ->tooltip(fn ($record) => strlen($record->email) > 22 ? $record->email : null),
 
             TextColumn::make('status')
                 ->badge()
@@ -233,14 +197,27 @@ class CrmClientResource extends Resource
                     }),
                 TrashedFilter::make(),
             ])
-            ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
-                ForceDeleteAction::make(),
-                RestoreAction::make(),
+            ->actions([
+                ViewAction::make()
+                    ->iconButton()
+                    ->tooltip('View'),
+                EditAction::make()
+                    ->iconButton()
+                    ->tooltip('Edit')
+                    ->modalFooterActionsAlignment('end')
+                    ->modalSubmitActionLabel('Save')
+                    ->modalCancelActionLabel('Cancel'),
+                DeleteAction::make()
+                    ->iconButton()
+                    ->tooltip('Delete'),
+                ForceDeleteAction::make()
+                    ->iconButton()
+                    ->tooltip('Force Delete'),
+                RestoreAction::make()
+                    ->iconButton()
+                    ->tooltip('Restore'),
             ])
-            ->toolbarActions([
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                     ForceDeleteBulkAction::make(),

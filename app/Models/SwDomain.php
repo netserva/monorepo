@@ -54,6 +54,7 @@ class SwDomain extends Model
         'grace_period_fee',
         'redemption_period_days',
         'redemption_period_fee',
+        'customer_id',
     ];
 
     protected $casts = [

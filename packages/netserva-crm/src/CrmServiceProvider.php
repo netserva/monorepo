@@ -35,6 +35,7 @@ class CrmServiceProvider extends ServiceProvider
                 Console\Commands\ShcrmCommand::class,
                 Console\Commands\ChcrmCommand::class,
                 Console\Commands\DelcrmCommand::class,
+                Console\Commands\ImportcrmCommand::class,
             ]);
         }
 
@@ -101,20 +102,48 @@ class CrmServiceProvider extends ServiceProvider
 
     /**
      * Check if Fleet integration is available
+     *
+     * Requires: FleetVsite model exists AND fleet_vsites.customer_id column exists
      */
     public static function hasFleetIntegration(): bool
     {
-        return config('netserva-crm.enable_fleet_integration', true)
-            && class_exists(\NetServa\Fleet\Models\FleetVsite::class);
+        if (! config('netserva-crm.enable_fleet_integration', true)) {
+            return false;
+        }
+
+        if (! class_exists(\NetServa\Fleet\Models\FleetVsite::class)) {
+            return false;
+        }
+
+        // Check if the foreign key column exists
+        try {
+            return \Illuminate\Support\Facades\Schema::hasColumn('fleet_vsites', 'customer_id');
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**
      * Check if Domain integration is available
+     *
+     * Requires: SwDomain model exists AND sw_domains.customer_id column exists
      */
     public static function hasDomainIntegration(): bool
     {
-        return config('netserva-crm.enable_domain_integration', true)
-            && class_exists(\App\Models\SwDomain::class);
+        if (! config('netserva-crm.enable_domain_integration', true)) {
+            return false;
+        }
+
+        if (! class_exists(\App\Models\SwDomain::class)) {
+            return false;
+        }
+
+        // Check if the foreign key column exists
+        try {
+            return \Illuminate\Support\Facades\Schema::hasColumn('sw_domains', 'customer_id');
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**

@@ -5,7 +5,6 @@ namespace NetServa\Fleet\Tests;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use NetServa\Core\Models\SshHost;
-use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Models\FleetVsite;
@@ -45,24 +44,20 @@ abstract class TestCase extends BaseTestCase
 
     /**
      * Seed complete test fleet infrastructure
+     * Hierarchy: VSite → VNode → VHost (no venue layer)
      */
     protected function seedTestFleet(): array
     {
-        $venue = FleetVenue::factory()->create([
-            'name' => 'test-datacenter',
-            'location' => 'Test Location',
-        ]);
-
         $vsite = FleetVsite::factory()->create([
-            'venue_id' => $venue->id,
             'name' => 'test-vsite',
             'provider' => 'local',
+            'technology' => 'proxmox',
+            'location' => 'Test Location',
         ]);
 
         $vnode = FleetVnode::factory()->create([
             'vsite_id' => $vsite->id,
             'name' => 'test-vnode',
-            'technology' => 'proxmox',
         ]);
 
         $sshHost = SshHost::factory()->create([
@@ -77,7 +72,6 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         return [
-            'venue' => $venue,
             'vsite' => $vsite,
             'vnode' => $vnode,
             'vhost' => $vhost,

@@ -217,17 +217,17 @@ class ImportVmailCredentialsCommand extends Command
         $email = $vmail['user'];
         $domain = substr(strstr($email, '@'), 1);
 
-        // Find vhost
+        // Find vhost by domain on this vnode
         $vhost = FleetVhost::where(function ($q) use ($domain) {
             $q->where('domain', $domain)
                 ->orWhere('fqdn', $domain);
         })
-            ->where('vnode_id', $vnode->id)
+            ->where('fleet_vnode_id', $vnode->id)
             ->first();
 
         if (! $vhost) {
             // Try to find any vhost for this vnode as fallback
-            $vhost = FleetVhost::where('vnode_id', $vnode->id)->first();
+            $vhost = FleetVhost::where('fleet_vnode_id', $vnode->id)->first();
 
             if (! $vhost) {
                 throw new Exception("No vhost found for domain {$domain} on vnode {$vnode->name}");
@@ -235,9 +235,9 @@ class ImportVmailCredentialsCommand extends Command
         }
 
         // Check if already exists
-        $existing = VPass::byOwner($vhost)
-            ->where('pserv', 'dovecot')
-            ->where('pname', $email)
+        $existing = VPass::where('fleet_vhost_id', $vhost->id)
+            ->where('service', 'dovecot')
+            ->where('name', $email)
             ->first();
 
         if ($existing) {
@@ -246,21 +246,13 @@ class ImportVmailCredentialsCommand extends Command
 
         // Create VPass entry (without password - hashed on server)
         VPass::create([
-            'owner_type' => FleetVhost::class,
-            'owner_id' => $vhost->id,
-            'ptype' => 'VMAIL',
-            'pserv' => 'dovecot',
-            'pname' => $email,
-            'pdata' => 'unknown', // Placeholder - cleartext not available
-            'pmeta' => [
-                'imported_from' => $vnode->name,
-                'home' => $vmail['home'],
-                'remote_created_at' => $vmail['created_at'],
-                'note' => 'Imported from remote database - cleartext password not available',
-            ],
-            'pstat' => true,
-            'pnote' => "Imported from {$vnode->name} on ".now()->format('Y-m-d H:i:s'),
-            'created_at' => $vmail['created_at'] ?? now(),
+            'fleet_vhost_id' => $vhost->id,
+            'service' => 'dovecot',
+            'name' => $email,
+            'password' => 'unknown', // Placeholder - cleartext not available
+            'notes' => "Imported from {$vnode->name} on ".now()->format('Y-m-d H:i:s').
+                       "\nHome: {$vmail['home']}".
+                       "\nNote: Cleartext password not available (hashed on server)",
         ]);
 
         return true;
@@ -272,10 +264,10 @@ class ImportVmailCredentialsCommand extends Command
     private function displayDryRun($vmails): void
     {
         $this->table(
-            ['Email', 'Maildir', 'Created'],
+            ['Email', 'Home', 'Created'],
             $vmails->map(fn ($v) => [
                 $v['user'],
-                $v['maildir'],
+                $v['home'],
                 $v['created_at'] ?? 'N/A',
             ])->toArray()
         );

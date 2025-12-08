@@ -4,7 +4,6 @@ namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
 use NetServa\Core\Models\SshHost;
-use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Models\FleetVsite;
 use NetServa\Fleet\Services\BinaryLaneService;
@@ -276,16 +275,9 @@ class BlSyncCommand extends Command
             return null;
         }
 
-        // Find or create default venue
-        $venue = FleetVenue::firstOrCreate(
-            ['slug' => 'default'],
-            ['name' => 'Default', 'description' => 'Default venue for infrastructure']
-        );
-
         $vsite = FleetVsite::create([
             'name' => 'BinaryLane Sydney',
             'slug' => 'binarylane-sydney',
-            'venue_id' => $venue->id,
             'provider' => 'binarylane',
             'technology' => 'vps',
             'location' => 'sydney',

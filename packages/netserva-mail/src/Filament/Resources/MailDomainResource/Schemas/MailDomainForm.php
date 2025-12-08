@@ -117,6 +117,7 @@ class MailDomainForm
                         ->keyLabel('Tag')
                         ->valueLabel('Value')
                         ->addActionLabel('Add Tag')
+                        ->default([])
                         ->hintIcon('heroicon-o-question-mark-circle')
                         ->hintIconTooltip('Custom tags for organization'),
 
@@ -124,6 +125,7 @@ class MailDomainForm
                         ->keyLabel('Key')
                         ->valueLabel('Value')
                         ->addActionLabel('Add Metadata')
+                        ->default([])
                         ->hintIcon('heroicon-o-question-mark-circle')
                         ->hintIconTooltip('Additional metadata for this domain'),
                 ])

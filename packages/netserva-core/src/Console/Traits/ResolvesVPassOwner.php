@@ -2,7 +2,6 @@
 
 namespace NetServa\Core\Console\Traits;
 
-use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Models\FleetVsite;
@@ -78,8 +77,6 @@ trait ResolvesVPassOwner
     protected function getOwnerContext(object $owner, string $name, ?string $domain = null): string
     {
         if ($owner instanceof FleetVhost) {
-            $vnodeName = $owner->vnode->name ?? 'unknown';
-
             return $domain ? "{$name}/{$domain}" : $name;
         }
 
@@ -89,10 +86,6 @@ trait ResolvesVPassOwner
 
         if ($owner instanceof FleetVsite) {
             return "vsite:{$owner->name}";
-        }
-
-        if ($owner instanceof FleetVenue) {
-            return "venue:{$owner->name}";
         }
 
         return get_class($owner).': '.($owner->name ?? $owner->id);
@@ -107,7 +100,6 @@ trait ResolvesVPassOwner
             $owner instanceof FleetVhost => 'VHost',
             $owner instanceof FleetVnode => 'VNode',
             $owner instanceof FleetVsite => 'VSite',
-            $owner instanceof FleetVenue => 'Venue',
             default => 'Unknown',
         };
     }

@@ -11,11 +11,15 @@ use function Laravel\Prompts\outro;
 use function Laravel\Prompts\spin;
 use function Laravel\Prompts\table;
 
+/**
+ * Show Fleet Command - NetServa 3.0
+ *
+ * Displays the fleet hierarchy: VSite → VNode → VHost → VServ
+ */
 class ShfleetCommand extends Command
 {
     protected $signature = 'shfleet
                             {vnode? : Filter by specific vnode (optional)}
-                            {--venue= : Filter by venue name/slug}
                             {--vsite= : Filter by vsite name/slug}
                             {--stats : Show statistics summary}
                             {--simple : Simple tree output without colors or emojis}
@@ -34,7 +38,7 @@ class ShfleetCommand extends Command
             );
         }
 
-        if (empty($data['venues'])) {
+        if (empty($data['vsites']) || $data['vsites']->isEmpty()) {
             if (! $this->option('simple')) {
                 note('No infrastructure found in the fleet.');
             }
@@ -57,47 +61,40 @@ class ShfleetCommand extends Command
 
     protected function loadFleetData(): array
     {
-        $venueFilter = $this->option('venue');
         $vsiteFilter = $this->option('vsite');
         $vnodeFilter = $this->argument('vnode');
 
-        // Load venues
-        $venuesQuery = DB::table('fleet_venues')
+        // Load vsites (top of hierarchy now)
+        $vsitesQuery = DB::table('fleet_vsites')
             ->where('is_active', true)
             ->orderBy('name');
 
-        if ($venueFilter) {
-            $venuesQuery->where(function ($q) use ($venueFilter) {
-                $q->where('name', 'like', "%{$venueFilter}%")
-                    ->orWhere('slug', 'like', "%{$venueFilter}%");
+        if ($vsiteFilter) {
+            $vsitesQuery->where(function ($q) use ($vsiteFilter) {
+                $q->where('name', 'like', "%{$vsiteFilter}%")
+                    ->orWhere('slug', 'like', "%{$vsiteFilter}%");
             });
         }
 
-        $venues = $venuesQuery->get();
+        $vsites = $vsitesQuery->get();
+        $vsiteIds = $vsites->pluck('id')->toArray();
 
-        // Load all related data
-        $venueIds = $venues->pluck('id')->toArray();
-
-        $vsites = DB::table('fleet_vsites')
-            ->whereIn('venue_id', $venueIds)
-            ->when($vsiteFilter, fn ($q) => $q->where('name', 'like', "%{$vsiteFilter}%")
-                ->orWhere('slug', 'like', "%{$vsiteFilter}%"))
-            ->orderBy('name')
-            ->get()
-            ->groupBy('venue_id');
-
-        $vsiteIds = $vsites->flatten()->pluck('id')->toArray();
-
-        $vnodes = DB::table('fleet_vnodes')
+        // Load vnodes
+        $vnodesQuery = DB::table('fleet_vnodes')
             ->whereIn('vsite_id', $vsiteIds)
-            ->when($vnodeFilter, fn ($q) => $q->where('name', 'like', "%{$vnodeFilter}%")
-                ->orWhere('slug', 'like', "%{$vnodeFilter}%"))
-            ->orderBy('name')
-            ->get()
-            ->groupBy('vsite_id');
+            ->orderBy('name');
 
+        if ($vnodeFilter) {
+            $vnodesQuery->where(function ($q) use ($vnodeFilter) {
+                $q->where('name', 'like', "%{$vnodeFilter}%")
+                    ->orWhere('slug', 'like', "%{$vnodeFilter}%");
+            });
+        }
+
+        $vnodes = $vnodesQuery->get()->groupBy('vsite_id');
         $vnodeIds = $vnodes->flatten()->pluck('id')->toArray();
 
+        // Load vhosts
         $vhosts = DB::table('fleet_vhosts')
             ->whereIn('vnode_id', $vnodeIds)
             ->orderBy('domain')
@@ -106,6 +103,7 @@ class ShfleetCommand extends Command
 
         $vhostIds = $vhosts->flatten()->pluck('id')->toArray();
 
+        // Load vservs
         $vservs = DB::table('fleet_vservs')
             ->whereIn('vhost_id', $vhostIds)
             ->orderBy('service_name')
@@ -113,7 +111,6 @@ class ShfleetCommand extends Command
             ->groupBy('vhost_id');
 
         return [
-            'venues' => $venues,
             'vsites' => $vsites,
             'vnodes' => $vnodes,
             'vhosts' => $vhosts,
@@ -124,14 +121,12 @@ class ShfleetCommand extends Command
     protected function displayTree(array $data): void
     {
         if ($this->option('simple')) {
-            $venueCount = $data['venues']->count();
-            $vsiteCount = $data['vsites']->flatten()->count();
+            $vsiteCount = $data['vsites']->count();
             $vnodeCount = $data['vnodes']->flatten()->count();
             $vhostCount = $data['vhosts']->flatten()->count();
             $vservCount = $data['vservs']->flatten()->count();
 
             $this->line('.');
-            $this->line("├── {$venueCount} venues");
             $this->line("├── {$vsiteCount} vsites");
             $this->line("├── {$vnodeCount} vnodes");
             $this->line("├── {$vhostCount} vhosts");
@@ -139,76 +134,49 @@ class ShfleetCommand extends Command
             $this->newLine();
         }
 
-        foreach ($data['venues'] as $venue) {
-            $this->renderVenue($venue, $data);
+        foreach ($data['vsites'] as $vsite) {
+            $this->renderVSite($vsite, $data);
         }
     }
 
-    protected function renderVenue($venue, array $data): void
-    {
-        $vsites = $data['vsites'][$venue->id] ?? collect();
-        $vsiteCount = $vsites->count();
-
-        if ($this->option('simple')) {
-            $this->line($venue->name);
-        } else {
-            $venueIcon = '🌍';
-            $venueInfo = sprintf(
-                '%s <fg=cyan;options=bold>%s</> <fg=gray>(%s)</> <fg=yellow>[%d vsites]</>',
-                $venueIcon,
-                $venue->name,
-                $venue->provider ?? 'unknown',
-                $vsiteCount
-            );
-
-            info($venueInfo);
-        }
-
-        foreach ($vsites as $index => $vsite) {
-            $isLast = $index === $vsites->count() - 1;
-            $this->renderVSite($vsite, $data, $isLast ? '└──' : '├──', $isLast ? '    ' : '│   ');
-        }
-
-        $this->newLine();
-    }
-
-    protected function renderVSite($vsite, array $data, string $prefix, string $childPrefix): void
+    protected function renderVSite($vsite, array $data): void
     {
         $vnodes = $data['vnodes'][$vsite->id] ?? collect();
+        $vnodeCount = $vnodes->count();
 
         if ($this->option('simple')) {
-            $this->line("{$prefix} {$vsite->name}");
+            $this->line($vsite->name);
         } else {
-            $vnodeCount = $vnodes->count();
-
-            $vsiteIcon = match ($vsite->technology) {
+            $vsiteIcon = match ($vsite->technology ?? 'unknown') {
                 'proxmox' => '📦',
                 'incus', 'lxc' => '🐳',
                 'kubernetes' => '☸️',
                 'docker' => '🐋',
-                'bare-metal' => '🖥️',
+                'bare-metal', 'hardware' => '🖥️',
                 'wireguard' => '🔐',
                 'dns' => '🌐',
+                'vps' => '☁️',
                 default => '📁',
             };
 
             $vsiteInfo = sprintf(
-                '%s <fg=green;options=bold>%s</> <fg=gray>(%s)</> <fg=yellow>[%d vnodes]</>',
+                '%s <fg=cyan;options=bold>%s</> <fg=gray>(%s/%s)</> <fg=yellow>[%d vnodes]</>',
                 $vsiteIcon,
                 $vsite->name,
-                $vsite->technology,
+                $vsite->provider ?? 'unknown',
+                $vsite->technology ?? 'unknown',
                 $vnodeCount
             );
 
-            $this->line("{$prefix} {$vsiteInfo}");
+            info($vsiteInfo);
         }
 
         foreach ($vnodes as $index => $vnode) {
             $isLast = $index === $vnodes->count() - 1;
-            $vnodePrefix = $childPrefix.($isLast ? '└──' : '├──');
-            $vnodeChildPrefix = $childPrefix.($isLast ? '    ' : '│   ');
-            $this->renderVNode($vnode, $data, $vnodePrefix, $vnodeChildPrefix);
+            $this->renderVNode($vnode, $data, $isLast ? '└──' : '├──', $isLast ? '    ' : '│   ');
         }
+
+        $this->newLine();
     }
 
     protected function renderVNode($vnode, array $data, string $prefix, string $childPrefix): void
@@ -220,7 +188,7 @@ class ShfleetCommand extends Command
         } else {
             $vhostCount = $vhosts->count();
 
-            $vnodeIcon = match ($vnode->role) {
+            $vnodeIcon = match ($vnode->role ?? 'server') {
                 'workstation' => '💻',
                 'hypervisor' => '🖥️',
                 'nameserver' => '🌐',
@@ -260,7 +228,7 @@ class ShfleetCommand extends Command
             $vservCount = $vservs->count();
 
             $vhostIcon = '🌐';
-            $statusIcon = match ($vhost->status) {
+            $statusIcon = match ($vhost->status ?? 'unknown') {
                 'active' => '✅',
                 'inactive' => '⏸️',
                 'error' => '❌',
@@ -325,27 +293,25 @@ class ShfleetCommand extends Command
         $this->newLine();
         info('📊 Fleet Statistics');
 
-        $venueCount = $data['venues']->count();
-        $vsiteCount = $data['vsites']->flatten()->count();
+        $vsiteCount = $data['vsites']->count();
         $vnodeCount = $data['vnodes']->flatten()->count();
         $vhostCount = $data['vhosts']->flatten()->count();
         $vservCount = $data['vservs']->flatten()->count();
 
         $stats = [
             ['Component', 'Count'],
-            ['Venues', $venueCount],
             ['VSites', $vsiteCount],
             ['VNodes', $vnodeCount],
             ['VHosts', $vhostCount],
             ['VServs', $vservCount],
             ['─────────', '─────'],
-            ['Total', $venueCount + $vsiteCount + $vnodeCount + $vhostCount + $vservCount],
+            ['Total', $vsiteCount + $vnodeCount + $vhostCount + $vservCount],
         ];
 
         table($stats);
 
         // Technology breakdown
-        $techStats = $data['vsites']->flatten()
+        $techStats = $data['vsites']
             ->groupBy('technology')
             ->map->count()
             ->sortDesc();

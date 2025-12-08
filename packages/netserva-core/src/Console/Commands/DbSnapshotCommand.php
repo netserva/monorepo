@@ -12,29 +12,40 @@ use Illuminate\Support\Facades\File;
  * Create a database snapshot (SQL dump)
  *
  * Works with SQLite and MySQL databases.
- * Snapshots are stored in storage/app/backups/
+ * Snapshots are stored in both:
+ *   - storage/app/backups/ (project-local)
+ *   - ~/.netserva/backups/db/ (external, survives git clean)
  */
 class DbSnapshotCommand extends Command
 {
     protected $signature = 'db:snapshot
                             {name? : Optional name for the snapshot (defaults to timestamp)}
-                            {--connection= : Database connection to use}';
+                            {--connection= : Database connection to use}
+                            {--quiet : Suppress output}';
 
     protected $description = 'Create a database snapshot (SQL dump) for backup/restore';
 
     protected string $backupPath;
 
+    protected string $externalBackupPath;
+
     public function __construct()
     {
         parent::__construct();
         $this->backupPath = storage_path('app/backups');
+        $this->externalBackupPath = ($_SERVER['HOME'] ?? getenv('HOME')).'/.netserva/backups/db';
     }
 
     public function handle(): int
     {
-        // Ensure backup directory exists
+        $quiet = $this->option('quiet');
+
+        // Ensure backup directories exist
         if (! File::isDirectory($this->backupPath)) {
             File::makeDirectory($this->backupPath, 0755, true);
+        }
+        if (! File::isDirectory($this->externalBackupPath)) {
+            @mkdir($this->externalBackupPath, 0700, true);
         }
 
         $connection = $this->option('connection') ?? config('database.default');
@@ -44,7 +55,9 @@ class DbSnapshotCommand extends Command
         $filename = "{$name}_{$connection}.sql";
         $filepath = "{$this->backupPath}/{$filename}";
 
-        $this->components->info("Creating snapshot: {$filename}");
+        if (! $quiet) {
+            $this->components->info("Creating snapshot: {$filename}");
+        }
 
         try {
             $result = match ($driver) {
@@ -56,20 +69,30 @@ class DbSnapshotCommand extends Command
 
             if ($result) {
                 $size = $this->formatBytes(File::size($filepath));
-                $this->components->success("Snapshot created: {$filepath} ({$size})");
 
-                // Show table counts
-                $this->showTableSummary($connection);
+                // Copy to external backup location (survives git clean)
+                $externalPath = "{$this->externalBackupPath}/{$filename}";
+                File::copy($filepath, $externalPath);
+
+                if (! $quiet) {
+                    $this->components->success("Snapshot created: {$filepath} ({$size})");
+                    $this->components->info("External copy: {$externalPath}");
+                    $this->showTableSummary($connection);
+                }
 
                 return self::SUCCESS;
             }
 
-            $this->components->error('Failed to create snapshot');
+            if (! $quiet) {
+                $this->components->error('Failed to create snapshot');
+            }
 
             return self::FAILURE;
 
         } catch (\Exception $e) {
-            $this->components->error("Snapshot failed: {$e->getMessage()}");
+            if (! $quiet) {
+                $this->components->error("Snapshot failed: {$e->getMessage()}");
+            }
 
             return self::FAILURE;
         }
@@ -167,8 +190,8 @@ class DbSnapshotCommand extends Command
         $this->components->twoColumnDetail('Tables backed up', (string) count($tables));
 
         // Show row counts for key tables
-        $keyTables = ['dns_zones', 'dns_records', 'wireguard_servers', 'wireguard_peers',
-            'fleet_vnodes', 'fleet_vhosts', 'ip_networks', 'ssh_hosts'];
+        $keyTables = ['vpass', 'ssh_hosts', 'fleet_vsites', 'fleet_vnodes', 'fleet_vhosts',
+            'dns_zones', 'dns_records', 'dns_providers'];
 
         foreach ($keyTables as $table) {
             try {

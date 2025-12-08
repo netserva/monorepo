@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('password');
             $table->boolean('is_admin')->default(false);
             $table->string('avatar')->nullable();
-            $table->foreignId('palette_id')->nullable()->constrained('palettes')->nullOnDelete();
+            $table->unsignedBigInteger('palette_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -102,12 +102,9 @@ class DomainRegistrationResource extends Resource
                     ->hintIconTooltip('Current status of the domain registration'),
             ]),
 
-            Forms\Components\KeyValue::make('registrant_contact')
+            Forms\Components\TextInput::make('registrant_contact')
                 ->label('Registrant Contact')
-                ->keyLabel('Field')
-                ->valueLabel('Value')
-                ->addActionLabel('Add contact field')
-                ->default([])
+                ->maxLength(255)
                 ->hintIcon('heroicon-o-question-mark-circle')
                 ->hintIconTooltip('Contact information for domain owner'),
 

@@ -226,6 +226,8 @@ class NetServaCoreServiceProvider extends ServiceProvider
             \NetServa\Core\Console\Commands\DbSnapshotCommand::class,
             \NetServa\Core\Console\Commands\DbRestoreCommand::class,
             \NetServa\Core\Console\Commands\DbListCommand::class,
+            \NetServa\Core\Console\Commands\DbExportCommand::class,
+            \NetServa\Core\Console\Commands\DbImportCommand::class,
         ]);
     }
 

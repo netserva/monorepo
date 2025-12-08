@@ -74,13 +74,10 @@ expect()->extend('toBeValidVnode', function () {
 
 function createTestFleetInfrastructure(array $attributes = []): array
 {
-    $venue = \NetServa\Fleet\Models\FleetVenue::factory()->create([
-        'name' => $attributes['venue_name'] ?? 'test-datacenter',
-    ]);
-
     $vsite = \NetServa\Fleet\Models\FleetVsite::factory()->create([
-        'venue_id' => $venue->id,
         'name' => $attributes['vsite_name'] ?? 'test-vsite',
+        'provider' => $attributes['provider'] ?? 'local',
+        'technology' => $attributes['technology'] ?? 'proxmox',
     ]);
 
     $vnode = \NetServa\Fleet\Models\FleetVnode::factory()->create([
@@ -89,7 +86,6 @@ function createTestFleetInfrastructure(array $attributes = []): array
     ]);
 
     return [
-        'venue' => $venue,
         'vsite' => $vsite,
         'vnode' => $vnode,
     ];

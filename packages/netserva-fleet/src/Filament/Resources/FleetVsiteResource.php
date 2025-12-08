@@ -96,6 +96,7 @@ class FleetVsiteResource extends Resource
 
                         Forms\Components\KeyValue::make('api_credentials')
                             ->helperText('API credentials (encrypted storage)')
+                            ->default([])
                             ->columnSpanFull(),
                     ])
                     ->columns(1),

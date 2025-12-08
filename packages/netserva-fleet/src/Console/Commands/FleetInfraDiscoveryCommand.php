@@ -5,7 +5,6 @@ namespace NetServa\Fleet\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 use NetServa\Core\Models\SshHost;
-use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVhost;
 use NetServa\Fleet\Models\FleetVnode;
 use NetServa\Fleet\Models\FleetVsite;
@@ -398,21 +397,17 @@ class FleetInfraDiscoveryCommand extends Command
             $this->cleanIncorrectData();
         }
 
-        info('Classifying SSH hosts into Venues, VSites, VNodes, and VHosts...');
+        info('Classifying SSH hosts into VSites, VNodes, and VHosts...');
 
         $sshHosts = SshHost::all();
-        $created = ['venues' => 0, 'vsites' => 0, 'vnodes' => 0, 'vhosts' => 0];
+        $created = ['vsites' => 0, 'vnodes' => 0, 'vhosts' => 0];
         $skipped = 0;
 
-        // First pass: Create Venues
-        $venuesCreated = $this->createVenues();
-        $created['venues'] = $venuesCreated;
-
-        // Second pass: Create VSites
+        // First pass: Create VSites
         $vsitesCreated = $this->createVSites();
         $created['vsites'] = $vsitesCreated;
 
-        // Third pass: Create VNodes
+        // Second pass: Create VNodes
         foreach ($sshHosts as $sshHost) {
             $classification = $this->classifySshHost($sshHost);
 
@@ -425,7 +420,7 @@ class FleetInfraDiscoveryCommand extends Command
             }
         }
 
-        // Fourth pass: Create VHosts
+        // Third pass: Create VHosts
         foreach ($sshHosts as $sshHost) {
             $classification = $this->classifySshHost($sshHost);
 
@@ -439,34 +434,12 @@ class FleetInfraDiscoveryCommand extends Command
         }
 
         info('✅ Infrastructure classification complete:');
-        info("  Venues created: {$created['venues']}");
         info("  VSites created: {$created['vsites']}");
         info("  VNodes created: {$created['vnodes']}");
         info("  VHosts created: {$created['vhosts']}");
         info("  Skipped: {$skipped}");
 
         return self::SUCCESS;
-    }
-
-    protected function createVenues(): int
-    {
-        $created = 0;
-
-        // Create a default "Local" venue for all local infrastructure
-        if (! FleetVenue::where('name', 'local-infrastructure')->exists()) {
-            FleetVenue::create([
-                'name' => 'local-infrastructure',
-                'slug' => 'local-infrastructure',
-                'provider' => 'local',
-                'location' => 'Local Infrastructure',
-                'description' => 'Local development and homelab infrastructure',
-                'status' => 'active',
-                'is_active' => true,
-            ]);
-            $created++;
-        }
-
-        return $created;
     }
 
     protected function cleanIncorrectData(): void
@@ -493,18 +466,11 @@ class FleetInfraDiscoveryCommand extends Command
     {
         $created = 0;
 
-        // Get the default local venue
-        $venue = FleetVenue::where('name', 'local-infrastructure')->first();
-        if (! $venue) {
-            return 0;
-        }
-
         foreach ($this->vsitePatterns as $vsiteName => $config) {
             if (! FleetVsite::where('name', $vsiteName)->exists()) {
                 FleetVsite::create([
                     'name' => $vsiteName,
                     'slug' => str($vsiteName)->slug(),
-                    'venue_id' => $venue->id,
                     'provider' => $config['provider'],
                     'technology' => $config['technology'],
                     'location' => $config['location'] ?? null,

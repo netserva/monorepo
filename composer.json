@@ -89,6 +89,10 @@
         ],
         "safe-fresh": [
             "./scripts/safe-migrate-fresh.sh"
+        ],
+        "db:fresh": [
+            "./scripts/backup-db.sh pre-fresh",
+            "@php artisan migrate:fresh"
         ]
     },
     "extra": {

@@ -131,7 +131,8 @@ return new class extends Migration
 
             $table->index('is_active');
             $table->index('parent_theme');
-            $table->foreign('parent_theme')->references('name')->on('cms_themes')->nullOnDelete();
+            // Note: Self-referential FK on string column removed for MySQL compatibility
+            // Parent theme validation handled at application level
         });
 
         // CMS Theme Settings

@@ -3,7 +3,6 @@
 namespace NetServa\Fleet\Console\Commands;
 
 use Illuminate\Console\Command;
-use NetServa\Fleet\Models\FleetVenue;
 use NetServa\Fleet\Models\FleetVsite;
 
 use function Laravel\Prompts\confirm;
@@ -17,44 +16,18 @@ use function Laravel\Prompts\warning;
  * Interactive VSite Discovery Command
  *
  * Helps users register new infrastructure sites (providers/environments)
+ * VSite is now the top of the hierarchy: VSite → VNode → VHost
  */
 class DiscoverVSitesCommand extends Command
 {
-    protected $signature = 'fleet:discover-vsites {--name= : VSite name (e.g., prod-proxmox)} {--venue= : Venue to add this VSite to}';
+    protected $signature = 'fleet:discover-vsites {--name= : VSite name (e.g., prod-proxmox)}';
 
     protected $description = 'Interactively discover and register VSites (infrastructure clusters)';
 
     public function handle(): int
     {
         info('🏗️  NetServa Fleet VSite Discovery');
-        info('Register a new infrastructure site (cluster/group within a venue)');
-
-        // Get or select Venue
-        $venueName = $this->option('venue');
-        if (! $venueName) {
-            $venues = FleetVenue::active()->pluck('name', 'id')->toArray();
-
-            if (empty($venues)) {
-                error('No venues found. Run: php artisan fleet:discover-venues first');
-
-                return self::FAILURE;
-            }
-
-            $venueId = select(
-                label: 'Select venue for this VSite',
-                options: $venues
-            );
-        } else {
-            $venue = FleetVenue::where('name', $venueName)->first();
-            if (! $venue) {
-                error("Venue '{$venueName}' not found!");
-
-                return self::FAILURE;
-            }
-            $venueId = $venue->id;
-        }
-
-        $venue = FleetVenue::find($venueId);
+        info('Register a new infrastructure site (VSite is the top of the hierarchy)');
 
         $name = $this->option('name') ?: text(
             label: 'VSite name',
@@ -73,6 +46,22 @@ class DiscoverVSitesCommand extends Command
         // Parse name components or ask for them
         $components = $this->parseVSiteName($name);
 
+        $provider = select(
+            label: 'Infrastructure provider',
+            options: [
+                'local' => 'Local (homelab, on-premise)',
+                'binarylane' => 'BinaryLane',
+                'vultr' => 'Vultr',
+                'digitalocean' => 'DigitalOcean',
+                'aws' => 'AWS',
+                'azure' => 'Azure',
+                'gcp' => 'Google Cloud',
+                'customer' => 'Customer-provided',
+                'other' => 'Other',
+            ],
+            default: 'local'
+        );
+
         $technology = $components['technology'] ?: select(
             label: 'Technology platform',
             options: [
@@ -86,6 +75,11 @@ class DiscoverVSitesCommand extends Command
                 'mixed' => 'Mixed technologies',
             ],
             default: 'proxmox'
+        );
+
+        $location = text(
+            label: 'Location (optional)',
+            placeholder: 'e.g., sydney, us-west, home-office'
         );
 
         $description = text(
@@ -137,9 +131,10 @@ class DiscoverVSitesCommand extends Command
         // Show summary
         info('VSite Configuration Summary:');
         $this->table(['Property', 'Value'], [
-            ['Venue', $venue->name],
             ['Name', $name],
+            ['Provider', $provider],
             ['Technology', $technology],
+            ['Location', $location ?: 'None'],
             ['Description', $description ?: 'None'],
             ['API Endpoint', $apiEndpoint ?: 'None'],
             ['Has Credentials', $apiCredentials ? 'Yes' : 'No'],
@@ -154,13 +149,12 @@ class DiscoverVSitesCommand extends Command
 
         try {
             $vsite = FleetVsite::create([
-                'venue_id' => $venue->id,
                 'name' => $name,
                 'slug' => str($name)->slug(),
-                'provider' => $venue->provider,
+                'provider' => $provider,
                 'technology' => $technology,
-                'location' => $venue->location,
-                'description' => $description,
+                'location' => $location ?: null,
+                'description' => $description ?: null,
                 'api_endpoint' => $apiEndpoint,
                 'api_credentials' => $apiCredentials ? encrypt(json_encode($apiCredentials)) : null,
                 'capabilities' => $capabilities,

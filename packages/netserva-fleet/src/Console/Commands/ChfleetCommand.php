@@ -42,7 +42,7 @@ class ChfleetCommand extends Command
         $this->newLine();
         $this->line('For normal operations, use:');
         $this->line('  • addfleet <vnode>     : Discover infrastructure via SSH');
-        $this->line('  • addvenue/addvsite/addvnode : Create infrastructure manually');
+        $this->line('  • addvsite/addvnode    : Create infrastructure manually');
         $this->newLine();
 
         $this->dryRun = $this->option('dry-run');
@@ -95,7 +95,7 @@ class ChfleetCommand extends Command
             $this->line('To set up your fleet in NetServa 3.0:');
             $this->line('  1. Create SSH hosts:    addssh <host> <hostname>');
             $this->line('  2. Discover infrastructure: addfleet <vnode>');
-            $this->line('  3. Or create manually:  addvenue → addvsite → addvnode');
+            $this->line('  3. Or create manually:  addvsite → addvnode');
             throw new \Exception("Legacy var/ directory not found: {$varBase}");
         }
 
