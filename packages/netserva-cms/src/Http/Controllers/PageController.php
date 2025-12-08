@@ -16,12 +16,19 @@ class PageController
 {
     /**
      * Display the homepage
+     *
+     * Fallback to Laravel welcome view if no homepage exists (e.g., fresh install)
      */
     public function home(): View
     {
         $page = Page::published()
             ->where('template', 'homepage')
-            ->firstOrFail();
+            ->first();
+
+        // Fallback to Laravel welcome page if no homepage exists
+        if (! $page) {
+            return view('welcome');
+        }
 
         return view('pages.templates.homepage', [
             'page' => $page,

@@ -5,15 +5,8 @@ declare(strict_types=1);
 namespace NetServa\Core\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use NetServa\Core\Models\SshHost;
-use NetServa\Core\Models\VPass;
-use NetServa\Dns\Models\DnsProvider;
-use NetServa\Dns\Models\DnsRecord;
-use NetServa\Dns\Models\DnsZone;
-use NetServa\Fleet\Models\FleetVhost;
-use NetServa\Fleet\Models\FleetVnode;
-use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Export database to JSON (database-agnostic)
@@ -31,22 +24,24 @@ class DbExportCommand extends Command
     protected string $exportPath;
 
     /**
-     * Tables to export in dependency order (parents before children)
+     * Tables to exclude from export (Laravel internal tables)
      */
-    protected array $tables = [
-        // Core
-        'vpass' => VPass::class,
-        'ssh_hosts' => SshHost::class,
-
-        // Fleet (order matters for FKs)
-        'fleet_vsites' => FleetVsite::class,
-        'fleet_vnodes' => FleetVnode::class,
-        'fleet_vhosts' => FleetVhost::class,
-
-        // DNS
-        'dns_providers' => DnsProvider::class,
-        'dns_zones' => DnsZone::class,
-        'dns_records' => DnsRecord::class,
+    protected array $excludedTables = [
+        'migrations',
+        'cache',
+        'cache_locks',
+        'jobs',
+        'job_batches',
+        'failed_jobs',
+        'password_reset_tokens',
+        'sessions',
+        'personal_access_tokens',
+        'pulse_aggregates',
+        'pulse_entries',
+        'pulse_values',
+        'telescope_entries',
+        'telescope_entries_tags',
+        'telescope_monitoring',
     ];
 
     public function __construct()
@@ -84,31 +79,52 @@ class DbExportCommand extends Command
 
         $totalRecords = 0;
 
-        foreach ($this->tables as $tableName => $modelClass) {
-            if (! class_exists($modelClass)) {
-                if (! $quiet) {
-                    $this->components->warn("Skipping {$tableName}: Model not found");
-                }
+        // Dynamically get all tables from database schema
+        $allTables = DB::getSchemaBuilder()->getTables();
 
-                continue;
-            }
+        // Filter out excluded tables and sort by name for consistency
+        $tablesToExport = collect($allTables)
+            ->map(fn($table) => $table['name'])
+            ->reject(fn($tableName) => in_array($tableName, $this->excludedTables))
+            ->reject(fn($tableName) => str_starts_with($tableName, 'sqlite_')) // SQLite internal
+            ->sort()
+            ->values();
 
+        foreach ($tablesToExport as $tableName) {
             try {
-                $records = $modelClass::all();
-                $count = $records->count();
+                // Special handling for VPass: decrypt passwords for portable backup
+                if ($tableName === 'vpass' && class_exists(\NetServa\Core\Models\VPass::class)) {
+                    $records = \NetServa\Core\Models\VPass::all();
+                    $count = $records->count();
 
-                if ($count > 0) {
-                    // For VPass, decrypt passwords for plain text backup
-                    if ($modelClass === VPass::class) {
+                    if ($count > 0) {
                         $export['tables'][$tableName] = $records->map(function ($record) {
                             $data = $record->toArray();
-                            $data['password'] = $record->getSecret(); // Decrypt
+                            // Decrypt password to plain text for APP_KEY portability
+                            $data['password'] = $record->getSecret();
 
                             return $data;
                         })->toArray();
-                    } else {
-                        $export['tables'][$tableName] = $records->toArray();
+
+                        $totalRecords += $count;
+
+                        if (! $quiet) {
+                            $this->components->twoColumnDetail($tableName, (string) $count);
+                        }
                     }
+
+                    continue;
+                }
+
+                // Standard export for all other tables
+                $records = DB::table($tableName)->get();
+                $count = $records->count();
+
+                if ($count > 0) {
+                    // Convert to array
+                    $export['tables'][$tableName] = $records->map(function ($record) {
+                        return (array) $record;
+                    })->toArray();
 
                     $totalRecords += $count;
 

@@ -7,14 +7,6 @@ namespace NetServa\Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use NetServa\Core\Models\SshHost;
-use NetServa\Core\Models\VPass;
-use NetServa\Dns\Models\DnsProvider;
-use NetServa\Dns\Models\DnsRecord;
-use NetServa\Dns\Models\DnsZone;
-use NetServa\Fleet\Models\FleetVhost;
-use NetServa\Fleet\Models\FleetVnode;
-use NetServa\Fleet\Models\FleetVsite;
 
 /**
  * Import database from JSON (database-agnostic)
@@ -32,25 +24,6 @@ class DbImportCommand extends Command
     protected $description = 'Import database from JSON export (works across SQLite/MySQL)';
 
     protected string $importPath;
-
-    /**
-     * Tables to import in dependency order (parents before children)
-     */
-    protected array $tables = [
-        // Core
-        'vpass' => VPass::class,
-        'ssh_hosts' => SshHost::class,
-
-        // Fleet (order matters for FKs)
-        'fleet_vsites' => FleetVsite::class,
-        'fleet_vnodes' => FleetVnode::class,
-        'fleet_vhosts' => FleetVhost::class,
-
-        // DNS
-        'dns_providers' => DnsProvider::class,
-        'dns_zones' => DnsZone::class,
-        'dns_records' => DnsRecord::class,
-    ];
 
     public function __construct()
     {
@@ -151,10 +124,12 @@ class DbImportCommand extends Command
         // TRUNCATE resets auto_increment which is essential for preserving original IDs
         if ($driver === 'mysql' && $this->option('truncate')) {
             // Truncate in reverse order (children before parents) to avoid FK issues
-            $tableNames = array_keys($this->tables);
+            $tableNames = array_keys($export['tables']);
             foreach (array_reverse($tableNames) as $tableName) {
-                if (isset($export['tables'][$tableName])) {
+                try {
                     DB::statement("TRUNCATE TABLE {$tableName}");
+                } catch (\Exception $e) {
+                    $this->components->warn("Could not truncate {$tableName}: {$e->getMessage()}");
                 }
             }
         }
@@ -162,18 +137,45 @@ class DbImportCommand extends Command
         DB::beginTransaction();
 
         try {
-            foreach ($this->tables as $tableName => $modelClass) {
-                if (! isset($export['tables'][$tableName])) {
+            // Import all tables from JSON file dynamically
+            foreach ($export['tables'] as $tableName => $records) {
+                // Check if table exists in current database schema
+                if (! DB::getSchemaBuilder()->hasTable($tableName)) {
+                    $this->components->warn("Skipping {$tableName}: Table does not exist in current schema");
                     continue;
                 }
 
-                if (! class_exists($modelClass)) {
-                    $this->components->warn("Skipping {$tableName}: Model not found");
+                // Special handling for VPass: re-encrypt passwords with new APP_KEY
+                if ($tableName === 'vpass' && class_exists(\NetServa\Core\Models\VPass::class)) {
+                    // Clear table if requested
+                    if ($this->option('truncate')) {
+                        if ($driver === 'sqlite') {
+                            DB::table($tableName)->delete();
+                            DB::statement("DELETE FROM sqlite_sequence WHERE name='{$tableName}'");
+                        }
+                    }
+
+                    $tableImported = 0;
+                    $tableErrors = 0;
+
+                    foreach ($records as $record) {
+                        try {
+                            // Use Eloquent to re-encrypt password with new APP_KEY
+                            \NetServa\Core\Models\VPass::create($record);
+                            $tableImported++;
+                        } catch (\Exception $e) {
+                            $tableErrors++;
+                            $recordId = $record['id'] ?? 'unknown';
+                            $this->components->warn("  ↳ Record ID {$recordId}: {$e->getMessage()}");
+                        }
+                    }
+
+                    $imported += $tableImported;
+                    $errors += $tableErrors;
+                    $this->components->twoColumnDetail($tableName, "{$tableImported} imported".($tableErrors ? " ({$tableErrors} errors)" : ''));
 
                     continue;
                 }
-
-                $records = $export['tables'][$tableName];
 
                 // Clear table if requested - for SQLite use DELETE (MySQL already TRUNCATED above)
                 if ($this->option('truncate') && $driver === 'sqlite') {
@@ -214,18 +216,9 @@ class DbImportCommand extends Command
                 $tableImported = 0;
                 $tableErrors = 0;
 
-                // VPass requires Eloquent insert (encrypted cast must re-encrypt passwords)
-                $useEloquent = ($modelClass === VPass::class);
-
                 foreach ($chunks as $chunk) {
                     try {
-                        if ($useEloquent) {
-                            // Use Eloquent for models with encrypted casts
-                            foreach ($chunk as $record) {
-                                $modelClass::create($record);
-                                $tableImported++;
-                            }
-                        } elseif ($this->option('truncate')) {
+                        if ($this->option('truncate')) {
                             // Fresh import - use insert to preserve original IDs
                             DB::table($tableName)->insert($chunk);
                             $tableImported += count($chunk);
@@ -238,10 +231,17 @@ class DbImportCommand extends Command
                         // Fall back to individual inserts for this chunk
                         foreach ($chunk as $record) {
                             try {
-                                $modelClass::updateOrCreate(['id' => $record['id']], $record);
+                                if ($this->option('truncate')) {
+                                    DB::table($tableName)->insert($record);
+                                } else {
+                                    DB::table($tableName)->upsert([$record], ['id']);
+                                }
                                 $tableImported++;
                             } catch (\Exception $e2) {
                                 $tableErrors++;
+                                // Log detailed error for debugging
+                                $recordId = $record['id'] ?? 'unknown';
+                                $this->components->warn("  ↳ Record ID {$recordId}: {$e2->getMessage()}");
                             }
                         }
                     }
@@ -256,13 +256,14 @@ class DbImportCommand extends Command
 
             // Reset auto_increment for MySQL after commit (DDL causes implicit commit, can't be in transaction)
             if ($driver === 'mysql' && $this->option('truncate')) {
-                foreach ($this->tables as $tableName => $modelClass) {
-                    if (! isset($export['tables'][$tableName])) {
-                        continue;
-                    }
-                    $maxId = collect($export['tables'][$tableName])->max('id') ?? 0;
+                foreach ($export['tables'] as $tableName => $records) {
+                    $maxId = collect($records)->max('id') ?? 0;
                     if ($maxId > 0) {
-                        DB::statement("ALTER TABLE {$tableName} AUTO_INCREMENT = ".($maxId + 1));
+                        try {
+                            DB::statement("ALTER TABLE {$tableName} AUTO_INCREMENT = ".($maxId + 1));
+                        } catch (\Exception $e) {
+                            // Ignore errors (table might not have auto_increment)
+                        }
                     }
                 }
             }
