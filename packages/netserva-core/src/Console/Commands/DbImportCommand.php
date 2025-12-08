@@ -214,16 +214,26 @@ class DbImportCommand extends Command
                 $tableImported = 0;
                 $tableErrors = 0;
 
+                // VPass requires Eloquent insert (encrypted cast must re-encrypt passwords)
+                $useEloquent = ($modelClass === VPass::class);
+
                 foreach ($chunks as $chunk) {
                     try {
-                        if ($this->option('truncate')) {
+                        if ($useEloquent) {
+                            // Use Eloquent for models with encrypted casts
+                            foreach ($chunk as $record) {
+                                $modelClass::create($record);
+                                $tableImported++;
+                            }
+                        } elseif ($this->option('truncate')) {
                             // Fresh import - use insert to preserve original IDs
                             DB::table($tableName)->insert($chunk);
+                            $tableImported += count($chunk);
                         } else {
                             // Merge/update - use upsert
                             DB::table($tableName)->upsert($chunk, ['id']);
+                            $tableImported += count($chunk);
                         }
-                        $tableImported += count($chunk);
                     } catch (\Exception $e) {
                         // Fall back to individual inserts for this chunk
                         foreach ($chunk as $record) {
