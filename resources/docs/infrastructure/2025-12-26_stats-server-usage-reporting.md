@@ -7,6 +7,7 @@ Unified server usage statistics collection and reporting system for NetServa 3.0
 | Date | Change |
 |------|--------|
 | 2025-12-26 | Initial implementation on mrn with daily/weekly/monthly reports |
+| 2025-12-26 | Refactored to run from ~/.rc/stats.d, DB at /var/lib/sqlite/stats.db |
 
 ## Overview
 
@@ -17,32 +18,31 @@ Unified server usage statistics collection and reporting system for NetServa 3.0
 Currently installed on: **mrn** (mail.renta.net)
 
 ```
-/usr/local/bin/stats                    # CLI
-/usr/local/lib/serverstats/             # Libraries and collectors
-/var/lib/serverstats/stats.db           # SQLite database
+~/.rc/stats                             # CLI wrapper (in PATH)
+~/.rc/stats.d/                          # Libraries, collectors, reports
+/var/lib/sqlite/stats.db                # SQLite database
 /etc/cron.d/stats                       # Cron jobs
 /var/log/stats.log                      # Log file
 ```
 
 ## Runbook: Setup on New Server
 
-**Time:** ~15 minutes
+**Time:** ~10 minutes
 
 ### Prerequisites
 ```bash
 apt install sqlite3 vnstat jq bc
 ```
 
-### 1. Copy scripts from existing server
+### 1. Sync ~/.rc from workstation
 ```bash
-scp -r mrn:/usr/local/lib/serverstats /usr/local/lib/
-scp mrn:/usr/local/bin/stats /usr/local/bin/
-chmod +x /usr/local/bin/stats
+~/.rc/rcm sync <vnode>
 ```
 
-### 2. Initialize database
+### 2. On server: fix permissions and init DB
 ```bash
-mkdir -p /var/lib/serverstats
+chmod -R 755 ~/.rc/stats*
+mkdir -p /var/lib/sqlite
 stats init
 ```
 
@@ -67,10 +67,13 @@ systemctl restart dovecot
 ### 4. Set up cron
 ```bash
 cat > /etc/cron.d/stats << 'EOF'
-10 0 * * * root /usr/local/bin/stats collect >> /var/log/stats.log 2>&1
-15 0 * * * root /usr/local/bin/stats report --email >> /var/log/stats.log 2>&1
-30 0 * * 1 root /usr/local/bin/stats report weekly --email >> /var/log/stats.log 2>&1
-0 1 1 * * root /usr/local/bin/stats report monthly --email >> /var/log/stats.log 2>&1
+SHELL=/bin/bash
+PATH=/root/.rc:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+10 0 * * * root stats collect >> /var/log/stats.log 2>&1
+15 0 * * * root stats report --email >> /var/log/stats.log 2>&1
+30 0 * * 1 root stats report weekly --email >> /var/log/stats.log 2>&1
+0 1 1 * * root stats report monthly --email >> /var/log/stats.log 2>&1
 EOF
 ```
 
@@ -82,7 +85,7 @@ stats report --email
 ```
 
 ### 6. Update REPORT_EMAIL
-Edit `/usr/local/lib/serverstats/lib/common.sh`:
+Edit `~/.rc/stats.d/lib/common.sh`:
 ```bash
 export REPORT_EMAIL="your@email.com"
 ```
