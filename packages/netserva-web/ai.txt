@@ -1,0 +1,135 @@
+# netserva-web Package
+
+Web server management (Nginx/PHP-FPM) for multi-tenant virtual hosting.
+
+## Purpose
+
+Complete web hosting lifecycle management:
+- Nginx virtual host provisioning
+- PHP-FPM pool configuration
+- SSL certificate lifecycle management
+- Web root and permission management
+- Site deployment and updates
+- Performance optimization
+
+## Key Models
+
+- **VWeb**: Web hosting configuration
+- **WebService**: Nginx and PHP-FPM service state
+- **SslCertificate**: SSL certificate lifecycle
+
+## Core Services
+
+- **VWebService**: Create, update, delete web hosts
+- **NginxService**: Nginx configuration generation
+- **PhpFpmService**: PHP-FPM pool management
+- **SslService**: Certificate provisioning and renewal
+- **DeploymentService**: Site deployment workflows
+
+## CRUD Commands
+
+Web commands follow NetServa naming convention:
+- `addvweb` - Provision new web host
+- `shvweb` - Show web host details
+- `chvweb` - Modify configuration
+- `delvweb` - Remove web host
+
+Non-CRUD:
+- `web:deploy` - Deploy application
+- `web:update-php` - Update PHP version
+- `ssl:cert list` - List certificates (netserva-web manages)
+
+## Key Features
+
+### Virtual Host Management
+- Multi-site hosting per server
+- Per-domain document roots
+- PHP version selection (8.1 - 8.4)
+- Process user isolation
+
+### Nginx Configuration
+- Single-file configs: `/etc/nginx/nginx.conf` + `/etc/nginx/sites-enabled/*`
+- Common includes: `/etc/nginx/common.conf`
+- SSL configuration per domain
+- Performance optimization (caching, compression)
+- Rate limiting native (no fail2ban)
+
+### PHP-FPM Pools
+- Per-vhost PHP-FPM pool: `/etc/php/8.4/fpm/pool.d/`
+- Process manager: dynamic
+- Pool configuration in vconfs table
+- Separate user per domain (www-vhost1, www-vhost2)
+
+### SSL Certificates
+- Let's Encrypt integration
+- ACME challenge handling
+- Automatic renewal
+- Certificate status monitoring
+
+### Document Root Management
+- Automatic creation per domain
+- Permission configuration (600/644/755)
+- Symlink support for deployments
+- Backup before modifications
+
+## Database Tables
+
+- `web_vhosts` - Virtual host configuration
+- `web_services` - Nginx and PHP-FPM state
+- `ssl_certificates` - SSL cert lifecycle
+- `web_logs` - Deployment and change logs
+
+## Configuration
+
+Database-first via vconfs table:
+- `WPATH`: Web document root
+- `WUSER`: Process user
+- `WPHPV`: PHP version
+- `WSSL`: SSL enabled
+- Service control via `sc()` function
+
+## Remote Execution
+
+All web operations via `RemoteExecutionService::executeScript()`:
+- Nginx configuration generation
+- PHP-FPM pool creation
+- Document root setup
+- Permission configuration
+- Service reload/restart
+
+## Testing
+
+- Feature tests: virtual host CRUD
+- Nginx config validation
+- PHP-FPM pool configuration
+- SSL certificate provisioning
+- Deployment workflows
+
+## Constraints
+
+- Web host must belong to a VNode
+- Document root must be accessible via SSH
+- PHP version must be installed on target server
+- Cannot delete vhost while SSL renewal in progress
+- Nginx reload must succeed before vhost activation
+
+## Performance Considerations
+
+- Nginx rate limiting (built-in, no external tools)
+- PHP-FPM process manager: dynamic (scales with load)
+- Gzip compression enabled by default
+- Browser caching headers optimized
+- Database connection pooling in PHP
+
+## Related Packages
+
+- **netserva-core**: Base services and SSH
+- **netserva-fleet**: VHost to web host linking
+- **netserva-dns**: Domain and DNS configuration
+- **netserva-ops**: Monitoring and backup
+
+See parent [ai.txt](../../ai.txt) for platform overview.
+
+---
+
+Web server management for NetServa 3.0.

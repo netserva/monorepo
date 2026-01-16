@@ -1,0 +1,165 @@
+# NetServa 3.0 Platform
+
+NetServa 3.0 is a modern, plugin-based Laravel infrastructure management platform built on Laravel 12 + Filament 4.0 + Pest 4.0.
+
+## What It Is
+
+A comprehensive system for managing multi-server infrastructure through unified web (Filament 4.0) and CLI (Laravel Artisan) interfaces. Uses database-first architecture (all config in `vconfs` table, 54+ variables per vhost).
+
+## Architecture
+
+### Platform Hierarchy (6 Layers)
+```
+venue → vsite → vnode → vhost + vconf → vserv
+```
+
+- **venue**: Physical location/datacenter
+- **vsite**: Logical grouping (production, staging)
+- **vnode**: Server/VM/container
+- **vhost**: Virtual hosting domain
+- **vconf**: Configuration variables (database-driven)
+- **vserv**: Services (nginx, php-fpm, postfix, dovecot)
+
+### Plugin System
+- 11 specialized packages in `packages/` (netserva-core, netserva-dns, netserva-mail, etc.)
+- Path repositories (Composer) for local monorepo development
+- Each plugin provides dual interfaces: CLI + Filament
+- Auto-discovery of resources and commands
+
+## Technology Stack
+
+- **PHP 8.4+** with Laravel 12
+- **Filament 4.0** for admin interface (SDUI framework on Livewire 3)
+- **Pest 4.0** for testing (unit, feature, browser)
+- **Laravel Prompts** for CLI interactions
+- **phpseclib 3.x** for SSH (certificate-free)
+- **SQLite** (dev) / **MySQL** (production)
+
+## Key Design Patterns
+
+### DRY Service Layer
+- Business logic in Services (`src/Services/`)
+- CLI Commands call Services (thin wrappers)
+- Filament Resources call SAME Services
+- 250+ commands, single source of truth
+
+### CRUD Naming Convention
+Pattern: `add<resource>` `sh<resource>` `ch<resource>` `del<resource>`
+Examples: `addvhost`, `shvhost`, `chvhost`, `delvhost`
+
+### Architecture Rules (MANDATORY)
+1. **Database-First**: ALL config in `vconfs` table - NEVER in files
+2. **Remote SSH**: Use `RemoteExecutionService::executeScript()` heredoc method
+3. **CLI Arguments**: Commands use `<command> <vnode> <vhost> [options]` - NO --flags
+4. **Service Control**: ALWAYS use `sc()` function (works Alpine/Debian/OpenWrt)
+5. **Testing**: ALL features include comprehensive Pest 4.0 tests
+6. **No File Config**: Nginx/Postfix/Dovecot configs generated, not committed
+
+## Directory Structure
+
+```
+.ns/
+├── app/                           # Main Laravel application
+│   ├── Filament/                  # Admin panel resources
+│   ├── Services/                  # Business logic services
+│   └── Console/Commands/          # CLI commands
+├── packages/                       # Plugin packages (path repos)
+│   ├── netserva-core/             # Foundation models, services, migrations
+│   ├── netserva-dns/              # DNS zones, PowerDNS integration
+│   ├── netserva-fleet/            # VNode/VHost/VConf management
+│   ├── netserva-mail/             # Postfix/Dovecot/Rspamd
+│   ├── netserva-web/              # Nginx/PHP-FPM virtual hosts
+│   ├── netserva-cms/              # CMS + landing pages
+│   └── ... (7 more packages)
+├── resources/docs/                # Documentation
+│   ├── NetServa_3.0_Coding_Style.md  # Full coding standards
+│   ├── SSH_EXECUTION_ARCHITECTURE.md
+│   ├── VHOST-VARIABLES.md
+│   └── self-learning/             # Agent/Runbook/Journal methodology
+├── tests/                         # Feature tests
+├── database/migrations/           # Core migrations
+├── .claude/                       # (gitignored) AI workflow artifacts
+│   ├── agents/                    # Domain-specific problem solvers
+│   ├── runbooks/                  # Step-by-step procedures
+│   └── journal/                   # Session history
+└── CLAUDE.md                      # Essential development rules
+
+## Critical Files
+
+- **CLAUDE.md**: Non-negotiable architecture & coding rules
+- **resources/docs/NetServa_3.0_Coding_Style.md**: Full style guide
+- **composer.json**: Path repositories define package locations
+- **resources/docs/SSH_EXECUTION_ARCHITECTURE.md**: SSH execution patterns
+- **resources/docs/VHOST-VARIABLES.md**: vconf variable reference
+
+## Development Guidelines
+
+### When Working on Features
+1. Read existing code before proposing changes
+2. Follow existing conventions (check sibling files)
+3. Place business logic in Services
+4. CLI commands call Services (thin wrappers)
+5. Write comprehensive Pest 4.0 tests
+6. Use `search-docs` MCP tool for Laravel/Filament questions
+7. Run `vendor/bin/pint` before finalizing
+
+### Remote Server Interaction
+- Use `RemoteExecutionService::executeScript()` with heredoc (NEVER copy scripts)
+- Execute FROM workstation TO remote via SSH
+- Single-file configs: `/etc/dovecot/dovecot.conf` (not conf.d/)
+- Use `sc()` function for service control
+
+### Filament 4.0 Patterns
+- Use Schema components: `Filament\Schemas\Components\`
+- All actions extend `Filament\Actions\Action`
+- Multiple fields to one column: separate field names + mutateBeforeSave()
+- deferFilters default to true (click button to apply)
+
+## Testing Requirements
+
+- **Pest 4.0** framework
+- Feature tests in `tests/Feature/` (preferred)
+- Unit tests in `tests/Unit/` (when isolated logic)
+- Browser tests in `tests/Browser/`
+- Factories for test data
+- All new features require comprehensive test coverage
+
+## AI Development Notes
+
+NetServa uses a **self-learning system** for development:
+- **Agents** (`.claude/agents/`): Domain expertise, contextual decisions
+- **Runbooks** (`.claude/runbooks/`): Step-by-step procedures with checkpoints
+- **Journal** (`.claude/journal/`): Session history and lessons learned
+
+See `resources/docs/self-learning/README.md` for methodology.
+
+## Security Context
+
+- SSH keys: Ed25519 by default, secure permissions (600)
+- Passwords: Auto-generated via `/dev/urandom`
+- Credentials: NEVER hardcoded, stored in `vconfs` table
+- Audit logging: Comprehensive activity tracking
+- File permissions: Auto-secured (600/644)
+
+## Constraints & Limitations
+
+- ⚠️ **Alpha Release (v0.0.x)** - APIs may change, not production-ready yet
+- Single `.env` file for configuration (see `NS_ADMIN_PREFIX`, `CMS_*` env vars)
+- vconfs table capacity: 54+ variables per vhost recommended maximum
+- SSH connections work only with SSH key infrastructure (no password auth)
+- Remote execution MUST use heredoc method (no script copying)
+
+## Related Contexts
+
+- See individual package `ai.txt` files for package-specific context
+- `CLAUDE.md` for non-negotiable rules
+- `resources/docs/` for detailed documentation
+- Package README files for usage examples
+
+## License
+
+MIT License - See LICENSE file
+
+---
+
+Built by NetServa development team using Claude Code (Anthropic's AI development tool).

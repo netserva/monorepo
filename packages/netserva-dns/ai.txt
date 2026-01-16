@@ -1,0 +1,108 @@
+# netserva-dns Package
+
+DNS zone and record management with PowerDNS integration for multi-provider DNS infrastructure.
+
+## Purpose
+
+Manages DNS zones and records across multiple providers:
+- PowerDNS native zones
+- Cloudflare integration (API-based)
+- Multi-provider failover support
+- DKIM/SPF/DMARC record generation
+- fcRDNS (reverse DNS) verification
+
+## Key Models
+
+- **DnsZone**: DNS zone (domain.com)
+- **DnsRecord**: Individual records (A, CNAME, MX, TXT, etc.)
+- **DnsProvider**: PowerDNS, Cloudflare, etc.
+- **DnsTemplate**: Record templates for automation
+
+## Core Services
+
+- **DnsZoneService**: Create, update, delete zones
+- **DnsRecordService**: Manage individual records
+- **PowerDnsService**: Native zone operations
+- **CloudflareService**: Cloudflare API integration
+- **DkimService**: Generate DKIM records for mail
+
+## CRUD Commands
+
+DNS commands follow NetServa naming convention:
+- `addzone` - Create new DNS zone
+- `shzone` - Show zone details and records
+- `chzone` - Modify zone settings
+- `delzone` - Delete zone
+
+- `addrec` - Add DNS record
+- `shrec` - Show record details
+- `chrec` - Modify record
+- `delrec` - Delete record
+
+## Key Features
+
+### Multi-Provider Support
+- PowerDNS: Native zone files/API
+- Cloudflare: API integration with fallback
+- Provider abstraction layer
+- Automatic failover configuration
+
+### Record Management
+- Standard record types (A, AAAA, CNAME, MX, TXT, NS)
+- Templating for common patterns
+- Bulk record operations
+- Zone file import/export
+
+### Email Integration
+- DKIM record generation and management
+- SPF/DMARC template generation
+- Automatic mail record configuration
+- DKIM signing key storage
+
+### Reverse DNS (fcRDNS)
+- Verify reverse DNS configuration
+- Generate reverse zone records
+- PTR record management
+
+## Database Tables
+
+- `dns_zones` - DNS zones
+- `dns_records` - Individual records
+- `dns_providers` - Provider configurations
+- `dns_templates` - Record templates
+- `dns_dkim_keys` - DKIM signing keys
+
+## PowerDNS Integration
+
+- Single-file configuration: `/etc/powerdns/pdns.conf`
+- Zone file directory: `/var/lib/powerdns/`
+- API integration for record management
+- Master/slave replication support
+
+## Testing
+
+- Feature tests: zone creation, record management
+- Provider mocking (PowerDNS, Cloudflare)
+- Zone file generation tests
+- DKIM/SPF/DMARC validation
+
+## Constraints
+
+- Zone must have valid root NS records
+- Record names must be within zone apex
+- DKIM requires mail service integration
+- PowerDNS requires nameserver configuration
+- Cannot delete zone with active vhosts
+
+## Related Packages
+
+- **netserva-core**: Base services
+- **netserva-fleet**: VHost to zone linking
+- **netserva-mail**: DKIM/SPF/DMARC integration
+- **netserva-ops**: Monitoring and alerting
+
+See parent [ai.txt](../../ai.txt) for platform overview.
+
+---
+
+DNS infrastructure management for NetServa 3.0.

@@ -1,0 +1,118 @@
+# netserva-fleet Package
+
+Infrastructure orchestration and VNode/VHost/VConf management - the central hub for multi-server infrastructure administration.
+
+## Purpose
+
+Manages the platform hierarchy for infrastructure:
+- VNode discovery and enrollment (servers, containers, VMs)
+- VHost provisioning and lifecycle
+- VConf (configuration variable) management
+- Server grouping through venues and vsites
+- Infrastructure assessment and monitoring
+
+## Key Models
+
+Extends netserva-core models:
+- **VNode**: Server/VM/container discovery and status
+- **VHost**: Virtual hosting domain lifecycle
+- **VConf**: 54+ configuration variables per vhost
+- Relationships defined in netserva-core
+
+## Core Services
+
+- **VNodeService**: Discovery, import, status monitoring
+- **VHostService**: CRUD operations, provisioning
+- **VConfService**: Configuration variable management
+- **FleetDiscoveryService**: Auto-discovery of infrastructure
+
+## Database Tables
+
+Additional tables beyond netserva-core:
+- `fleet_vnode_status` - Real-time server health
+- `fleet_vhost_logs` - Audit trail for vhost changes
+- Migration: `vconfs` expanded with 54+ standard variables
+
+## CRUD Commands
+
+Fleet commands follow NetServa naming convention:
+- `addvnode` - Register new server
+- `shvnode` - Show server details
+- `chvnode` - Modify server configuration
+- `delvnode` - Remove server
+
+- `addvhost` - Provision new virtual host
+- `shvhost` - Show virtual host details
+- `chvhost` - Modify virtual host
+- `delvhost` - Remove virtual host
+
+- `addvconf` - Initialize configuration variables
+- `shvconf` - Show vconf values
+- `chvconf` - Modify vconf value
+
+## Key Features
+
+### Infrastructure Discovery
+- Auto-discover servers from infrastructure
+- Classify by server type (web, mail, database, etc.)
+- Test SSH connectivity and keys
+
+### VHost Provisioning
+- Multi-step provisioning workflow
+- Automatic service initialization
+- Permission configuration
+- Database seeding
+
+### Configuration Management
+- Database-first approach (vconfs table)
+- 54+ variables per vhost (paths, credentials, settings)
+- Sensitive variable masking
+- Category-based organization
+
+## CLI Arguments Pattern
+
+All commands use positional arguments (no flags):
+```bash
+addvhost <vnode> <vhost> [options]
+chvhost <vnode> <vhost> --php-version=8.4
+shvconf <vnode> <vhost> [VARNAME]
+```
+
+NOT: `--vnode=markc --shost=example.com` (anti-pattern)
+
+## Remote Execution
+
+All remote operations via `RemoteExecutionService::executeScript()`:
+- No script copying to remote servers
+- Heredoc commands executed from workstation
+- SSH key authentication (phpseclib 3.x)
+- Returns output/status for validation
+
+## Testing
+
+- Feature tests: server discovery, vhost provisioning
+- Integration tests: end-to-end workflows
+- SSH mocking for unit tests
+- Factory data generation
+
+## Constraints
+
+- VNode must be discoverable via SSH
+- VHost must belong to a VSite
+- VSite must belong to a Venue
+- Cannot delete vnode with active vhosts
+- vconfs table: max 54+ variables per vhost
+
+## Related Packages
+
+- **netserva-core**: Base models and services
+- **netserva-web**: Web hosting integration
+- **netserva-mail**: Mail server integration
+- **netserva-dns**: DNS zone provisioning
+- **netserva-ops**: Server monitoring
+
+See parent [ai.txt](../../ai.txt) for platform hierarchy.
+
+---
+
+Central infrastructure orchestration hub for NetServa 3.0.

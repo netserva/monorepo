@@ -1,0 +1,91 @@
+# netserva-core Package
+
+Foundation package providing core models, services, database migrations, and SSH infrastructure for all NetServa plugins.
+
+## Purpose
+
+Provides the fundamental infrastructure that all other NetServa packages depend on:
+- Base models (Venue, VSite, VNode, VHost, VConf)
+- SSH execution and key management
+- Remote command execution
+- Database schema foundation
+- Test factories
+
+## Key Models
+
+- **Venue**: Physical location/datacenter
+- **VSite**: Logical grouping (production, staging)
+- **VNode**: Server/VM/container
+- **VHost**: Virtual hosting domain (website/service)
+- **VConf**: Configuration variables (54+ per vhost, database-driven)
+- **SshHost**: SSH connectivity and keys
+- **SshKey**: Ed25519 keys with secure permissions
+
+## Core Services
+
+- **RemoteExecutionService**: Executes commands on remote servers via SSH (heredoc method)
+- **SshKeyService**: Manages SSH keys (generate, store, load)
+- **VHostService**: VHost CRUD operations
+- **VConfService**: Configuration variable management
+
+## Database Tables
+
+- `venues` - Datacenter locations
+- `vsites` - Logical environments
+- `vnodes` - Servers/containers
+- `fleet_vhosts` - Virtual hosting domains
+- `vconfs` - Configuration variables (54+ per vhost)
+- `ssh_hosts` - SSH connectivity
+- `ssh_keys` - Ed25519 key storage
+
+## Critical Patterns
+
+### Remote Command Execution
+ALWAYS use `RemoteExecutionService::executeScript()` with heredoc:
+```php
+RemoteExecutionService::executeScript($vnode, <<<'BASH'
+    command here
+    multiline supported
+BASH);
+```
+
+NEVER copy scripts to remote servers.
+
+### Service-Driven Architecture
+- Services contain all business logic
+- Commands call Services (thin CLI wrappers)
+- Filament Resources call SAME Services
+- Database transactions in Services
+
+## Testing
+
+- Feature tests in `packages/netserva-core/tests/Feature/`
+- Factories in `packages/netserva-core/database/factories/`
+- Database migrations tested via migration tests
+- SSH mocking for remote execution tests
+
+## Configuration
+
+- All config in `vconfs` table (database-first)
+- No file-based configuration
+- vconfs accessed via VConfService
+- 54+ standard variables per vhost
+
+## Constraints
+
+- SSH requires key-based authentication (no passwords)
+- All remote operations must use SSH (no local filesystem access on remote)
+- VHost must belong to a VSite
+- VSite must belong to a Venue
+- VConf names are 5-character codes (e.g., WPATH, DPASS)
+
+## Related Packages
+
+All other NetServa packages depend on netserva-core:
+- netserva-dns, netserva-fleet, netserva-mail, netserva-web, etc.
+
+See parent [ai.txt](../../ai.txt) for platform overview.
+
+---
+
+Foundation for NetServa 3.0 platform infrastructure management.

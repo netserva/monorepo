@@ -1,0 +1,117 @@
+# netserva-mail Package
+
+Email server management (Postfix/Dovecot/Rspamd) for multi-tenant mail infrastructure.
+
+## Purpose
+
+Complete mail server lifecycle management:
+- Virtual mail account provisioning
+- Dovecot IMAP/POP3 service management
+- Postfix SMTP service management
+- Rspamd spam filtering
+- DKIM/SPF/DMARC configuration
+- Mail domain and alias management
+
+## Key Models
+
+- **VMailbox**: Virtual mail account
+- **VMailDomain**: Mail domain configuration
+- **VMailAlias**: Mail forwarding
+- **VMailService**: Service configuration
+
+## Core Services
+
+- **VMailboxService**: Create, update, delete mailboxes
+- **VMailDomainService**: Domain and service setup
+- **VMailAliasService**: Alias management
+- **PostfixService**: Postfix configuration
+- **DovecotService**: Dovecot configuration
+- **DkimService**: DKIM key generation (via netserva-dns)
+
+## CRUD Commands
+
+Mail commands follow NetServa naming convention:
+- `addvmail` - Create mail account
+- `shvmail` - Show mail account details
+- `chvmail` - Modify mail account
+- `delvmail` - Delete mail account
+
+- `addvalias` - Create mail alias
+- `shvalias` - Show alias details
+- `chvalias` - Modify alias
+- `delvalias` - Delete alias
+
+Non-CRUD:
+- `mail:configure-dkim` - Set up DKIM signing
+- `mail:test-smtp` - Test SMTP connectivity
+
+## Key Features
+
+### Virtual Mailbox Management
+- Per-domain mailbox creation
+- Auto-generated passwords
+- Quota configuration
+- Sieve filter support
+
+### Service Integration
+- Postfix: SMTP relay, virtual aliasing
+- Dovecot: IMAP, POP3, secure authentication
+- Rspamd: Spam filtering, virus scanning
+- DKIM: Email authentication
+
+### Configuration
+- Database-driven via vconfs table
+- Single-file configs:
+  - `/etc/postfix/main.cf` (not conf.d/)
+  - `/etc/dovecot/dovecot.conf` (not conf.d/)
+  - `/etc/rspamd/local.d/` for overrides
+- vconfs variables: MPWD (mail password), MQUOTA, DPASS (dovecot), etc.
+
+### Domain Setup
+- MX record configuration
+- DKIM key generation and signing
+- SPF/DMARC template generation
+- Reverse IP configuration
+
+## Database Tables
+
+- `mail_vhosts` - Mail domain configuration
+- `mail_vboxes` - Virtual mailboxes
+- `mail_valias` - Mail aliases
+- `mail_services` - Service status and config
+
+## Remote Execution
+
+All mail service operations via `RemoteExecutionService::executeScript()`:
+- No script copying
+- Service control via `sc()` function (Alpine/Debian compatible)
+- Configuration generation and deployment
+- Service reload/restart on vnode
+
+## Testing
+
+- Feature tests: mailbox CRUD operations
+- Service mocking: Postfix, Dovecot, Rspamd
+- Configuration generation validation
+- DKIM key generation tests
+
+## Constraints
+
+- Mail domain must have valid DNS zone
+- Mailbox password auto-generated via /dev/urandom
+- Cannot delete domain with active mailboxes
+- Quota limits respected per filesystem
+- DKIM requires DNS integration (netserva-dns)
+
+## Related Packages
+
+- **netserva-core**: Base services and SSH
+- **netserva-fleet**: VHost to mail domain linking
+- **netserva-dns**: DKIM and SPF record management
+- **netserva-ops**: Backup and monitoring
+
+See parent [ai.txt](../../ai.txt) for platform overview.
+
+---
+
+Email server management for NetServa 3.0.
