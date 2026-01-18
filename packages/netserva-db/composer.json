@@ -1,0 +1,61 @@
+{
+    "name": "netserva/db",
+    "description": "Filament 5 database management plugin - migrations, seeders, snapshots, and table browser",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "filament",
+        "database",
+        "migrations",
+        "seeders",
+        "backup",
+        "snapshot",
+        "admin"
+    ],
+    "authors": [
+        {
+            "name": "NetServa",
+            "email": "info@netserva.com"
+        }
+    ],
+    "homepage": "https://netserva.org",
+    "support": {
+        "issues": "https://github.com/netserva/filament-database-manager/issues",
+        "source": "https://github.com/netserva/filament-database-manager"
+    },
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^11.0|^12.0",
+        "filament/filament": "^5.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^3.0",
+        "laravel/pint": "^1.13"
+    },
+    "autoload": {
+        "psr-4": {
+            "NetServa\\Db\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NetServa\\Db\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NetServa\\Db\\NetServaDbServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
